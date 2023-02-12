@@ -10,6 +10,7 @@ in
 (import ./default.nix).shellFor {
   buildInputs = [
     python-custom
+    pkgs.stockfish
   ];
   tools = {
     cabal = "latest";
@@ -19,4 +20,5 @@ in
   PY_BASE_RAW = "${pkgs.python3}";
   PY_BASE = "${python-custom}";
   PY_PRE = "${python-custom.libPrefix}";
+  STOCKFISH_PATH="${pkgs.stockfish}/bin/stockfish";
 }
