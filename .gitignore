@@ -1,0 +1,5 @@
+.envrc
+dist-newstyle/
+dist/
+output
+*/__pycache__/

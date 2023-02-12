@@ -1,0 +1,55 @@
+cabal-version:      2.4
+name:               rep-gen
+version:            0.1.0.0
+license-file:       LICENSE
+author:             Cameron Kingsbury
+maintainer:         camsbury7@gmail.com
+extra-source-files: CHANGELOG.md
+
+library
+  hs-source-dirs:      src
+  default-language:    Haskell2010
+  exposed-modules:     RepGen
+  other-modules:       PyChess
+  default-extensions:  DerivingStrategies
+                       FlexibleContexts
+                       FlexibleInstances
+                       GeneralizedNewtypeDeriving
+                       OverloadedLists
+                       OverloadedStrings
+                       RecordWildCards
+                       ScopedTypeVariables
+                       StandaloneDeriving
+                       TupleSections
+                       MultiParamTypeClasses
+                       FunctionalDependencies
+  build-depends:       base
+                     , classy-prelude
+                     , data-default
+                     , lens
+                     , mtl
+                     , uuid
+                     , vector
+
+executable rep-gen
+    main-is:            Main.hs
+    hs-source-dirs:     app
+    default-extensions: OverloadedLists
+                        OverloadedStrings
+    build-depends:      base
+                      , classy-prelude
+                      , bytestring
+                      , data-default
+                      , directory
+                      , rep-gen
+                      , mtl
+                      , network
+    default-language:   Haskell2010
+    pkgconfig-depends:  python3
+    c-sources:          src/chess.c
+
+    -- gotta run the below to replace explicit ld-options it seems:
+-- cabal new-build exe:rep-gen  --ghc-options="-l${PY_PRE} -I${PY_BASE}/include/${PY_PRE}" --extra-lib-dirs=${PY_BASE}/lib
+    -- ld-options:         -I${PY_BASE}/include/python3.10
+    --                     -L${PY_BASE}/lib
+    --                     -l${PY_PRE}
