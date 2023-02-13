@@ -11,7 +11,12 @@ library
     default-language:    Haskell2010
     exposed-modules:     RepGen
                        , Prelude
-    other-modules:       PyChess
+    other-modules:       RepGen.PyChess
+                       , RepGen.PyChess.Internal
+                       , RepGen.PyChess.Type
+                       , RepGen.Lichess
+                       , RepGen.Lichess.History
+                       , RepGen.Type
     default-extensions:  NoImplicitPrelude
                          DerivingStrategies
                          FlexibleContexts
@@ -29,11 +34,16 @@ library
                        , aeson
                        , classy-prelude
                        , data-default
+                       , http-client
+                       , http-client-tls
+                       , http-types
                        , lens
                        , mtl
                        , regex
                        , regex-pcre
                        , uuid
+                       , text
+                       , time
                        , vector
     pkgconfig-depends:   python3
     c-sources:           src/chess.c

@@ -12,6 +12,7 @@ in
     python-custom
     pkgs.pcre
     pkgs.stockfish
+    pkgs.zlib
   ];
   tools = {
     cabal = "latest";

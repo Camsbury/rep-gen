@@ -1,4 +1,4 @@
-module RepGen (module PyChess) where
+module RepGen (module RepGen.PyChess) where
 import Prelude
-import PyChess
+import RepGen.PyChess
 
