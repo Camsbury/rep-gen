@@ -1,9 +1,24 @@
+{-# LANGUAGE ScopedTypeVariables #-}
 module Main where
+
 import Prelude
 import RepGen
 
 main :: IO ()
 main = do
-  putStrLn =<< ucisToFen ["e2e4", "e7e5"]
-  putStrLn =<< sansToUcis ["e4", "e5"]
-  putStrLn =<< ucisToEngineCandidates ["e2e4", "e7e5"] "white" 20 10
+  fen <- ucisToFen (["e2e4", "e7e5"] :: Vector Text)
+  putStrLn
+    . tshow
+    $ fen
+  ucis <- sansToUcis (["e4", "e5"] :: Vector Text)
+  putStrLn
+    . tshow
+    $ ucis
+  cands <- ucisToEngineCandidates
+    (["e2e4", "e7e5"] :: Vector Text)
+    White
+    20
+    10
+  putStrLn
+    . tshow
+    $ cands

@@ -33,6 +33,8 @@ library
                        , mtl
                        , uuid
                        , vector
+    pkgconfig-depends:   python3
+    c-sources:           src/chess.c
     mixins:              base hiding (Prelude)
 
 executable rep-gen
