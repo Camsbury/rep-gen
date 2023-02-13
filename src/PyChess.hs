@@ -1,11 +1,17 @@
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE TypeFamilies #-}
 
-module PyChess where
+module PyChess
+  ( ucisToFen
+  , sansToUcis
+  , ucisToEngineCandidates
+  ) where
 
 import Prelude
 import Foreign.C.String
 import Foreign.C.Types
+import Control.Lens.Operators
+import Control.Lens.Combinators
 import Data.Aeson
   ( FromJSON(..)
   , Value(..)
@@ -13,22 +19,32 @@ import Data.Aeson
   , decode
   )
 import Data.Aeson.Types (parseFail)
+import Text.Regex.PCRE ((=~))
 
 foreign import ccall "ucis_to_fen" ucis_to_fen
   :: CString -> IO CString
 foreign import ccall "sans_to_ucis" sans_to_ucis
   :: CString -> IO CString
 foreign import ccall "ucis_to_engine_candidates" ucis_to_engine_candidates
-  :: CString -> CString -> Int -> Int -> IO CString
+  :: CString -> Int -> Int -> IO CString
 
-data Score
-  = Cp   Int
-  | Mate Int
+data Color
+  = White
+  | Black
   deriving (Show, Eq)
 
--- | Parses a Stockfish representation of a score into ours
-parseScore :: Text -> Maybe Score
-parseScore = undefined
+data MateIn
+  = MateIn
+  { color     :: Color
+  , moveCount :: Int
+  } deriving (Show, Eq)
+
+type Cp = Int
+
+data Score
+  = CpScore   Cp
+  | MateScore MateIn
+  deriving (Show, Eq)
 
 instance FromJSON Score where
   parseJSON (String s)
@@ -36,19 +52,54 @@ instance FromJSON Score where
     $ parseScore s
   parseJSON _ = parseFail "Score not provided as a JSON string"
 
-data UciAndScore
-  = UciAndScore
+data EngineCandidate
+  = EngineCandidate
   { uci   :: !Text
   , score :: Score
   } deriving (Show, Eq)
 
-instance FromJSON UciAndScore where
+instance FromJSON EngineCandidate where
   parseJSON (Object v) =
-    UciAndScore
+    EngineCandidate
       <$> v .: "uci"
       <*> v .: "score"
-  parseJSON _ = parseFail "UciAndScore not provided as a JSON object"
+  parseJSON _ = parseFail "EngineCandidate not provided as a JSON object"
 
+parseMateIn :: Text -> Maybe Score
+parseMateIn text = do
+  let p :: String = "\\#([+-])(\\d+)"
+  case (unpack text =~ p :: (String, String, String, [String])) ^. _4 of
+    ["+", n]
+      -> Just
+      . MateScore
+      $ MateIn
+      { color = White
+      , moveCount = parseCount n
+      }
+
+    ["-", n]
+      -> Just
+      . MateScore
+      $ MateIn
+      { color = Black
+      , moveCount = parseCount n
+      }
+
+    _ -> Nothing
+  where
+    parseCount :: String -> Int
+    parseCount = fromMaybe (error "impossible regex") . readMay
+
+parseCp :: Text -> Maybe Score
+parseCp text = do
+  let p :: String = "\\+{0,1}(-{0,1}\\d+)"
+  case (unpack text =~ p :: (String, String, String, [String])) ^. _4 of
+    [n] -> CpScore <$> readMay n
+    _ -> Nothing
+
+-- | Parses a Stockfish representation of a score into ours
+parseScore :: Text -> Maybe Score
+parseScore text = parseMateIn text <|> parseCp text
 
 -- | Convert a sequence of UCI 'Text' into a FEN 'Text'
 ucisToFen :: (MonoFoldable m, Element m ~ Text) => m -> IO Text
@@ -65,30 +116,16 @@ sansToUcis sans = do
   result <- sans_to_ucis cSans
   pack <$> peekCString result
 
-data Color
-  = White
-  | Black
-  deriving (Show, Eq)
-
--- | Convert a 'Color' to 'Text'
-colorText :: Color -> Text
-colorText c
-  | c == White = "white"
-  | c == Black = "black"
-
--- | Convert a sequence of UCI 'Text' into a Vector/sequence of 'UciAndScore'
--- representing the candidate moves from the position
+-- | Convert a sequence of UCI 'Text' into a Vector/sequence of 'EngineCandidate'
 ucisToEngineCandidates
   :: (MonoFoldable m, Element m ~ Text)
   => m
-  -> Color
   -> Int
   -> Int
-  -> IO (Maybe (Vector UciAndScore))
-ucisToEngineCandidates ucis color depth moveCount = do
+  -> IO (Maybe (Vector EngineCandidate))
+ucisToEngineCandidates ucis depth moveCount = do
   cUcis <- newCString . unpack $ intercalate "," ucis
-  cColor <- newCString . unpack . colorText $ color
-  cResult <- ucis_to_engine_candidates cUcis cColor depth moveCount
+  cResult <- ucis_to_engine_candidates cUcis depth moveCount
   result <- peekCString cResult
   pure . decode $ fromString result
 

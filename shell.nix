@@ -10,6 +10,7 @@ in
 (import ./default.nix).shellFor {
   buildInputs = [
     python-custom
+    pkgs.pcre
     pkgs.stockfish
   ];
   tools = {

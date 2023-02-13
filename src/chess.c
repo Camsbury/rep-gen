@@ -92,7 +92,6 @@ char* sans_to_ucis(const char* sans) {
 // take a comma separated list of UCI moves, a string color, an int depth, and an int move_count, and return JSON of ucis and scores
 char* ucis_to_engine_candidates(
   const char* ucis,
-  const char* color,
   const int depth,
   const int move_count
 ) {
@@ -104,9 +103,8 @@ char* ucis_to_engine_candidates(
     pModule = PyImport_ImportModule("chess_helpers");
     pFunc = PyObject_GetAttrString(pModule, "ucis_to_engine_candidates");
     pArgs = PyTuple_Pack(
-      4,
+      3,
       PyUnicode_FromString(ucis),
-      PyUnicode_FromString(color),
       PyLong_FromLong(depth),
       PyLong_FromLong(move_count)
     );

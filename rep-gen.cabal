@@ -31,6 +31,8 @@ library
                        , data-default
                        , lens
                        , mtl
+                       , regex
+                       , regex-pcre
                        , uuid
                        , vector
     pkgconfig-depends:   python3
