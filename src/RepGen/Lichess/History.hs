@@ -3,10 +3,6 @@ module RepGen.Lichess.History where
 import Prelude
 
 import RepGen.Type
-import Network.HTTP.Client
-import Network.HTTP.Client.TLS
-import Network.HTTP.Types.Method
-import Network.HTTP.Types.URI
 import Data.Time.Calendar (Year(..), MonthOfYear(..))
 
 data GlobalParams
@@ -43,7 +39,6 @@ data LichessParams
 
 type PlayerName = Text
 
--- TODO: add since as a date!
 data PlayerParams
   = PlayerParams
   { color         :: Color
@@ -52,20 +47,3 @@ data PlayerParams
   , playerGlobals :: GlobalParams
   , since         :: (Year, MonthOfYear) -- default to Jan 1952
   } deriving (Eq, Show)
-
--- import qualified Data.ByteString.Lazy as LBS
-
--- makeGetRequest :: String -> [(ByteString, Maybe ByteString)] -> IO LBS.ByteString
--- makeGetRequest url queryParams = do
---   manager <- newManager tlsManagerSettings
---   request <- parseRequest url
---   let requestWithParams = setQueryString queryParams request
---   response <- httpLbs requestWithParams manager
---   pure $ responseBody response
-
--- main :: IO ()
--- main = do
---   let url = "https://httpbin.org/get"
---   let queryParams = [("foo", Just "bar"), ("baz", Nothing)]
---   response <- makeGetRequest url queryParams
---   print response
