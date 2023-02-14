@@ -7,6 +7,7 @@ import ClassyPrelude
 
 import Control.Lens.Operators
 import Control.Lens.Combinators
+import Network.HTTP.Types.Status
 import Network.HTTP.Types.Method
 import Network.HTTP.Types.URI
 import qualified Network.HTTP.Client as H
@@ -18,7 +19,7 @@ type Url = Text
 getRequest
   :: Url
   -> Map Text Text
-  -> IO Text
+  -> IO (Int, Text)
 getRequest url queryParams = do
   manager <- H.newManager H.tlsManagerSettings
   request <- H.parseRequest . unpack $ url
@@ -30,8 +31,6 @@ getRequest url queryParams = do
         .   to mapToBS
   let requestWithParams = H.setQueryString bsParams request
   response <- H.httpLbs requestWithParams manager
-  pure . tshow $ H.responseBody response
-
-  --   let statusCode = H.statusCode $ H.responseStatus response
-  -- let body = H.responseBody response
-  -- pure (statusCode, body)
+  let code = statusCode $ H.responseStatus response
+  let responseBody = tshow $ H.responseBody response
+  pure (code, responseBody)
