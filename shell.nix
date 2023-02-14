@@ -23,4 +23,5 @@ in
   PY_BASE = "${python-custom}";
   PY_PRE = "${python-custom.libPrefix}";
   STOCKFISH_PATH="${pkgs.stockfish}/bin/stockfish";
+  LD_LIBRARY_PATH="${python-custom}/lib:$LD_LIBRARY_PATH";
 }
