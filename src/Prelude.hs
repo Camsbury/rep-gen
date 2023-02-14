@@ -31,3 +31,7 @@ getRequest url queryParams = do
   let requestWithParams = H.setQueryString bsParams request
   response <- H.httpLbs requestWithParams manager
   pure . tshow $ H.responseBody response
+
+  --   let statusCode = H.statusCode $ H.responseStatus response
+  -- let body = H.responseBody response
+  -- pure (statusCode, body)

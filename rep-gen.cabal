@@ -9,14 +9,15 @@ extra-source-files: CHANGELOG.md
 library
     hs-source-dirs:      src
     default-language:    Haskell2010
-    exposed-modules:     RepGen
-                       , Prelude
-    other-modules:       RepGen.PyChess
+    exposed-modules:     Prelude
+                       , RepGen
+                       , RepGen.Lichess.History
+    other-modules:       RepGen.Type
+                       , RepGen.PyChess
                        , RepGen.PyChess.Internal
                        , RepGen.PyChess.Type
                        , RepGen.Lichess
-                       , RepGen.Lichess.History
-                       , RepGen.Type
+                       , RepGen.Lichess.History.Type
     default-extensions:  NoImplicitPrelude
                          DerivingStrategies
                          FlexibleContexts

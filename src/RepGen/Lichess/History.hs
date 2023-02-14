@@ -1,49 +1,32 @@
-module RepGen.Lichess.History where
+module RepGen.Lichess.History
+  ( module RepGen.Lichess.History.Type
+  , historicMovesMasters
+  ) where
 
 import Prelude
 
-import RepGen.Type
-import Data.Time.Calendar (Year(..), MonthOfYear(..))
+import Control.Lens.Operators
+import Control.Lens.Combinators
+import RepGen.Lichess.History.Type
 
-data GlobalParams
-  = GlobalParams
-  { moveCount :: Int -- moves
-  , fen       :: Text
-  } deriving (Eq, Show)
+-- hitting https://explorer.lichess.ovh/{masters,lichess,player}
 
-data GameSpeed
-  = Bullet
-  | Blitz
-  | Rapid
-  | Classical
-  deriving (Eq, Show)
+--- type has uci, white, black, play-count, prob
 
-data LichessRating
-  = L600
-  | L1000
-  | L1200
-  | L1400
-  | L1600
-  | L1800
-  | L2000
-  | L2200
-  | L2500
-  deriving (Eq, Show)
+baseUrl :: Text
+baseUrl = "https://explorer.lichess.ovh/"
 
-data LichessParams
-  = LichessParams
-  { ratings        :: Vector LichessRating
-  , lichessSpeeds  :: Vector GameSpeed
-  , lichessGlobals :: GlobalParams
-  } deriving (Eq, Show)
+-- | Convert masters params to query params
+fromMastersParams :: UniversalParams -> Map Text Text
+fromMastersParams params
+  = mapFromList
+  [ ("moves",    params ^. moveCount . to tshow)
+  , ("fen",      params ^. fen)
+  , ("topGames", "0")
+  ]
 
-type PlayerName = Text
+-- | get historic Lichess moves for masters games
+historicMovesMasters :: UniversalParams -> IO Text
+historicMovesMasters
+  = getRequest (baseUrl <> "masters") . fromMastersParams
 
-data PlayerParams
-  = PlayerParams
-  { color         :: Color
-  , player        :: PlayerName
-  , playerSpeeds  :: Vector GameSpeed
-  , playerGlobals :: GlobalParams
-  , since         :: (Year, MonthOfYear) -- default to Jan 1952
-  } deriving (Eq, Show)

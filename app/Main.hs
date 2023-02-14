@@ -3,6 +3,7 @@ module Main where
 
 import Prelude
 import RepGen
+import RepGen.Lichess.History
 
 main :: IO ()
 main = do
@@ -18,7 +19,14 @@ main = do
   --   10
   -- print cands
 
-  let url = "https://httpbin.org/get"
-  let qps = mapFromList [("foo", "bar")]
-  response <- getRequest url qps
-  print response
+  fen <- ucisToFen (["e2e4", "e7e5"] :: Vector Text)
+  -- let url = "https://explorer.lichess.ovh/masters"
+  -- let qps = mapFromList [("fen", fen), ("moves", "10"), ("topGames", "0")]
+  -- response <- getRequest url qps
+  -- print response
+  fmap print
+    . historicMovesMasters
+    $ UniversalParams
+    { _moveCount = 10
+    , _fen = fen
+    }

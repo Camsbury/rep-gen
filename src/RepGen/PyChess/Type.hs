@@ -1,7 +1,9 @@
+{-# LANGUAGE TemplateHaskell #-}
 module RepGen.PyChess.Type where
 
 import Prelude
 import RepGen.Type
+import Control.Lens (makeFieldsNoPrefix)
 
 --------------------------------------------------------------------------------
 --- Types
@@ -9,9 +11,10 @@ import RepGen.Type
 
 data MateIn
   = MateIn
-  { color     :: Color
-  , moveCount :: Int
+  { _color     :: Color
+  , _moveCount :: Int
   } deriving (Show, Eq)
+makeFieldsNoPrefix ''MateIn
 
 type Cp = Int
 
@@ -22,6 +25,7 @@ data Score
 
 data EngineCandidate
   = EngineCandidate
-  { uci   :: !Text
-  , score :: Score
+  { _uci   :: !Text
+  , _score :: Score
   } deriving (Show, Eq)
+makeFieldsNoPrefix ''EngineCandidate

@@ -39,16 +39,16 @@ parseMateIn text = do
       -> Just
       . MateScore
       $ MateIn
-      { color = White
-      , moveCount = parseCount n
+      { _color = White
+      , _moveCount = parseCount n
       }
 
     ["-", n]
       -> Just
       . MateScore
       $ MateIn
-      { color = Black
-      , moveCount = parseCount n
+      { _color = Black
+      , _moveCount = parseCount n
       }
 
     _ -> Nothing
