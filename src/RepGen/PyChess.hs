@@ -50,9 +50,9 @@ ucisToEngineCandidates
   => m
   -> Int
   -> Int
-  -> IO (Maybe (Vector EngineCandidate))
+  -> IO (Either Text (Vector EngineCandidate))
 ucisToEngineCandidates ucis depth moveCount = do
   cUcis <- newCString . unpack $ intercalate "," ucis
   cResult <- ucis_to_engine_candidates cUcis depth moveCount
   result <- peekCString cResult
-  pure . J.decode $ fromString result
+  pure . first pack . J.eitherDecode $ fromString result
