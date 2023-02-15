@@ -46,7 +46,8 @@ instance Default HistoryConfig where
 
 data RGConfig
   = RGConfig
-  { _engineP         :: Bool
+  { _color           :: Color
+  , _engineP         :: Bool
   , _engineConfig    :: EngineConfig
   , _exportP         :: Bool
   , _exportPgnPath   :: Maybe Text
@@ -67,7 +68,8 @@ makeLenses ''RGConfig
 
 instance Default RGConfig where
   def = RGConfig
-      { _engineP         = True
+      { _color           = White
+      , _engineP         = True
       , _engineConfig    = def
       , _exportP         = True
       , _exportPgnPath   = Nothing
