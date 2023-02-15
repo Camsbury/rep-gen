@@ -1,4 +1,4 @@
-module MoveTree where
+module RepGen.MoveTree.Type where
 
 import Prelude
 

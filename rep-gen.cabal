@@ -11,7 +11,8 @@ library
     default-language:    Haskell2010
     exposed-modules:     Prelude
                        , RepGen
-    other-modules:       RepGen.Config.Type
+    other-modules:       RepGen.Action
+                       , RepGen.Config.Type
                        , RepGen.Lichess
                        , RepGen.Lichess.History
                        , RepGen.Lichess.History.Type
@@ -19,6 +20,7 @@ library
                        , RepGen.PyChess
                        , RepGen.PyChess.Internal
                        , RepGen.PyChess.Type
+                       , RepGen.State.Type
                        , RepGen.Type
                        , RepGen.Monad
     default-extensions:  NoImplicitPrelude

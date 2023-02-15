@@ -1,4 +1,3 @@
-{-# LANGUAGE TemplateHaskell #-}
 module RepGen.Type where
 
 import Prelude
@@ -22,9 +21,3 @@ data RGStrategy
   = MinLoss
   | MaxWinOverLoss
   deriving (Show, Eq)
-
-data RGState
-  = RGState
-  {
-  } deriving (Show, Eq)
-makeLenses ''RGState

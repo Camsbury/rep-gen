@@ -31,7 +31,5 @@ main = do
   -- print historicMoves
 
   buildRepertoire $
-    def & exportP  %~ not
-        & minPlays .~ 5
-        & engineConfig . engineDepth .~ 30
-
+    def & color        .~ Black
+        & engineConfig . engineAllowableLoss .~ 0.05
