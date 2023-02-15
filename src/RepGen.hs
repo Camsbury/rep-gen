@@ -17,6 +17,10 @@ import Control.Monad.State (get, runStateT)
 import Control.Monad.Logger (runStdoutLoggingT, logInfoN)
 import Text.Pretty.Simple
 
+-- | Build the move tree for the repertoire
+buildTree :: RGM MoveTree
+buildTree = undefined
+
 -- | Build a chess repertoire from a config
 buildRepertoire :: RGConfig -> IO ()
 buildRepertoire rgConfig
@@ -26,6 +30,7 @@ buildRepertoire rgConfig
   . (`runReaderT` rgConfig)
   . (`runStateT` RGState)
   $ do
+    tree <- buildTree
     cfg <- ask
     pPrintDarkBg cfg
 

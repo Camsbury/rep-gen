@@ -15,6 +15,7 @@ library
                        , RepGen.Lichess
                        , RepGen.Lichess.History
                        , RepGen.Lichess.History.Type
+                       , RepGen.MoveTree.Type
                        , RepGen.PyChess
                        , RepGen.PyChess.Internal
                        , RepGen.PyChess.Type
