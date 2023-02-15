@@ -3,9 +3,6 @@ module Main where
 
 import Prelude
 import RepGen
-import Control.Lens.Operators
-import Control.Lens.Combinators
-import Data.Default (Default(..))
 
 main :: IO ()
 main = do

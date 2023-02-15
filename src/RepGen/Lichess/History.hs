@@ -5,8 +5,6 @@ module RepGen.Lichess.History
 
 import Prelude
 
-import Control.Lens.Operators
-import Control.Lens.Combinators
 import RepGen.Lichess.History.Type
 import qualified Control.Concurrent as C
 

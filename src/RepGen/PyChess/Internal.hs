@@ -2,8 +2,6 @@ module RepGen.PyChess.Internal where
 
 import Prelude
 
-import Control.Lens.Combinators
-import Control.Lens.Operators
 import Data.Aeson
   ( FromJSON(..)
   , Value(..)

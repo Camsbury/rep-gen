@@ -3,7 +3,6 @@ module RepGen.MoveTree.Type where
 import Prelude
 
 import RepGen.Type
-import Data.Default
 
 data WinStats
   = WinStats

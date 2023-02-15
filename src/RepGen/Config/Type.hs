@@ -5,8 +5,6 @@ module RepGen.Config.Type where
 import Prelude
 
 import Control.Lens (makeLenses)
-import Control.Lens.Operators
-import Data.Default
 import RepGen.Lichess.History.Type
 import RepGen.Type
 

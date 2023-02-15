@@ -3,7 +3,6 @@ module RepGen.State.Type where
 
 import Prelude
 import Control.Lens (makeLenses)
-import Data.Default
 
 data RGState
   = RGState

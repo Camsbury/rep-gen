@@ -9,11 +9,9 @@ module RepGen
 
 import Prelude
 
-import Data.Default
 import RepGen.Action
 import RepGen.Config.Type
 import RepGen.Monad
-import Control.Lens.Combinators
 import RepGen.MoveTree.Type
 import RepGen.State.Type
 import RepGen.PyChess
@@ -22,7 +20,6 @@ import Control.Monad.Reader (runReaderT)
 import Control.Monad.Except (runExceptT)
 import Control.Monad.State (get, runStateT)
 import Control.Monad.Logger (runStdoutLoggingT, logInfoN)
-import Text.Pretty.Simple
 
 -- | build the move tree for the repertoire
 buildTree :: RGM TreeNode
