@@ -10,6 +10,7 @@ module RepGen
 import Prelude
 
 import RepGen.Action
+import RepGen.Action.Type
 import RepGen.Config.Type
 import RepGen.Monad
 import RepGen.MoveTree.Type
@@ -25,8 +26,9 @@ import Control.Monad.Logger (runStdoutLoggingT, logInfoN)
 -- | build the move tree for the repertoire
 buildTree :: RGM TreeNode
 buildTree = do
-  stack <- uses actionStack . toListOf $ ix 0
-  undefined
+  action <- uses actionStack . preview $ ix 0
+  actionStack %= fromMaybe empty . tailMay
+  maybe (use moveTree) ((>> buildTree) . runAction) action
 
 
 -- | Build a chess repertoire from a config

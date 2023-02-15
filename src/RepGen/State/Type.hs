@@ -5,13 +5,14 @@ import Prelude
 import Control.Lens (makeLenses)
 
 import RepGen.Action.Type
+import RepGen.MoveTree.Type
 
 data RGState
   = RGState
-  { _tree :: ()
+  { _moveTree :: TreeNode
   , _actionStack :: Vector RGAction
   } deriving (Show, Eq)
 makeLenses ''RGState
 
 instance Default RGState where
-  def = RGState () empty
+  def = RGState def empty
