@@ -10,13 +10,12 @@ import RepGen.PyChess
 import RepGen.Type
 import RepGen.Config.Type
 import RepGen.Monad
+import Control.Lens.Combinators
 import Control.Monad.Reader (runReaderT)
 import Control.Monad.Except (runExceptT)
 import Control.Monad.State (get, runStateT)
 import Control.Monad.Logger (runStdoutLoggingT, logInfoN)
-
-printThing :: RGM ()
-printThing = lift $ print "thing"
+import Text.Pretty.Simple
 
 -- | Build a chess repertoire from a config
 buildRepertoire :: RGConfig -> IO ()
@@ -27,4 +26,6 @@ buildRepertoire rgConfig
   . (`runReaderT` rgConfig)
   . (`runStateT` RGState)
   $ do
-    logInfoN "logging!"
+    cfg <- ask
+    pPrintDarkBg cfg
+

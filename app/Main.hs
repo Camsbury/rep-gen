@@ -3,6 +3,8 @@ module Main where
 
 import Prelude
 import RepGen
+import Control.Lens.Operators
+import Control.Lens.Combinators
 import Data.Default (Default(..))
 
 main :: IO ()
@@ -28,4 +30,8 @@ main = do
   --   }
   -- print historicMoves
 
-  buildRepertoire def
+  buildRepertoire $
+    def & exportP  %~ not
+        & minPlays .~ 5
+        & engineConfig . engineDepth .~ 30
+

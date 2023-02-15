@@ -1,13 +1,10 @@
 {-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE DuplicateRecordFields #-}
 module RepGen.Lichess.History.Type where
 
 import Prelude
 
 import RepGen.Type
--- NOTE: makeLenses interrupts python for some reason,
--- so I have to manually make my lenses...
-import Control.Lens (makeLenses, makeLensesFor)
+import Control.Lens (makeLenses)
 import Data.Time.Calendar (Year(..), MonthOfYear(..))
 
 data UniversalParams
@@ -38,20 +35,20 @@ data LichessRating
 
 data LichessParams
   = LichessParams
-  { _ratings    :: Vector LichessRating
-  , _speeds     :: Vector GameSpeed
+  { _lichessRatings :: Vector LichessRating
+  , _lichessSpeeds  :: Vector GameSpeed
   , _universals :: UniversalParams
   } deriving (Eq, Show)
-makeLensesFor [("_", "lichess")] ''LichessParams
+makeLenses ''LichessParams
 
 type PlayerName = Text
 
 data PlayerParams
   = PlayerParams
-  { _color      :: Color
-  , _player     :: !PlayerName
-  , _speeds     :: Vector GameSpeed
-  , _universals :: UniversalParams
-  , _since      :: (Year, MonthOfYear) -- default to Jan 1952
+  { _playerColor      :: Color
+  , _player           :: !PlayerName
+  , _playerSpeeds     :: Vector GameSpeed
+  , _playerUniversals :: UniversalParams
+  , _playerSince      :: (Year, MonthOfYear) -- default to Jan 1952
   } deriving (Eq, Show)
-makeLensesFor [("_", "player")] ''PlayerParams
+makeLenses ''PlayerParams
