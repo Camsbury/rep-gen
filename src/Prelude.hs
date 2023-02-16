@@ -5,6 +5,8 @@ module Prelude
   , module Control.Lens.Combinators
   , module Data.Default
   , getRequest
+  , throwMaybe
+  , throwEither
   ) where
 
 import ClassyPrelude
@@ -18,6 +20,7 @@ import Control.Lens.Combinators hiding
   , unsnoc
   , Index
   )
+import Control.Monad.Except (MonadError(..))
 import Data.Default
 import Network.HTTP.Types.Status
 import Network.HTTP.Types.Method
@@ -26,6 +29,14 @@ import Text.Pretty.Simple hiding (Color(..))
 import qualified Network.HTTP.Client as H
 import qualified Network.HTTP.Client.TLS as H
 import qualified Data.ByteString as B
+
+-- | throws error if Nothing
+throwMaybe :: MonadError e m => e -> Maybe a -> m a
+throwMaybe e = maybe (throwError e) pure
+
+-- | throws error if Nothing
+throwEither :: MonadError e m => Either e a -> m a
+throwEither = either throwError pure
 
 type Url = Text
 

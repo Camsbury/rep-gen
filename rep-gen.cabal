@@ -12,6 +12,12 @@ library
     exposed-modules:     Prelude
                        , RepGen
     other-modules:       RepGen.Action
+                       , RepGen.Action.CalcStats
+                       , RepGen.Action.EnumCands
+                       , RepGen.Action.EnumResps
+                       , RepGen.Action.PruneCands
+                       , RepGen.Action.PruneHooks
+                       , RepGen.Action.TransStats
                        , RepGen.Action.Type
                        , RepGen.Config.Type
                        , RepGen.Lichess
