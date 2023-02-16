@@ -7,70 +7,46 @@ import Prelude
 import Control.Lens (makeLenses)
 import RepGen.Type
 
-data WinStats
-  = WinStats
-  { _wins     :: Maybe Double
-  , _winsAgg  :: Maybe Double
+-- | Provide a nominal and aggregate statistic
+data RGStat
+  = RGStat
+  { _nom :: Double
+  , _agg :: Double
   } deriving (Show, Eq)
-makeLenses ''WinStats
-
-instance Default WinStats where
-  def = WinStats
-      { _wins     = Nothing
-      , _winsAgg  = Nothing
-      }
+makeLenses ''RGStat
 
 -- | Node stats per source (lichess, masters)
 data NodeStats
   = NodeStats
-  { _whiteStats :: WinStats
-  , _blackStats :: WinStats
-  , _prob       :: Maybe Double
+  { _whiteWins :: RGStat
+  , _blackWins :: RGStat
+  , _prob      :: Double
   } deriving (Show, Eq)
 makeLenses ''NodeStats
 
-instance Default NodeStats where
-  def = NodeStats
-      { _whiteStats = def
-      , _blackStats = def
-      , _prob       = Nothing
-      }
-
--- | Stats that are universal to a node
-data SharedStats
-  = SharedStats
-  { _score      :: Maybe Double
-  , _scoreAgg   :: Maybe Double
-  , _probAgg    :: Maybe Double
+data RGStats
+  = RGStats
+  { _lichessStats :: Maybe NodeStats
+  , _mastersStats :: Maybe NodeStats
+  , _score        :: Maybe RGStat
+  , _probAgg      :: Double
   } deriving (Show, Eq)
-makeLenses ''SharedStats
+makeLenses ''RGStats
 
-instance Default SharedStats where
-  def = SharedStats
-      { _score    = Nothing
-      , _scoreAgg = Nothing
-      , _probAgg  = Nothing
-      }
+instance Default RGStats where
+  def = RGStats Nothing Nothing Nothing 1
 
 -- | A node in the tree of candidates and responses in the generated repertoire
 data TreeNode
   = TreeNode
-  { _lichessStats :: NodeStats
-  , _mastersStats :: NodeStats
-  , _sharedStats  :: SharedStats
-  , _ucis         :: Vector Uci
-  , _responses    :: Vector (Uci, TreeNode)
+  { _rgStats   :: RGStats
+  , _ucis      :: Vector Uci
+  , _responses :: Vector (Uci, TreeNode)
   } deriving (Show, Eq)
 makeLenses ''TreeNode
 
 instance Default TreeNode where
-  def = TreeNode
-      { _lichessStats = def
-      , _mastersStats = def
-      , _sharedStats  = def
-      , _ucis         = empty
-      , _responses    = empty
-      }
+  def = TreeNode def empty empty
 
 -- | Provide a traversal into the move tree for a given list of ucis
 traverseUcis :: Vector Uci -> Traversal' TreeNode TreeNode
