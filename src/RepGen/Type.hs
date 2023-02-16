@@ -12,6 +12,10 @@ data Color
   | Black
   deriving (Show, Eq)
 
+flipColor :: Color -> Color
+flipColor White = Black
+flipColor Black = White
+
 type RGError = Text
 
 type San = Text
