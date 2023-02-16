@@ -13,7 +13,7 @@ makeLenses ''CalcStats
 
 data TransStats
   = TransStats
-  {
+  { _transUcis :: Vector Uci
   } deriving (Show, Eq)
 makeLenses ''TransStats
 

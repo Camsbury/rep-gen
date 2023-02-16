@@ -16,8 +16,3 @@ type RGError = Text
 
 type San = Text
 type Uci = Text
-
-data RGStrategy
-  = MinLoss
-  | MaxWinOverLoss
-  deriving (Show, Eq)

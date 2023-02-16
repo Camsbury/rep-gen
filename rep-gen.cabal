@@ -29,6 +29,8 @@ library
                        , RepGen.PyChess.Type
                        , RepGen.State
                        , RepGen.State.Type
+                       , RepGen.Strategy
+                       , RepGen.Strategy.Type
                        , RepGen.Type
                        , RepGen.Monad
     default-extensions:  NoImplicitPrelude

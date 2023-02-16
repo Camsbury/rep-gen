@@ -13,6 +13,7 @@ import RepGen.Action.Type
 import RepGen.State.Type
 --------------------------------------------------------------------------------
 
+-- | Calculate a stat weighting
 weightedStat
   :: Lens' NodeStats (Maybe Double)
   -> NodeStats
@@ -22,6 +23,7 @@ weightedStat winsL ns = stat * p
     stat = fromMaybe 0 $ ns ^. winsL
     p    = fromMaybe 0 $ ns ^. prob
 
+-- | Extract a weighted statistic for child nodes
 childrenStat
   :: Vector (Uci, TreeNode)
   -> Lens' TreeNode NodeStats
@@ -35,6 +37,8 @@ childrenStat children parentL statL
   . parentL
   . to (weightedStat statL)
 
+-- | Calculate the win probabilites per color for a given node
+-- adjusted for the known probabilities of the children nodes
 -- NOTE: could split to run per color
 calcNodeStats
   :: Vector Uci
@@ -78,6 +82,8 @@ probNonChild children
   . prob
   . to (fromMaybe 0)
 
+-- | Calculate the weighted score for a node given the chosen moves
+-- for its children
 calcScore
   :: Vector Uci
   -> RGM ()
@@ -92,7 +98,6 @@ calcScore ucis = do
     $ moveTree
     . traverseUcis ucis
     . responses
-  let pnc = probNonChild children
   let cScoreAgg
         = sum
         $ children
@@ -102,8 +107,10 @@ calcScore ucis = do
                  * fromMaybe 0 (n ^. lichessStats . prob))
   let pScore = parent ^. sharedStats . scoreAgg
   moveTree . traverseUcis ucis . sharedStats . scoreAgg
-    .= ((\pS -> cScoreAgg + pnc * pS) <$> pScore)
+    .= ((\pS -> cScoreAgg + probNonChild children * pS) <$> pScore)
 
+-- | Calculate stats for a candidate node
+-- given the weighted stats of its children
 runAction :: CalcStats -> RGM ()
 runAction (CalcStats ucis) = do
   calcNodeStats ucis lichessStats

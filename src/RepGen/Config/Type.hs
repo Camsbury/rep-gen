@@ -1,5 +1,4 @@
 {-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE DuplicateRecordFields #-}
 module RepGen.Config.Type where
 
 import Prelude
@@ -7,6 +6,7 @@ import Prelude
 import Control.Lens (makeLenses)
 import RepGen.Lichess.History.Type
 import RepGen.Type
+import RepGen.Strategy.Type
 
 data EngineConfig
   = EngineConfig
