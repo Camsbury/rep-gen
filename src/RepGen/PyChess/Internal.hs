@@ -1,6 +1,7 @@
+{-# OPTIONS_GHC -Wno-orphans #-}
 module RepGen.PyChess.Internal where
 
-import Prelude
+
 
 import Data.Aeson
   ( FromJSON(..)

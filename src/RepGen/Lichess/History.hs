@@ -3,7 +3,7 @@ module RepGen.Lichess.History
   , historicMovesMasters
   ) where
 
-import Prelude
+
 
 import Web
 import RepGen.Lichess.History.Type

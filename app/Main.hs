@@ -1,7 +1,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module Main where
 
-import Prelude
+
 import RepGen
 
 main :: IO ()

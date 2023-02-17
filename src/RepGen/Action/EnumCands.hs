@@ -26,7 +26,7 @@ module RepGen.Action.EnumCands
   ( module RepGen.Action.EnumCands
   ) where
 --------------------------------------------------------------------------------
-import Prelude
+
 import RepGen.Monad
 import RepGen.Action.Type
 --------------------------------------------------------------------------------

@@ -1,11 +1,10 @@
 {-# LANGUAGE TemplateHaskell #-}
 module RepGen.Lichess.History.Type where
 
-import Prelude
 
-import RepGen.Type
-import Control.Lens (makeLenses)
-import Data.Time.Calendar (Year(..), MonthOfYear(..))
+
+import RepGen.Type (Color)
+import Data.Time.Calendar (Year, MonthOfYear)
 
 data UniversalParams
   = UniversalParams

@@ -1,9 +1,8 @@
 {-# LANGUAGE TemplateHaskell #-}
 module RepGen.Config.Type where
 
-import Prelude
 
-import Control.Lens (makeLenses)
+
 import RepGen.Lichess.History.Type
 import RepGen.Type
 import RepGen.Strategy.Type

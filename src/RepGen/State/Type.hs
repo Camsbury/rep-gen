@@ -1,7 +1,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 module RepGen.State.Type where
 
-import Prelude
+
 
 import RepGen.Action.Type
 import RepGen.MoveTree.Type

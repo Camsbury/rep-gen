@@ -1,9 +1,8 @@
 {-# LANGUAGE TemplateHaskell #-}
 module RepGen.PyChess.Type where
 
-import Prelude
+
 import RepGen.Type
-import Control.Lens (makeLenses)
 
 --------------------------------------------------------------------------------
 --- Types

@@ -4,7 +4,7 @@ module RepGen.Action.TransStats
   ( module RepGen.Action.TransStats
   ) where
 --------------------------------------------------------------------------------
-import Prelude
+
 import RepGen.Monad
 import RepGen.Type
 import RepGen.Action.Type
@@ -40,7 +40,7 @@ runAction (TransStats ucis) = do
     <- throwMaybe "impossible state!"
     $ children
     ^? folded
-    . filtered (\(x, y) -> x == choiceUci)
+    . filtered (\(x, _) -> x == choiceUci)
     . _2
   -- NOTE: these are something like natural transformations?
 

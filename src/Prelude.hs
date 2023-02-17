@@ -5,6 +5,13 @@ module Prelude
   , module Control.Lens.Combinators
   , module Data.Default
   , module Prelude
+  , MonadError(..)
+  , MonadState(..)
+  , MonadLogger(..)
+  , runExceptT
+  , runStateT
+  , runStdoutLoggingT
+  , logInfoN
   ) where
 
 import ClassyPrelude
@@ -14,12 +21,15 @@ import Control.Lens.Combinators hiding
   ( children
   , cons
   , index
+  , sans
   , snoc
   , uncons
   , unsnoc
   , Index
   )
-import Control.Monad.Except (MonadError(..))
+import Control.Monad.Except
+import Control.Monad.State
+import Control.Monad.Logger
 import Data.Default
 import Text.Pretty.Simple hiding (Color(..))
 

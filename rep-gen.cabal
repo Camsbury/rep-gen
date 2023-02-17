@@ -34,8 +34,7 @@ library
                        , RepGen.Type
                        , RepGen.Monad
                        , Web
-    default-extensions:  NoImplicitPrelude
-                         DerivingStrategies
+    default-extensions:  DerivingStrategies
                          FlexibleContexts
                          FlexibleInstances
                          GeneralizedNewtypeDeriving
@@ -73,8 +72,7 @@ library
 executable rep-gen
     main-is:            Main.hs
     hs-source-dirs:     app
-    default-extensions: NoImplicitPrelude
-                        OverloadedLists
+    default-extensions: OverloadedLists
                         OverloadedStrings
     build-depends:      base
                       , rep-gen

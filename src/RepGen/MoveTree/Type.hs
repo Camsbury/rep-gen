@@ -2,7 +2,7 @@
 {-# LANGUAGE RankNTypes #-}
 module RepGen.MoveTree.Type where
 
-import Prelude
+
 import RepGen.Type
 
 -- | Provide a nominal and aggregate statistic

@@ -3,7 +3,7 @@ module Web
   ( module Web
   ) where
 --------------------------------------------------------------------------------
-import Prelude
+
 --------------------------------------------------------------------------------
 import Network.HTTP.Types.Status ( Status(statusCode) )
 import Network.HTTP.Types.Method ()

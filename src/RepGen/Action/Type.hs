@@ -1,7 +1,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 module RepGen.Action.Type where
 
-import Prelude
+
 import RepGen.Type
 
 data CalcStats

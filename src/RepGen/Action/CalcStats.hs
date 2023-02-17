@@ -3,7 +3,7 @@ module RepGen.Action.CalcStats
   ( module RepGen.Action.CalcStats
   ) where
 --------------------------------------------------------------------------------
-import Prelude
+
 import RepGen.Type
 import RepGen.Monad
 import RepGen.MoveTree.Type

@@ -1,7 +1,6 @@
 module RepGen.Type where
 
-import Prelude
-import Control.Lens (makeLenses)
+
 
 --------------------------------------------------------------------------------
 --- Types

@@ -1,6 +1,6 @@
 module RepGen.Action where
 
-import Prelude
+
 import RepGen.Monad
 import RepGen.Action.Type
 import RepGen.Action.CalcStats  as CS

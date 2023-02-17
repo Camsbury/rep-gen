@@ -7,11 +7,10 @@ module RepGen.PyChess
   , ucisToEngineCandidates
   ) where
 
-import Prelude
+
 
 import Foreign.C.String
-import Foreign.C.Types
-import RepGen.PyChess.Internal
+import RepGen.PyChess.Internal ()
 import RepGen.PyChess.Type
 
 import qualified Data.Aeson as J
@@ -51,8 +50,8 @@ ucisToEngineCandidates
   -> Int
   -> Int
   -> IO (Either Text (Vector EngineCandidate))
-ucisToEngineCandidates ucis depth moveCount = do
+ucisToEngineCandidates ucis depth mCount = do
   cUcis <- newCString . unpack $ intercalate "," ucis
-  cResult <- ucis_to_engine_candidates cUcis depth moveCount
+  cResult <- ucis_to_engine_candidates cUcis depth mCount
   result <- peekCString cResult
   pure . first pack . J.eitherDecode $ fromString result

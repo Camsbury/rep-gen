@@ -26,7 +26,7 @@ module RepGen.Action.PruneCands
   ( module RepGen.Action.PruneCands
   ) where
 --------------------------------------------------------------------------------
-import Prelude
+
 import RepGen.Monad
 import RepGen.Action.Type
 --------------------------------------------------------------------------------

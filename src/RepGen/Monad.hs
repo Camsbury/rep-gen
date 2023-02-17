@@ -1,6 +1,6 @@
 module RepGen.Monad where
 
-import Prelude
+
 
 import RepGen.Type
 import RepGen.Config.Type

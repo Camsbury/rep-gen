@@ -7,10 +7,7 @@ module RepGen
   , buildRepertoire
   ) where
 
-import Prelude
-
-import RepGen.Action
-import RepGen.Action.Type
+import RepGen.Action (runAction)
 import RepGen.Config.Type
 import RepGen.Monad
 import RepGen.MoveTree.Type
@@ -18,10 +15,6 @@ import RepGen.State (initState)
 import RepGen.State.Type
 import RepGen.PyChess
 import RepGen.Type
-import Control.Monad.Reader (runReaderT)
-import Control.Monad.Except (runExceptT)
-import Control.Monad.State (runStateT)
-import Control.Monad.Logger (runStdoutLoggingT, logInfoN)
 
 -- | build the move tree for the repertoire
 buildTree :: RGM TreeNode

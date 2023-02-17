@@ -3,7 +3,7 @@ module RepGen.Strategy
   ( module RepGen.Strategy
   ) where
 --------------------------------------------------------------------------------
-import Prelude
+
 import RepGen.Config.Type
 import RepGen.Monad
 import RepGen.MoveTree.Type
