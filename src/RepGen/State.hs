@@ -4,4 +4,4 @@ import RepGen.State.Type
 
 -- | Initialize the state of the repertoire generator
 initState :: RGState
-initState = undefined
+initState = def -- FIXME: actually initialize state

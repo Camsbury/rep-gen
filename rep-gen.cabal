@@ -57,6 +57,8 @@ library
                        , lens
                        , monad-logger
                        , mtl
+                       , persistent
+                       , persistent-sqlite
                        , pretty-simple
                        , regex
                        , regex-pcre

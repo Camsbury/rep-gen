@@ -15,6 +15,8 @@ import RepGen.State (initState)
 import RepGen.State.Type
 import RepGen.PyChess
 import RepGen.Type
+import qualified Database.Persist.Sqlite as DP
+import qualified Web
 
 -- | build the move tree for the repertoire
 buildTree :: RGM TreeNode
@@ -33,6 +35,8 @@ buildRepertoire rgConfig
   . (`runReaderT` rgConfig)
   . (`runStateT` initState)
   $ do
+    dbPath <- view cachePath
+    liftIO . DP.runSqlite dbPath $ DP.runMigration Web.migrateAll
     tree <- buildTree
-    pPrintDarkBg tree
+    undefined -- TODO: Finish this function by exporting or whatever
 

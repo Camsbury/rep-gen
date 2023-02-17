@@ -1,8 +1,6 @@
 {-# LANGUAGE TemplateHaskell #-}
 module RepGen.Config.Type where
 
-
-
 import RepGen.Lichess.History.Type
 import RepGen.Type
 import RepGen.Strategy.Type
@@ -43,7 +41,8 @@ instance Default HistoryConfig where
 
 data RGConfig
   = RGConfig
-  { _color           :: Color
+  { _cachePath       :: Text
+  , _color           :: Color
   , _engineP         :: Bool
   , _engineConfig    :: EngineConfig
   , _exportP         :: Bool
@@ -65,7 +64,8 @@ makeLenses ''RGConfig
 
 instance Default RGConfig where
   def = RGConfig
-      { _color           = White
+      { _cachePath       = "/tmp/cache.db"
+      , _color           = White
       , _engineP         = True
       , _engineConfig    = def
       , _exportP         = True
