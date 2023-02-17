@@ -67,6 +67,7 @@ library
                        , vector
     pkgconfig-depends:   python3
     c-sources:           src/chess.c
+    ghc-options:         -Wall
     mixins:              base hiding (Prelude)
 
 executable rep-gen

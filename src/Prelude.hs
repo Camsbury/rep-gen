@@ -11,7 +11,8 @@ import ClassyPrelude
 
 import Control.Lens.Operators hiding ((<|), (<.>))
 import Control.Lens.Combinators hiding
-  ( cons
+  ( children
+  , cons
   , index
   , snoc
   , uncons

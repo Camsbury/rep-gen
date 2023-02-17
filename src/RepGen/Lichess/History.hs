@@ -39,6 +39,6 @@ historicMovesMasters params = do
     429 -> do
       C.threadDelay oneMinute
       historicMovesMasters params
-    404 -> pure Nothing -- TODO: update this to put errors into our app monad
-    _   -> pure Nothing -- TODO: update this to put errors into our app monad
+    404 -> pure Nothing -- FIXME: update this to put errors into our app monad
+    _   -> pure Nothing -- FIXME: update this to put errors into our app monad
 

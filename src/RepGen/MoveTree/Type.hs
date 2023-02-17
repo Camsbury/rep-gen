@@ -3,8 +3,6 @@
 module RepGen.MoveTree.Type where
 
 import Prelude
-
-import Control.Lens (makeLenses)
 import RepGen.Type
 
 -- | Provide a nominal and aggregate statistic
@@ -48,7 +46,7 @@ instance Default RGStats where
 data TreeNode
   = TreeNode
   { _rgStats   :: RGStats
-  , _ucis      :: Vector Uci
+  , _uciPath   :: Vector Uci
   , _responses :: Vector (Uci, TreeNode)
   } deriving (Show, Eq)
 makeLenses ''TreeNode
@@ -64,5 +62,5 @@ traverseUcis = foldl' f $ prism' id Just
       = p
       . responses
       . traversed
-      . filtered (\(x, y) -> x == uci)
+      . filtered (\(x, _) -> x == uci)
       . _2

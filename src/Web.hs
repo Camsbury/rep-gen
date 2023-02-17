@@ -5,13 +5,12 @@ module Web
 --------------------------------------------------------------------------------
 import Prelude
 --------------------------------------------------------------------------------
-import Network.HTTP.Types.Status
-import Network.HTTP.Types.Method
-import Network.HTTP.Types.URI
+import Network.HTTP.Types.Status ( Status(statusCode) )
+import Network.HTTP.Types.Method ()
+import Network.HTTP.Types.URI ()
 --------------------------------------------------------------------------------
 import qualified Network.HTTP.Client as H
 import qualified Network.HTTP.Client.TLS as H
-import qualified Data.ByteString as B
 --------------------------------------------------------------------------------
 
 getRequest

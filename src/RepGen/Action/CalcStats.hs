@@ -4,8 +4,6 @@ module RepGen.Action.CalcStats
   ) where
 --------------------------------------------------------------------------------
 import Prelude
-import Control.Monad.State (get)
-import Control.Lens (Lens', use)
 import RepGen.Type
 import RepGen.Monad
 import RepGen.MoveTree.Type

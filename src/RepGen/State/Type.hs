@@ -2,7 +2,6 @@
 module RepGen.State.Type where
 
 import Prelude
-import Control.Lens (makeLenses)
 
 import RepGen.Action.Type
 import RepGen.MoveTree.Type

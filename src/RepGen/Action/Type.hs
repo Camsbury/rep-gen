@@ -3,7 +3,6 @@ module RepGen.Action.Type where
 
 import Prelude
 import RepGen.Type
-import Control.Lens (makeLenses, makePrisms)
 
 data CalcStats
   = CalcStats
