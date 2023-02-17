@@ -4,9 +4,7 @@ module Prelude
   , module Control.Lens.Operators
   , module Control.Lens.Combinators
   , module Data.Default
-  , getRequest
-  , throwMaybe
-  , throwEither
+  , module Prelude
   ) where
 
 import ClassyPrelude
@@ -58,3 +56,7 @@ getRequest url queryParams = do
   let code = statusCode $ H.responseStatus response
   let responseBody = tshow $ H.responseBody response
   pure (code, responseBody)
+
+(/?) :: (Eq a, Fractional a) => a -> a -> Maybe a
+_ /? 0 = Nothing
+x /? y = Just (x / y)

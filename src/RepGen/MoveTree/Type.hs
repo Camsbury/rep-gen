@@ -24,6 +24,14 @@ data NodeStats
   } deriving (Show, Eq)
 makeLenses ''NodeStats
 
+myWins :: Color -> Lens' NodeStats RGStat
+myWins White = whiteWins
+myWins Black = blackWins
+
+oppWins :: Color -> Lens' NodeStats RGStat
+oppWins White = blackWins
+oppWins Black = whiteWins
+
 data RGStats
   = RGStats
   { _lichessStats :: Maybe NodeStats

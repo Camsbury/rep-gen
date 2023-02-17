@@ -14,13 +14,39 @@ import RepGen.Type
 
 -- | Comparison for MinLoss
 minLoss :: Color -> (Uci, TreeNode) -> (Uci, TreeNode) -> Ordering
-minLoss c a b = undefined
-  where opp = flipColor c
-
+minLoss c (_, a) (_, b) = fromMaybe EQ $ compM <|> comp
+  where
+    stat x pWins cStats = x ^? rgStats . cStats . _Just . pWins c . agg
+    compM = compare
+      <$> stat a oppWins mastersStats
+      <*> stat b oppWins mastersStats
+    comp = compare
+      <$> stat a oppWins lichessStats
+      <*> stat b oppWins lichessStats
 
 -- | Comparison for MaxWinOverLoss
 maxWinOverLoss :: Color -> (Uci, TreeNode) -> (Uci, TreeNode) -> Ordering
-maxWinOverLoss = undefined
+maxWinOverLoss c (_, a) (_, b) = fromMaybe EQ $ compM <|> comp
+  where
+    stat x pWins cStats = x ^? rgStats . cStats . _Just . pWins c . agg
+    lossWinMA = do
+      lm <- stat a oppWins mastersStats
+      wm <- stat a myWins mastersStats
+      lm /? wm
+    lossWinMB = do
+      lm <- stat b oppWins mastersStats
+      wm <- stat b myWins mastersStats
+      lm /? wm
+    lossWinA = do
+      l <- stat a oppWins lichessStats
+      w <- stat a myWins lichessStats
+      l /? w
+    lossWinB = do
+      l <- stat b oppWins lichessStats
+      w <- stat b myWins lichessStats
+      l /? w
+    compM = compare <$> lossWinMA <*> lossWinMB
+    comp = compare <$> lossWinA <*> lossWinB
 
 -- | Get the 'Ordering' needed to fulfill the chosen 'RGStrategy'
 strategicCompare
