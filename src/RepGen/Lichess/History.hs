@@ -5,6 +5,7 @@ module RepGen.Lichess.History
 
 import Prelude
 
+import Web
 import RepGen.Lichess.History.Type
 import qualified Control.Concurrent as C
 

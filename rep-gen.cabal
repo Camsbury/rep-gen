@@ -33,6 +33,7 @@ library
                        , RepGen.Strategy.Type
                        , RepGen.Type
                        , RepGen.Monad
+                       , Web
     default-extensions:  NoImplicitPrelude
                          DerivingStrategies
                          FlexibleContexts

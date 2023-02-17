@@ -1,27 +1,4 @@
 --------------------------------------------------------------------------------
--- |
--- Module: RepGen.Action.EnumResps
--- Description:
--- Maintainers: Cameron Kingsbury <camsbury7@gmail.com>
--- Maturity: Draft
---
---
--- = Detailed Description
---
---
---
--- = Usage Example
---
---
---
--- = Implementation Overview
---
---
---
--- = Known Concessions
---
---
---------------------------------------------------------------------------------
 module RepGen.Action.EnumResps
   ( module RepGen.Action.EnumResps
   ) where
