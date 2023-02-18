@@ -46,3 +46,8 @@ type Url = Text
 (/?) :: (Eq a, Fractional a) => a -> a -> Maybe a
 _ /? 0 = Nothing
 x /? y = Just (x / y)
+
+-- | Use the thing if true
+toMaybe :: Bool -> a -> Maybe a
+toMaybe p v =
+  if p then Just v else Nothing
