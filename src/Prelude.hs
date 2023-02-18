@@ -51,3 +51,6 @@ x /? y = Just (x / y)
 toMaybe :: Bool -> a -> Maybe a
 toMaybe p v =
   if p then Just v else Nothing
+
+(/.) :: (Integral a, Fractional b) => a -> a -> b
+a /. b = fromIntegral a / fromIntegral b

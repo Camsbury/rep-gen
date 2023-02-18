@@ -15,12 +15,16 @@ parseStatsMove :: Int -> RawStatsMove -> (Uci, NodeStats)
 parseStatsMove totalCount rs =
   ( rs ^. rawUci
   , NodeStats
-      { _whiteWins = RGStat white white,
-        _blackWins = RGStat black black,
-        _prob = (white + black + draws) / fromIntegral totalCount
+      { _whiteWins = RGStat whiteP whiteP
+      , _blackWins = RGStat blackP blackP
+      , _prob      = total /. totalCount
+      , _playCount = total
       }
   )
   where
-    white = fromIntegral $ rs ^. rawWhite
-    black = fromIntegral $ rs ^. rawBlack
-    draws = fromIntegral $ rs ^. rawDraw
+    white = rs ^. rawWhite
+    black = rs ^. rawBlack
+    draws = rs ^. rawDraw
+    total = white + black + draws
+    whiteP = white /. total
+    blackP = black /. total
