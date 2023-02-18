@@ -9,7 +9,7 @@ import RepGen.MoveTree.Type
 data RGState
   = RGState
   { _moveTree :: TreeNode
-  , _actionStack :: Vector RGAction
+  , _actionStack :: [RGAction]
   } deriving (Show, Eq)
 makeLenses ''RGState
 

@@ -54,7 +54,8 @@ data RGConfig
   , _minCandProb     :: Double
   , _minPlays        :: Int
   , _minProbAgg      :: Double
-  , _minRespProb     :: Double
+  , _initRespProb    :: Double
+  , _asymRespProb    :: Double
   , _minTotalMasters :: Int
   , _moves           :: Vector San
   , _searchDepth     :: Int
@@ -77,7 +78,8 @@ instance Default RGConfig where
       , _minCandProb     = 0.01
       , _minPlays        = 100
       , _minProbAgg      = 0.01
-      , _minRespProb     = 0.05
+      , _initRespProb    = 0.015
+      , _asymRespProb    = 0.25
       , _minTotalMasters = 500
       , _moves           = []
       , _searchDepth     = 5

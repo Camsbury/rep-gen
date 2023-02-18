@@ -20,6 +20,7 @@ data NodeStats
   { _whiteWins :: RGStat
   , _blackWins :: RGStat
   , _prob      :: Double
+  , _playCount :: Int
   } deriving (Show, Eq)
 makeLenses ''NodeStats
 
@@ -36,9 +37,10 @@ data RGStats
   { _lichessStats :: Maybe NodeStats
   , _mastersStats :: Maybe NodeStats
   , _score        :: Maybe RGStat
+  , _probPrune    :: Double
   , _probAgg      :: Double
   } deriving (Show, Eq)
 makeLenses ''RGStats
 
 instance Default RGStats where
-  def = RGStats Nothing Nothing Nothing 1
+  def = RGStats Nothing Nothing Nothing 1 1
