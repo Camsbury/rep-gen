@@ -23,6 +23,7 @@ library
                        , RepGen.Lichess
                        , RepGen.Lichess.History
                        , RepGen.Lichess.History.Type
+                       , RepGen.Monad
                        , RepGen.MoveTree.Type
                        , RepGen.PyChess
                        , RepGen.PyChess.Internal
@@ -32,7 +33,6 @@ library
                        , RepGen.Strategy
                        , RepGen.Strategy.Type
                        , RepGen.Type
-                       , RepGen.Monad
                        , Web
     default-extensions:  DerivingStrategies
                          FlexibleContexts

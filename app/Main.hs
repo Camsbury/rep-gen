@@ -18,15 +18,19 @@ main = do
   --   10
   -- print cands
 
-  -- fen <- ucisToFen (["e2e4", "e7e5"] :: Vector Text)
-  -- historicMoves
-  --   <- historicMovesMasters
-  --   $ UniversalParams
-  --   { _moveCount = 10
-  --   , _fen = fen
-  --   }
-  -- print historicMoves
+  fen <- ucisToFen (["e2e4", "e7e6"] :: Vector Text)
+  historicMoves <- do
+    runStdoutLoggingT
+    . runExceptT
+    . (`runReaderT` def)
+    . (`runStateT` def)
+    . historicMovesMasters
+    $ UniversalParams
+    { _moveCount = 10
+    , _fen = fen
+    }
+  print historicMoves
 
-  buildRepertoire $
-    def & color        .~ Black
-        & engineConfig . engineAllowableLoss .~ 0.05
+  -- buildRepertoire $
+  --   def & color        .~ Black
+  --       & engineConfig . engineAllowableLoss .~ 0.05

@@ -42,7 +42,7 @@ getRequest url queryParams = do
   let requestWithParams = H.setQueryString bsParams request
   response <- H.httpLbs requestWithParams manager
   let code = statusCode $ H.responseStatus response
-  let responseBody = tshow $ H.responseBody response
+  let responseBody = decodeUtf8 . toStrict $ H.responseBody response
   pure (code, responseBody)
 
 share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|

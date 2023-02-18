@@ -5,9 +5,12 @@ module RepGen.Lichess.History
 
 
 
-import Web
+import RepGen.Config.Type
 import RepGen.Lichess.History.Type
+import RepGen.Monad
 import qualified Control.Concurrent as C
+import qualified Data.Aeson as J
+import qualified Web
 
 -- hitting https://explorer.lichess.ovh/{masters,lichess,player}
 
@@ -30,15 +33,31 @@ fromMastersParams params
   ]
 
 -- | get historic Lichess moves for masters games
-historicMovesMasters :: UniversalParams -> IO (Maybe Text)
+historicMovesMasters :: UniversalParams -> RGM RawStats
 historicMovesMasters params = do
+  dbPath <- view cachePath
   (statusCode, response)
-    <- getRequest (baseUrl <> "masters") . fromMastersParams $ params
+    <- liftIO
+    . Web.cachedGetRequest dbPath (baseUrl <> "masters")
+    . fromMastersParams
+    $ params
   case statusCode of
-    200 -> pure $ Just response
+    200 -> throwEither
+        . first pack
+        . J.eitherDecode
+        . fromString
+        $ unpack response
     429 -> do
-      C.threadDelay oneMinute
+      liftIO $ C.threadDelay oneMinute
       historicMovesMasters params
-    404 -> pure Nothing -- FIXME: update this to put errors into our app monad
-    _   -> pure Nothing -- FIXME: update this to put errors into our app monad
+    404 -> throwError
+        ( "404 Not found for params: "
+        <> tshow params
+        )
+    code -> throwError
+         ( "HTTP error code: "
+         <> tshow code
+         <> " for params: "
+         <> tshow params
+         )
 

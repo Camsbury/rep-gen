@@ -1,10 +1,13 @@
 {-# LANGUAGE TemplateHaskell #-}
 module RepGen.Lichess.History.Type where
 
-
-
 import RepGen.Type (Color)
 import Data.Time.Calendar (Year, MonthOfYear)
+import Data.Aeson
+  ( FromJSON(..)
+  , (.:)
+  )
+import qualified Data.Aeson as J
 
 data UniversalParams
   = UniversalParams
@@ -51,3 +54,38 @@ data PlayerParams
   , _playerSince      :: (Year, MonthOfYear) -- default to Jan 1952
   } deriving (Eq, Show)
 makeLenses ''PlayerParams
+
+data RawStatsMove
+  = RawStatsMove
+  { _rawWhite :: Int
+  , _rawBlack :: Int
+  , _rawDraw  :: Int
+  , _rawUci   :: Text
+  } deriving (Eq, Show)
+makeLenses ''RawStatsMove
+
+instance FromJSON RawStatsMove where
+  parseJSON = J.withObject "RawStatsMove" $ \v ->
+    RawStatsMove
+      <$> v .: "white"
+      <*> v .: "black"
+      <*> v .: "draws"
+      <*> v .: "uci"
+
+data RawStats
+  = RawStats
+  { _rawTotal      :: Int
+  , _rawStatsMoves :: [RawStatsMove]
+  } deriving (Eq, Show)
+makeLenses ''RawStats
+
+instance FromJSON RawStats where
+  parseJSON = J.withObject "RawStats" $ \v -> do
+    white <- v .: "white"
+    black <- v .: "black"
+    draws <- v .: "draws"
+    moves <- v .: "moves"
+    statsMoves <- traverse parseJSON moves
+    pure $ RawStats (white + black + draws) statsMoves
+
+

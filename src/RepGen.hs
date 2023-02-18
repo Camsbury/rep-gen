@@ -2,6 +2,7 @@ module RepGen
   ( module RepGen.PyChess
   , module RepGen.Type
   , module RepGen.Config.Type
+  , module RepGen.Lichess.History
   , module RepGen.State.Type
   , module RepGen.Monad
   , buildRepertoire
@@ -9,6 +10,7 @@ module RepGen
 
 import RepGen.Action (runAction)
 import RepGen.Config.Type
+import RepGen.Lichess.History
 import RepGen.Monad
 import RepGen.MoveTree.Type
 import RepGen.State (initState)
