@@ -1,11 +1,11 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE RankNTypes #-}
+--------------------------------------------------------------------------------
 module RepGen.MoveTree.Type where
-
-
+--------------------------------------------------------------------------------
 import RepGen.Type
 import RepGen.Stats.Type
-
+--------------------------------------------------------------------------------
 
 -- | A node in the tree of candidates and responses in the generated repertoire
 data TreeNode

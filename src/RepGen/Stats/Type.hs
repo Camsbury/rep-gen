@@ -1,8 +1,10 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE RankNTypes #-}
+--------------------------------------------------------------------------------
 module RepGen.Stats.Type where
-
+--------------------------------------------------------------------------------
 import RepGen.Type
+--------------------------------------------------------------------------------
 
 -- | Provide a nominal and aggregate statistic
 data RGStat

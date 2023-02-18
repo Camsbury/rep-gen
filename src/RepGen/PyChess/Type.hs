@@ -24,7 +24,7 @@ data Score
 
 data EngineCandidate
   = EngineCandidate
-  { _uci   :: !Text
+  { _ngnUci   :: !Uci
   , _score :: Score
   } deriving (Show, Eq)
 makeLenses ''EngineCandidate

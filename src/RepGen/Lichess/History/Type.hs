@@ -1,6 +1,7 @@
 {-# LANGUAGE TemplateHaskell #-}
+--------------------------------------------------------------------------------
 module RepGen.Lichess.History.Type where
-
+--------------------------------------------------------------------------------
 import RepGen.Type (Color)
 import Data.Time.Calendar (Year, MonthOfYear)
 import Data.Aeson
@@ -8,6 +9,7 @@ import Data.Aeson
   , (.:)
   )
 import qualified Data.Aeson as J
+--------------------------------------------------------------------------------
 
 data UniversalParams
   = UniversalParams
@@ -23,7 +25,6 @@ data GameSpeed
   | Classical
   deriving (Eq, Show)
 
--- | Document me!
 speedText :: GameSpeed -> Text
 speedText Bullet    = "bullet"
 speedText Blitz     = "blitz"
