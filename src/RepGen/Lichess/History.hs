@@ -45,17 +45,15 @@ instance HistoricFetchable LichessParams where
 fromLichessParams :: LichessParams -> Map Text Text
 fromLichessParams params
   = mapFromList
-  [ ("moves",    params ^. universals . moveCount . to tshow)
-  , ("fen",      params ^. universals . fen)
-  , ( "ratings"
+  [ ( "ratings"
     ,  params ^. lichessRatings . to (intercalate "," . fmap ratingText)
     )
   , ( "speeds"
     , params ^. lichessSpeeds . to (intercalate "," . fmap speedText)
     )
   , ("recentGames", "0")
-  , ("topGames", "0")
-  ]
+  ] <> fromMastersParams (params ^. universals)
+
 
 -- | get historic Lichess moves for masters games
 fetchMovesFor :: Map Text Text -> Text -> RGM RawStats

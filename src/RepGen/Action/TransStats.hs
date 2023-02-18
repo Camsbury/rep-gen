@@ -7,7 +7,6 @@ module RepGen.Action.TransStats
 
 import RepGen.Monad
 import RepGen.Type
-import RepGen.Action.Type
 import RepGen.State.Type
 import RepGen.MoveTree.Type
 import RepGen.Strategy
@@ -28,8 +27,8 @@ setNodeStats Nothing _ _ _ = pure ()
 setNodeStats (Just s) ucis nodeStats aggStats = do
   moveTree . traverseUcis ucis . rgStats . nodeStats . _Just . aggStats .= (s ^. aggStats)
 
-runAction :: TransStats -> RGM ()
-runAction (TransStats ucis) = do
+runAction :: Vector Uci -> RGM ()
+runAction ucis = do
   children
     <- use
     $ moveTree

@@ -8,5 +8,5 @@ import RepGen.Monad
 import RepGen.Action.Type
 --------------------------------------------------------------------------------
 
-runAction :: EnumResps -> RGM ()
+runAction :: EnumData -> RGM ()
 runAction = undefined

@@ -7,7 +7,6 @@ module RepGen.Action.CalcStats
 import RepGen.Type
 import RepGen.Monad
 import RepGen.MoveTree.Type
-import RepGen.Action.Type
 import RepGen.State.Type
 --------------------------------------------------------------------------------
 
@@ -124,8 +123,8 @@ calcScore ucis = do
 
 -- | Calculate stats for a candidate node
 -- given the weighted stats of its children
-runAction :: CalcStats -> RGM ()
-runAction (CalcStats ucis) = do
+runAction :: Vector Uci -> RGM ()
+runAction ucis = do
   calcNodeStats ucis lichessStats
   calcNodeStats ucis mastersStats
   calcScore ucis
