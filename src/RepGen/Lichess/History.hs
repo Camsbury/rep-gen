@@ -1,13 +1,17 @@
 module RepGen.Lichess.History
   ( module RepGen.Lichess.History.Type
+  , getLichessParams
   , historicMoves
+  , prepareMastersMoves
   ) where
 
+import RepGen.Type
 import RepGen.Config.Type
 import RepGen.Lichess.History.Type
 import RepGen.Monad
 import qualified Control.Concurrent as C
 import qualified Data.Aeson as J
+import qualified RepGen.PyChess as PyC
 import qualified Web
 
 -- hitting https://explorer.lichess.ovh/{masters,lichess,player}
@@ -83,3 +87,33 @@ fetchMovesFor params path = do
          <> tshow params
          )
 
+filterMinTotal :: RawStats -> RGM (Maybe RawStats)
+filterMinTotal rs = do
+  mtm <- view minTotalMasters
+  pure $ if rs ^. rawTotal > mtm
+    then Just rs
+    else Nothing
+
+getLichessParams :: Vector Uci -> RGM LichessParams
+getLichessParams ucis = do
+  hmc <- view $ historyConfig . historyMoveCount
+  speeds <- view $ historyConfig . historySpeeds
+  ratings <- view $ historyConfig . historyRatings
+  fen' <- liftIO . PyC.ucisToFen $ ucis
+  let ups = UniversalParams hmc fen'
+  pure $ LichessParams ratings speeds ups
+
+getMastersParams :: Vector Uci -> RGM UniversalParams
+getMastersParams ucis = do
+  hmc <- view $ historyConfig . historyMoveCount
+  fen' <- liftIO . PyC.ucisToFen $ ucis
+  pure $ UniversalParams hmc fen'
+
+-- | Fetches masters moves if they meet our criteria
+prepareMastersMoves :: Vector Uci -> RGM (Maybe RawStats)
+prepareMastersMoves ucis = do
+  useM <- view mastersP
+  mps <- getMastersParams ucis
+  if useM
+    then filterMinTotal =<< historicMoves mps
+    else pure Nothing
