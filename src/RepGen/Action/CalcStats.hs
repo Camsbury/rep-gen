@@ -8,6 +8,7 @@ import RepGen.Type
 import RepGen.Monad
 import RepGen.MoveTree.Type
 import RepGen.State.Type
+import RepGen.Stats.Type
 --------------------------------------------------------------------------------
 
 -- | Calculate a stat weighting

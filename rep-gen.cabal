@@ -31,6 +31,8 @@ library
                        , RepGen.PyChess.Type
                        , RepGen.State
                        , RepGen.State.Type
+                       , RepGen.Stats
+                       , RepGen.Stats.Type
                        , RepGen.Strategy
                        , RepGen.Strategy.Type
                        , RepGen.Type

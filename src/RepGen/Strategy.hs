@@ -8,6 +8,7 @@ import RepGen.Config.Type
 import RepGen.Monad
 import RepGen.MoveTree.Type
 import RepGen.Strategy.Type
+import RepGen.Stats.Type
 import RepGen.Type
 --------------------------------------------------------------------------------
 
