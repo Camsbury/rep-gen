@@ -59,9 +59,7 @@ cacheGet :: Text -> Text -> Map Text Text -> IO (Maybe Text)
 cacheGet dbPath url query =
     runSqlite dbPath $ do
         result <- DP.selectFirst [CacheKey ==. mkCacheKey url query] []
-        case result of
-            Just (Entity _ val) -> pure $ Just (cacheResponse val)
-            Nothing -> pure Nothing
+        pure $ (\(Entity _ val) -> cacheResponse val) <$> result
 
 cacheSet :: Text -> Text -> Map Text Text -> Text -> IO ()
 cacheSet dbPath url query response =
