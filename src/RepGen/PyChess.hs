@@ -35,7 +35,6 @@ ucisToFen ucis = do
   result <- ucis_to_fen cUcis
   pack <$> peekCString result
 
--- TODO: Split the result into a Vector (or maybe the same form as the input)
 -- | Convert a sequence of SAN 'Text' into UCI 'Text'
 sansToUcis :: (MonoFoldable m, Element m ~ Text) => m -> IO (Vector Text)
 sansToUcis sans = do

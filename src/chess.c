@@ -14,8 +14,7 @@ void py_setup() {
     py_base_raw = getenv("PY_BASE_RAW");
     py_pre = getenv("PY_PRE");
 
-    // NOTE: can print(sys.path) to find all these!!
-
+    // print(sys.path) in python to find what these should be:
     // skipped the zipped version...
     strcpy(search_path, py_base_raw);
     strcat(search_path, "/lib/");
