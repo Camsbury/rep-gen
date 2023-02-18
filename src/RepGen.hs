@@ -27,7 +27,6 @@ buildTree = do
   actionStack %= fromMaybe empty . tailMay
   maybe (use moveTree) ((>> buildTree) . runAction) action
 
-
 -- | Build a chess repertoire from a config
 buildRepertoire :: RGConfig -> IO ()
 buildRepertoire rgConfig

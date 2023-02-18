@@ -23,6 +23,13 @@ data GameSpeed
   | Classical
   deriving (Eq, Show)
 
+-- | Document me!
+speedText :: GameSpeed -> Text
+speedText Bullet    = "bullet"
+speedText Blitz     = "blitz"
+speedText Rapid     = "rapid"
+speedText Classical = "classical"
+
 data LichessRating
   = L600
   | L1000
@@ -34,6 +41,17 @@ data LichessRating
   | L2200
   | L2500
   deriving (Eq, Show)
+
+ratingText :: LichessRating -> Text
+ratingText L600  = "600"
+ratingText L1000 = "1000"
+ratingText L1200 = "1200"
+ratingText L1400 = "1400"
+ratingText L1600 = "1600"
+ratingText L1800 = "1800"
+ratingText L2000 = "2000"
+ratingText L2200 = "2200"
+ratingText L2500 = "2500"
 
 data LichessParams
   = LichessParams

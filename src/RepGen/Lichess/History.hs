@@ -1,9 +1,7 @@
 module RepGen.Lichess.History
   ( module RepGen.Lichess.History.Type
-  , historicMovesMasters
+  , historicMoves
   ) where
-
-
 
 import RepGen.Config.Type
 import RepGen.Lichess.History.Type
@@ -23,6 +21,13 @@ baseUrl = "https://explorer.lichess.ovh/"
 oneMinute :: Int
 oneMinute = 60 * 1000 * 1000
 
+class HistoricFetchable a where
+  historicMoves :: a -> RGM RawStats
+
+instance HistoricFetchable UniversalParams where
+  historicMoves params
+    = fetchMovesFor (fromMastersParams params) "masters"
+
 -- | Convert masters params to query params
 fromMastersParams :: UniversalParams -> Map Text Text
 fromMastersParams params
@@ -32,14 +37,33 @@ fromMastersParams params
   , ("topGames", "0")
   ]
 
+instance HistoricFetchable LichessParams where
+  historicMoves params
+    = fetchMovesFor (fromLichessParams params) "lichess"
+
+-- | Convert lichess params to query params
+fromLichessParams :: LichessParams -> Map Text Text
+fromLichessParams params
+  = mapFromList
+  [ ("moves",    params ^. universals . moveCount . to tshow)
+  , ("fen",      params ^. universals . fen)
+  , ( "ratings"
+    ,  params ^. lichessRatings . to (intercalate "," . fmap ratingText)
+    )
+  , ( "speeds"
+    , params ^. lichessSpeeds . to (intercalate "," . fmap speedText)
+    )
+  , ("recentGames", "0")
+  , ("topGames", "0")
+  ]
+
 -- | get historic Lichess moves for masters games
-historicMovesMasters :: UniversalParams -> RGM RawStats
-historicMovesMasters params = do
+fetchMovesFor :: Map Text Text -> Text -> RGM RawStats
+fetchMovesFor params path = do
   dbPath <- view cachePath
   (statusCode, response)
     <- liftIO
-    . Web.cachedGetRequest dbPath (baseUrl <> "masters")
-    . fromMastersParams
+    . Web.cachedGetRequest dbPath (baseUrl <> path)
     $ params
   case statusCode of
     200 -> throwEither
@@ -49,7 +73,7 @@ historicMovesMasters params = do
         $ unpack response
     429 -> do
       liftIO $ C.threadDelay oneMinute
-      historicMovesMasters params
+      fetchMovesFor params path
     404 -> throwError
         ( "404 Not found for params: "
         <> tshow params

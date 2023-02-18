@@ -1,7 +1,6 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module Main where
 
-
 import RepGen
 
 main :: IO ()
@@ -24,11 +23,20 @@ main = do
     . runExceptT
     . (`runReaderT` def)
     . (`runStateT` def)
-    . historicMovesMasters
-    $ UniversalParams
-    { _moveCount = 10
-    , _fen = fen
+    . historicMoves
+    $ LichessParams
+    { _lichessRatings = [L2000, L2200, L2500]
+    , _lichessSpeeds  = [Bullet, Blitz, Rapid]
+    , _universals
+      = UniversalParams
+      { _moveCount = 10
+      , _fen = fen
+      }
     }
+    -- $ UniversalParams
+    -- { _moveCount = 10
+    -- , _fen = fen
+    -- }
   print historicMoves
 
   -- buildRepertoire $
