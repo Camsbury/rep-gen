@@ -60,10 +60,10 @@ strategicCompare MaxWinOverLoss = maxWinOverLoss
 strategicCompare MinLoss        = minLoss
 
 -- | Apply a strategy to select the best move option
-applyStrategy :: Vector (Uci, TreeNode) -> RGM Uci
+applyStrategy :: Vector (Uci, TreeNode) -> RGM (Uci, TreeNode)
 applyStrategy options = do
   sComp <- strategicCompare <$> view strategy <*> view color
   opts <- throwMaybe "No options to apply the strategy to!"
        $ fromNullable options
   let choice = maximumBy sComp opts
-  pure $ choice ^. _1
+  pure choice

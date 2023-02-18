@@ -35,13 +35,7 @@ runAction ucis = do
     $ moveTree
     . traverseUcis ucis
     . responses
-  choiceUci <- applyStrategy children
-  child -- NOTE: this is just getting the value of the strategy key, maybe just return both?
-    <- throwMaybe "impossible state!"
-    $ children
-    ^? folded
-    . filtered (\(x, _) -> x == choiceUci)
-    . _2
+  (choiceUci, child) <- applyStrategy children
   -- NOTE: these are something like natural transformations?
 
   setScore (child ^. rgStats . score) (ucis <> [choiceUci])
