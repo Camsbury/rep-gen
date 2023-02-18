@@ -17,28 +17,28 @@ main = do
   --   10
   -- print cands
 
-  fen <- ucisToFen (["e2e4", "e7e6"] :: Vector Text)
-  historicMoves <- do
-    runStdoutLoggingT
-    . runExceptT
-    . (`runReaderT` def)
-    . (`runStateT` def)
-    . historicMoves
-    $ LichessParams
-    { _lichessRatings = [L2000, L2200, L2500]
-    , _lichessSpeeds  = [Bullet, Blitz, Rapid]
-    , _universals
-      = UniversalParams
-      { _moveCount = 10
-      , _fen = fen
-      }
-    }
+  -- fen <- ucisToFen (["e2e4", "e7e6"] :: Vector Text)
+  -- historicMoves <- do
+  --   runStdoutLoggingT
+  --   . runExceptT
+  --   . (`runReaderT` def)
+  --   . (`runStateT` def)
+  --   . historicMoves
+  --   $ LichessParams
+  --   { _lichessRatings = [L2000, L2200, L2500]
+  --   , _lichessSpeeds  = [Bullet, Blitz, Rapid]
+  --   , _universals
+  --     = UniversalParams
+  --     { _moveCount = 10
+  --     , _fen = fen
+  --     }
+  --   }
     -- $ UniversalParams
     -- { _moveCount = 10
     -- , _fen = fen
     -- }
-  print historicMoves
+  -- print historicMoves
 
-  -- buildRepertoire $
-  --   def & color        .~ Black
-  --       & engineConfig . engineAllowableLoss .~ 0.05
+  buildRepertoire $
+    def & color        .~ Black
+        & engineConfig . engineAllowableLoss .~ 0.05

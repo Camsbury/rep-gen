@@ -1,14 +1,15 @@
 module RepGen.Lichess.History
   ( module RepGen.Lichess.History.Type
-  , getLichessParams
-  , historicMoves
-  , prepareMastersMoves
+  , lichessMoves
+  , maybeMastersMoves
   ) where
 
-import RepGen.Type
 import RepGen.Config.Type
 import RepGen.Lichess.History.Type
 import RepGen.Monad
+import RepGen.Stats
+import RepGen.Stats.Type
+import RepGen.Type
 import qualified Control.Concurrent as C
 import qualified Data.Aeson as J
 import qualified RepGen.PyChess as PyC
@@ -58,7 +59,6 @@ fromLichessParams params
   , ("recentGames", "0")
   ] <> fromMastersParams (params ^. universals)
 
-
 -- | get historic Lichess moves for masters games
 fetchMovesFor :: Map Text Text -> Text -> RGM RawStats
 fetchMovesFor params path = do
@@ -103,6 +103,9 @@ getLichessParams ucis = do
   let ups = UniversalParams hmc fen'
   pure $ LichessParams ratings speeds ups
 
+lichessMoves :: Vector Uci -> RGM [(Uci, NodeStats)]
+lichessMoves ucis = fmap parseStats . historicMoves =<< getLichessParams ucis
+
 getMastersParams :: Vector Uci -> RGM UniversalParams
 getMastersParams ucis = do
   hmc <- view $ historyConfig . historyMoveCount
@@ -110,10 +113,10 @@ getMastersParams ucis = do
   pure $ UniversalParams hmc fen'
 
 -- | Fetches masters moves if they meet our criteria
-prepareMastersMoves :: Vector Uci -> RGM (Maybe RawStats)
-prepareMastersMoves ucis = do
+maybeMastersMoves :: Vector Uci -> RGM (Maybe [(Uci, NodeStats)])
+maybeMastersMoves ucis = do
   useM <- view mastersP
   mps <- getMastersParams ucis
   if useM
-    then filterMinTotal =<< historicMoves mps
+    then fmap (fmap parseStats) . filterMinTotal =<< historicMoves mps
     else pure Nothing
