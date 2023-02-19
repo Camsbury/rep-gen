@@ -12,12 +12,13 @@ data TreeNode
   = TreeNode
   { _rgStats   :: RGStats
   , _uciPath   :: Vector Uci
+  , _nodeFen   :: Fen
   , _responses :: Vector (Uci, TreeNode)
   } deriving (Show, Eq)
 makeLenses ''TreeNode
 
 instance Default TreeNode where
-  def = TreeNode def empty empty
+  def = TreeNode def empty def empty
 
 -- | Provide a traversal into the move tree for a given list of ucis
 traverseUcis :: Vector Uci -> Traversal' TreeNode TreeNode
