@@ -12,11 +12,13 @@ import RepGen.MoveTree.Type
 import RepGen.Stats.Type
 import RepGen.Strategy
 --------------------------------------------------------------------------------
+import qualified RepGen.MoveTree as MT
+--------------------------------------------------------------------------------
 
 setScore :: Maybe RGStat -> Vector Uci -> RGM ()
 setScore Nothing _ = pure ()
 setScore (Just s) ucis = do
-  moveTree . traverseUcis ucis . rgStats . score . _Just . agg .= (s ^. agg)
+  moveTree . MT.traverseUcis ucis . rgStats . score . _Just . agg .= (s ^. agg)
 
 setNodeStats
   :: Maybe NodeStats
@@ -26,14 +28,14 @@ setNodeStats
   -> RGM ()
 setNodeStats Nothing _ _ _ = pure ()
 setNodeStats (Just s) ucis nodeStats aggStats = do
-  moveTree . traverseUcis ucis . rgStats . nodeStats . _Just . aggStats .= (s ^. aggStats)
+  moveTree . MT.traverseUcis ucis . rgStats . nodeStats . _Just . aggStats .= (s ^. aggStats)
 
 runAction :: Vector Uci -> RGM ()
 runAction ucis = do
   children
     <- use
     $ moveTree
-    . traverseUcis ucis
+    . MT.traverseUcis ucis
     . responses
   (choiceUci, child) <- applyStrategy children
   -- NOTE: these are something like natural transformations?

@@ -14,6 +14,7 @@ import RepGen.Stats.Type
 import RepGen.Type
 --------------------------------------------------------------------------------
 import qualified RepGen.PyChess as PyC
+import qualified RepGen.MoveTree as MT
 --------------------------------------------------------------------------------
 
 filterMoves
@@ -146,25 +147,20 @@ filterMinRespProb pPrune pAgg resps = do
           (rNode ^? rgStats . lichessStats . _Just . prob)
   pure . fmap (view _2) . filter f $ resps
 
-fetchPAgg :: Vector Uci -> RGM Double
-fetchPAgg ucis
-  = throwMaybe ("Node doesn't exist at: " <> intercalate "," ucis)
-  <=< preuse $ moveTree . traverseUcis ucis . rgStats . probAgg
-
 runAction :: EnumData -> RGM ()
 runAction action = do
   let ucis = action ^. edUcis
-  pAgg <- fetchPAgg ucis
+  pAgg <- MT.fetchPAgg ucis
   processed <- processMoves action pAgg
-  moveTree . traverseUcis ucis . responses .= fromList processed
+  moveTree . MT.traverseUcis ucis . responses .= fromList processed
   toActOn <- filterMinRespProb (action ^. edProbP) pAgg processed
   actionStack %= ((toAction action =<< reverse toActOn) ++)
 
 initRunAction :: Vector Uci -> RGM ()
 initRunAction ucis = do
-  pAgg <- fetchPAgg ucis
+  pAgg <- MT.fetchPAgg ucis
   processed <- initProcessMoves ucis pAgg
-  moveTree . traverseUcis ucis . responses .= fromList processed
+  moveTree . MT.traverseUcis ucis . responses .= fromList processed
   toActOn <- filterMinRespProb 1 pAgg processed
   actionStack %= ((initToAction =<< reverse toActOn) ++)
 

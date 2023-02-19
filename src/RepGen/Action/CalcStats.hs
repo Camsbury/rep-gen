@@ -10,6 +10,8 @@ import RepGen.MoveTree.Type
 import RepGen.State.Type
 import RepGen.Stats.Type
 --------------------------------------------------------------------------------
+import qualified RepGen.MoveTree as MT
+--------------------------------------------------------------------------------
 
 -- | Calculate a stat weighting
 weightedStat
@@ -42,7 +44,7 @@ setAggStat
   -> RGM ()
 setAggStat Nothing _ _ _ = pure ()
 setAggStat (Just s) ucis nodeStats aggStats = do
-  moveTree . traverseUcis ucis . rgStats . nodeStats . _Just . aggStats .= s
+  moveTree . MT.traverseUcis ucis . rgStats . nodeStats . _Just . aggStats .= s
 
 -- | Calculate the win probabilites per color for a given node
 -- adjusted for the known probabilities of the children nodes
@@ -56,11 +58,11 @@ calcNodeStats ucis statsLens = do
     <- throwMaybe ("No node exists for ucis: " <> intercalate ","  ucis)
     <=< preuse
     $ moveTree
-    . traverseUcis ucis
+    . MT.traverseUcis ucis
   children
     <- use
     $ moveTree
-    . traverseUcis ucis
+    . MT.traverseUcis ucis
     . responses
   let cWhite :: Double = childrenStat children statsLens $ whiteWins . nom
   let cWhiteAgg :: Double = childrenStat children statsLens $ whiteWins . agg
@@ -94,7 +96,7 @@ probNonChild children
 setScore :: Maybe Double -> Vector Uci -> RGM ()
 setScore Nothing _ = pure ()
 setScore (Just s) ucis = do
-  moveTree . traverseUcis ucis . rgStats . score . _Just . agg .= s
+  moveTree . MT.traverseUcis ucis . rgStats . score . _Just . agg .= s
 
 -- | Calculate the weighted score for a node given the chosen moves
 -- for its children
@@ -106,11 +108,11 @@ calcScore ucis = do
     <- throwMaybe ("No node exists for ucis: " <> intercalate "," ucis)
     <=< preuse
     $ moveTree
-    . traverseUcis ucis
+    . MT.traverseUcis ucis
   children
     <- use
     $ moveTree
-    . traverseUcis ucis
+    . MT.traverseUcis ucis
     . responses
   let cScoreAgg
         = sum

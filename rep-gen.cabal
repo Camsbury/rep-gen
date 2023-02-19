@@ -24,6 +24,7 @@ library
                        , RepGen.Lichess.History
                        , RepGen.Lichess.History.Type
                        , RepGen.Monad
+                       , RepGen.MoveTree
                        , RepGen.MoveTree.Type
                        , RepGen.PyChess
                        , RepGen.PyChess.Internal
