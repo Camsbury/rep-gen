@@ -42,7 +42,7 @@ instance Default HistoryConfig where
 data RGConfig
   = RGConfig
   { _cachePath       :: Text
-  , _color           :: Color
+  , _colorL           :: Color
   , _engineP         :: Bool
   , _engineConfig    :: EngineConfig
   , _exportP         :: Bool
@@ -67,7 +67,7 @@ makeLenses ''RGConfig
 instance Default RGConfig where
   def = RGConfig
       { _cachePath       = "/tmp/cache.db"
-      , _color           = White
+      , _colorL          = White
       , _engineP         = True
       , _engineConfig    = def
       , _exportP         = True

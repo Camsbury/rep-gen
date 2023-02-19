@@ -4,16 +4,12 @@
 module RepGen.PyChess
   ( ucisToFen
   , sansToUcis
-  , fenToEngineCandidates
+  , fen_to_engine_candidates
   ) where
 --------------------------------------------------------------------------------
 import Foreign.C.String
-import RepGen.Engine ()
-import RepGen.Engine.Type
-import RepGen.Monad
 import RepGen.Type
 --------------------------------------------------------------------------------
-import qualified Data.Aeson as J
 import qualified Data.Text as T
 --------------------------------------------------------------------------------
 foreign import ccall "ucis_to_fen" ucis_to_fen
@@ -38,15 +34,3 @@ sansToUcis sans = do
   cResult <- sans_to_ucis cSans
   result <- peekCString cResult
   pure . fromList . T.splitOn "," . pack $ result
-
--- | Convert a 'Fen' into a Vector/sequence of 'EngineCandidate'
-fenToEngineCandidates
-  :: Fen
-  -> Int
-  -> Int
-  -> RGM (Vector EngineCandidate)
-fenToEngineCandidates (Fen fen) depth mCount = do
-  cUcis <- liftIO . newCString . unpack $ fen
-  cResult <- liftIO $ fen_to_engine_candidates cUcis depth mCount
-  result <- liftIO $ peekCString cResult
-  throwEither . first pack . J.eitherDecode $ fromString result

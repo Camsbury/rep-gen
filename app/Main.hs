@@ -17,14 +17,14 @@ main = do
   --   10
   -- print cands
 
-  fen <- ucisToFen (["e2e4", "e7e6"] :: Vector Text)
-  cands <- do
-    runStdoutLoggingT
-    . runExceptT
-    . (`runReaderT` def)
-    . (`runStateT` def)
-    $ fenToEngineCandidates fen 20 10
-  print cands
+  -- fen <- ucisToFen (["e2e4", "e7e6"] :: Vector Text)
+  -- cands <- do
+  --   runStdoutLoggingT
+  --   . runExceptT
+  --   . (`runReaderT` def)
+  --   . (`runStateT` def)
+  --   $ fenToEngineCandidates fen 20 10
+  -- print cands
   -- historicMoves <- do
   --   runStdoutLoggingT
   --   . runExceptT
@@ -47,5 +47,5 @@ main = do
   -- print historicMoves
 
   buildRepertoire $
-    def & color        .~ Black
+    def & colorL       .~ Black
         & engineConfig . engineAllowableLoss .~ 0.05

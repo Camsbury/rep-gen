@@ -11,6 +11,6 @@ import RepGen.Score.Type
 data EngineCandidate
   = EngineCandidate
   { _ngnUci :: !Uci
-  , _score  :: Score
+  , _ngnScore  :: Score
   } deriving (Show, Eq)
 makeLenses ''EngineCandidate

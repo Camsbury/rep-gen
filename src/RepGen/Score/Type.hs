@@ -11,7 +11,7 @@ type Cp = Int
 
 data MateIn
   = MateIn
-  { _color     :: Color
+  { _miColor     :: Color
   , _moveCount :: Int
   } deriving (Show, Eq)
 makeLenses ''MateIn

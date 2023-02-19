@@ -12,9 +12,7 @@
 -- https://github.com/lichess-org/lila/blob/master/modules/analyse/src/main/WinPercent.scala#L23
 --
 --------------------------------------------------------------------------------
-module RepGen.Score
-  ( module RepGen.Score
-  ) where
+module RepGen.Score where
 --------------------------------------------------------------------------------
 import RepGen.Type
 import RepGen.Score.Type
@@ -68,7 +66,7 @@ parseMateIn text = do
       -> Just
       . MateScore
       $ MateIn
-      { _color = White
+      { _miColor = White
       , _moveCount = parseCount n
       }
 
@@ -76,7 +74,7 @@ parseMateIn text = do
       -> Just
       . MateScore
       $ MateIn
-      { _color = Black
+      { _miColor = Black
       , _moveCount = parseCount n
       }
 
