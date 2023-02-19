@@ -19,13 +19,8 @@ def sans_to_ucis(sans):
         board.push_san(san)
     return ",".join(move.uci() for move in board.move_stack)
 
-# TODO: do the work of getting the uci/score stuff before
-# sending back to haskell as a json string
-def ucis_to_engine_candidates(ucis, depth, move_count):
-    ucis = ucis.split(",")
-    board = chess.Board()
-    for uci in ucis:
-        board.push_uci(uci)
+def fen_to_engine_candidates(fen, depth, move_count):
+    board = chess.Board(fen)
     engine = ngn.SimpleEngine.popen_uci(STOCKFISH_PATH)
     engine.configure({"Hash": 2048, "Threads": 7})
     info = engine.analyse(

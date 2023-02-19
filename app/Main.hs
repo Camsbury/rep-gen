@@ -17,7 +17,14 @@ main = do
   --   10
   -- print cands
 
-  -- fen <- ucisToFen (["e2e4", "e7e6"] :: Vector Text)
+  fen <- ucisToFen (["e2e4", "e7e6"] :: Vector Text)
+  cands <- do
+    runStdoutLoggingT
+    . runExceptT
+    . (`runReaderT` def)
+    . (`runStateT` def)
+    $ fenToEngineCandidates fen 20 10
+  print cands
   -- historicMoves <- do
   --   runStdoutLoggingT
   --   . runExceptT
