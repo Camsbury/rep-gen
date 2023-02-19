@@ -1,6 +1,7 @@
 --------------------------------------------------------------------------------
 module RepGen.Action.EnumResps
-  ( module RepGen.Action.EnumResps
+  ( runAction
+  , initRunAction
   ) where
 --------------------------------------------------------------------------------
 
@@ -16,6 +17,23 @@ import RepGen.Type
 import qualified RepGen.PyChess as PyC
 import qualified RepGen.MoveTree as MT
 --------------------------------------------------------------------------------
+
+runAction :: EnumData -> RGM ()
+runAction action = do
+  let ucis = action ^. edUcis
+  pAgg <- MT.fetchPAgg ucis
+  processed <- processMoves action pAgg
+  moveTree . MT.traverseUcis ucis . responses .= fromList processed
+  toActOn <- filterMinRespProb (action ^. edProbP) pAgg processed
+  actionStack %= ((toAction action =<< reverse toActOn) ++)
+
+initRunAction :: Vector Uci -> RGM ()
+initRunAction ucis = do
+  pAgg <- MT.fetchPAgg ucis
+  processed <- initProcessMoves ucis pAgg
+  moveTree . MT.traverseUcis ucis . responses .= fromList processed
+  toActOn <- filterMinRespProb 1 pAgg processed
+  actionStack %= ((initToAction =<< reverse toActOn) ++)
 
 filterMoves
   :: EnumData
@@ -146,21 +164,4 @@ filterMinRespProb pPrune pAgg resps = do
           (\x -> pPrune * x > minProb)
           (rNode ^? rgStats . lichessStats . _Just . prob)
   pure . fmap (view _2) . filter f $ resps
-
-runAction :: EnumData -> RGM ()
-runAction action = do
-  let ucis = action ^. edUcis
-  pAgg <- MT.fetchPAgg ucis
-  processed <- processMoves action pAgg
-  moveTree . MT.traverseUcis ucis . responses .= fromList processed
-  toActOn <- filterMinRespProb (action ^. edProbP) pAgg processed
-  actionStack %= ((toAction action =<< reverse toActOn) ++)
-
-initRunAction :: Vector Uci -> RGM ()
-initRunAction ucis = do
-  pAgg <- MT.fetchPAgg ucis
-  processed <- initProcessMoves ucis pAgg
-  moveTree . MT.traverseUcis ucis . responses .= fromList processed
-  toActOn <- filterMinRespProb 1 pAgg processed
-  actionStack %= ((initToAction =<< reverse toActOn) ++)
 
