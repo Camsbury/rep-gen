@@ -13,6 +13,8 @@ import RepGen.State.Type
 import RepGen.Stats.Type
 import RepGen.Type
 --------------------------------------------------------------------------------
+import qualified RepGen.PyChess as PyC
+--------------------------------------------------------------------------------
 
 filterMoves
   :: EnumData
@@ -30,12 +32,13 @@ filterMoves action pAgg mvs = do
 
 mergeMoves
   :: Vector Uci
+  -> Fen
   -> Double
   -> Double
   -> [(Uci, NodeStats)]
   -> [(Uci, NodeStats)]
   -> [(Uci, TreeNode)]
-mergeMoves ucis pAgg pPrune lichessM mastersM
+mergeMoves ucis fen pAgg pPrune lichessM mastersM
   = f <$> lichessM
   where
     findBy _ [] = Nothing
@@ -54,12 +57,13 @@ mergeMoves ucis pAgg pPrune lichessM mastersM
             , _probAgg      = pAgg * lcm ^. prob
             }
           , _uciPath = snoc ucis uci
+          , _nodeFen = fen
           , _responses = empty
           }
         )
 
-wrapLCStats :: Vector Uci -> Double -> Double -> (Uci, NodeStats) -> (Uci, TreeNode)
-wrapLCStats ucis pAgg pPrune (uci, lcm)
+wrapLCStats :: Vector Uci -> Fen -> Double -> Double -> (Uci, NodeStats) -> (Uci, TreeNode)
+wrapLCStats ucis fen pAgg pPrune (uci, lcm)
   = ( uci
     , TreeNode
       { _rgStats
@@ -71,6 +75,7 @@ wrapLCStats ucis pAgg pPrune (uci, lcm)
         , _probAgg      = pAgg * lcm ^. prob
         }
       , _uciPath = snoc ucis uci
+      , _nodeFen = fen
       , _responses = empty
       }
     )
@@ -78,21 +83,23 @@ wrapLCStats ucis pAgg pPrune (uci, lcm)
 processMoves :: EnumData -> Double -> RGM [(Uci, TreeNode)]
 processMoves action pAgg = do
   let ucis = action ^. edUcis
-  maybeMastersM <- maybeMastersMoves ucis
-  lichessM <- filterMoves action pAgg =<< lichessMoves ucis
+  fen <- liftIO $ PyC.ucisToFen ucis
+  maybeMastersM <- maybeMastersMoves fen
+  lichessM <- filterMoves action pAgg =<< lichessMoves fen
   let pPrune = action ^. edProbP
   pure $ maybe
-           (wrapLCStats ucis pAgg pPrune <$> lichessM)
-           (mergeMoves ucis pAgg pPrune lichessM)
+           (wrapLCStats ucis fen pAgg pPrune <$> lichessM)
+           (mergeMoves ucis fen pAgg pPrune lichessM)
            maybeMastersM
 
 initProcessMoves :: Vector Uci -> Double -> RGM [(Uci, TreeNode)]
 initProcessMoves ucis pAgg = do
-  maybeMastersM <- maybeMastersMoves ucis
-  lichessM <- lichessMoves ucis
+  fen <- liftIO $ PyC.ucisToFen ucis
+  maybeMastersM <- maybeMastersMoves fen
+  lichessM <- lichessMoves fen
   pure $ maybe
-           (wrapLCStats ucis pAgg 1 <$> lichessM)
-           (mergeMoves ucis pAgg 1 lichessM)
+           (wrapLCStats ucis fen pAgg 1 <$> lichessM)
+           (mergeMoves ucis fen pAgg 1 lichessM)
            maybeMastersM
 
 -- | Turn viable responses into actions

@@ -2,7 +2,7 @@
 --------------------------------------------------------------------------------
 module RepGen.Lichess.History.Type where
 --------------------------------------------------------------------------------
-import RepGen.Type (Color)
+import RepGen.Type
 import Data.Time.Calendar (Year, MonthOfYear)
 import Data.Aeson
   ( FromJSON(..)
@@ -14,7 +14,7 @@ import qualified Data.Aeson as J
 data UniversalParams
   = UniversalParams
   { _moveCount :: Int -- moves
-  , _fen       :: !Text
+  , _fenParam  :: Fen
   } deriving (Eq, Show)
 makeLenses ''UniversalParams
 

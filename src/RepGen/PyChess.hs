@@ -13,6 +13,7 @@ import Foreign.C.String
 import RepGen.PyChess.Internal ()
 import RepGen.PyChess.Type
 import RepGen.Monad
+import RepGen.Type
 
 import qualified Data.Aeson as J
 import qualified Data.Text as T
@@ -29,11 +30,11 @@ foreign import ccall "ucis_to_engine_candidates" ucis_to_engine_candidates
 --------------------------------------------------------------------------------
 
 -- | Convert a sequence of UCI 'Text' into a FEN 'Text'
-ucisToFen :: (MonoFoldable m, Element m ~ Text) => m -> IO Text
+ucisToFen :: (MonoFoldable m, Element m ~ Text) => m -> IO Fen
 ucisToFen ucis = do
   cUcis <- newCString . unpack $ intercalate "," ucis
   result <- ucis_to_fen cUcis
-  pack <$> peekCString result
+  Fen . pack <$> peekCString result
 
 -- | Convert a sequence of SAN 'Text' into UCI 'Text'
 sansToUcis :: (MonoFoldable m, Element m ~ Text) => m -> IO (Vector Text)

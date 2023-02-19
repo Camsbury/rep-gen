@@ -38,7 +38,7 @@ fromMastersParams :: UniversalParams -> Map Text Text
 fromMastersParams params
   = mapFromList
   [ ("moves",    params ^. moveCount . to tshow)
-  , ("fen",      params ^. fen)
+  , ("fen",      params ^. fenParam . fenL)
   , ("topGames", "0")
   ]
 
@@ -94,29 +94,27 @@ filterMinTotal rs = do
     then Just rs
     else Nothing
 
-getLichessParams :: Vector Uci -> RGM LichessParams
-getLichessParams ucis = do
+getLichessParams :: Fen -> RGM LichessParams
+getLichessParams fen = do
   hmc <- view $ historyConfig . historyMoveCount
   speeds <- view $ historyConfig . historySpeeds
   ratings <- view $ historyConfig . historyRatings
-  fen' <- liftIO . PyC.ucisToFen $ ucis
-  let ups = UniversalParams hmc fen'
+  let ups = UniversalParams hmc fen
   pure $ LichessParams ratings speeds ups
 
-lichessMoves :: Vector Uci -> RGM [(Uci, NodeStats)]
-lichessMoves ucis = fmap parseStats . historicMoves =<< getLichessParams ucis
+lichessMoves :: Fen -> RGM [(Uci, NodeStats)]
+lichessMoves = fmap parseStats . historicMoves <=< getLichessParams
 
-getMastersParams :: Vector Uci -> RGM UniversalParams
-getMastersParams ucis = do
+getMastersParams :: Fen -> RGM UniversalParams
+getMastersParams fen = do
   hmc <- view $ historyConfig . historyMoveCount
-  fen' <- liftIO . PyC.ucisToFen $ ucis
-  pure $ UniversalParams hmc fen'
+  pure $ UniversalParams hmc fen
 
 -- | Fetches masters moves if they meet our criteria
-maybeMastersMoves :: Vector Uci -> RGM (Maybe [(Uci, NodeStats)])
-maybeMastersMoves ucis = do
+maybeMastersMoves :: Fen -> RGM (Maybe [(Uci, NodeStats)])
+maybeMastersMoves fen = do
   useM <- view mastersP
-  mps <- getMastersParams ucis
+  mps <- getMastersParams fen
   if useM
     then fmap (fmap parseStats) . filterMinTotal =<< historicMoves mps
     else pure Nothing
