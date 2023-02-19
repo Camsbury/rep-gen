@@ -20,6 +20,8 @@ library
                        , RepGen.Action.TransStats
                        , RepGen.Action.Type
                        , RepGen.Config.Type
+                       , RepGen.Engine
+                       , RepGen.Engine.Type
                        , RepGen.Lichess
                        , RepGen.Lichess.History
                        , RepGen.Lichess.History.Type
@@ -27,8 +29,8 @@ library
                        , RepGen.MoveTree
                        , RepGen.MoveTree.Type
                        , RepGen.PyChess
-                       , RepGen.PyChess.Internal
-                       , RepGen.PyChess.Type
+                       , RepGen.Score
+                       , RepGen.Score.Type
                        , RepGen.State
                        , RepGen.State.Type
                        , RepGen.Stats

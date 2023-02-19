@@ -8,8 +8,8 @@ module RepGen.PyChess
   ) where
 --------------------------------------------------------------------------------
 import Foreign.C.String
-import RepGen.PyChess.Internal ()
-import RepGen.PyChess.Type
+import RepGen.Engine ()
+import RepGen.Engine.Type
 import RepGen.Monad
 import RepGen.Type
 --------------------------------------------------------------------------------

@@ -12,7 +12,6 @@ import RepGen.Stats.Type
 import RepGen.Type
 import qualified Control.Concurrent as C
 import qualified Data.Aeson as J
-import qualified RepGen.PyChess as PyC
 import qualified Web
 
 -- hitting https://explorer.lichess.ovh/{masters,lichess,player}

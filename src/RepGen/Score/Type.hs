@@ -1,12 +1,13 @@
 {-# LANGUAGE TemplateHaskell #-}
-module RepGen.PyChess.Type where
-
-
+--------------------------------------------------------------------------------
+module RepGen.Score.Type
+  ( module RepGen.Score.Type
+  ) where
+--------------------------------------------------------------------------------
 import RepGen.Type
+--------------------------------------------------------------------------------
 
---------------------------------------------------------------------------------
---- Types
---------------------------------------------------------------------------------
+type Cp = Int
 
 data MateIn
   = MateIn
@@ -15,17 +16,13 @@ data MateIn
   } deriving (Show, Eq)
 makeLenses ''MateIn
 
-type Cp = Int
-
-data Score
+data RawScore
   = CpScore   Cp
   | MateScore MateIn
   deriving (Show, Eq)
 
-data EngineCandidate
-  = EngineCandidate
-  { _ngnUci   :: !Uci
-  , _score :: Score
+newtype Score
+  = Score
+  { _scoreL :: Double
   } deriving (Show, Eq)
-makeLenses ''EngineCandidate
-
+makeLenses ''Score
