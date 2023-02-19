@@ -15,7 +15,6 @@ library
                        , RepGen.Action.CalcStats
                        , RepGen.Action.EnumCands
                        , RepGen.Action.EnumResps
-                       , RepGen.Action.InitResps
                        , RepGen.Action.PruneCands
                        , RepGen.Action.PruneHooks
                        , RepGen.Action.TransStats

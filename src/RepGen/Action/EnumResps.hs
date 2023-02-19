@@ -80,10 +80,19 @@ processMoves action pAgg = do
   let ucis = action ^. edUcis
   maybeMastersM <- maybeMastersMoves ucis
   lichessM <- filterMoves action pAgg =<< lichessMoves ucis
-  let pPrune = action ^. edProb
+  let pPrune = action ^. edProbP
   pure $ maybe
            (wrapLCStats ucis pAgg pPrune <$> lichessM)
            (mergeMoves ucis pAgg pPrune lichessM)
+           maybeMastersM
+
+initProcessMoves :: Vector Uci -> Double -> RGM [(Uci, TreeNode)]
+initProcessMoves ucis pAgg = do
+  maybeMastersM <- maybeMastersMoves ucis
+  lichessM <- lichessMoves ucis
+  pure $ maybe
+           (wrapLCStats ucis pAgg 1 <$> lichessM)
+           (mergeMoves ucis pAgg 1 lichessM)
            maybeMastersM
 
 -- | Turn viable responses into actions
@@ -92,10 +101,24 @@ toAction action node
   = [ RGAEnumCands
       $ EnumData
       { _edUcis = node ^. uciPath
-      , _edProb = node ^. rgStats . probPrune
+      , _edProbP = node ^. rgStats . probPrune
       , _edDepth = action ^. edDepth
       , _edIsPruned = action ^. edIsPruned
       }
+    , RGATransStats $ node ^. uciPath
+    ]
+
+-- | Turn viable responses into actions
+initToAction ::  TreeNode -> [RGAction]
+initToAction node
+  = [ RGAEnumCands
+      $ EnumData
+      { _edUcis = node ^. uciPath
+      , _edProbP = node ^. rgStats . probPrune
+      , _edDepth = 0
+      , _edIsPruned = False
+      }
+    , RGAPruneCands $ node ^. uciPath
     , RGATransStats $ node ^. uciPath
     ]
 
@@ -116,12 +139,25 @@ filterMinRespProb pPrune pAgg resps = do
           (rNode ^? rgStats . lichessStats . _Just . prob)
   pure . fmap (view _2) . filter f $ resps
 
+fetchPAgg :: Vector Uci -> RGM Double
+fetchPAgg ucis
+  = throwMaybe ("Node doesn't exist at: " <> intercalate "," ucis)
+  <=< preuse $ moveTree . traverseUcis ucis . rgStats . probAgg
+
 runAction :: EnumData -> RGM ()
 runAction action = do
   let ucis = action ^. edUcis
-  pAgg <- throwMaybe ("Node doesn't exist at: " <> intercalate "," ucis)
-       <=< preuse $ moveTree . traverseUcis ucis . rgStats . probAgg
+  pAgg <- fetchPAgg ucis
   processed <- processMoves action pAgg
   moveTree . traverseUcis ucis . responses .= fromList processed
-  toActOn <- filterMinRespProb (action ^. edProb) pAgg processed
+  toActOn <- filterMinRespProb (action ^. edProbP) pAgg processed
   actionStack %= ((toAction action =<< reverse toActOn) ++)
+
+initRunAction :: Vector Uci -> RGM ()
+initRunAction ucis = do
+  pAgg <- fetchPAgg ucis
+  processed <- initProcessMoves ucis pAgg
+  moveTree . traverseUcis ucis . responses .= fromList processed
+  toActOn <- filterMinRespProb 1 pAgg processed
+  actionStack %= ((initToAction =<< reverse toActOn) ++)
+
