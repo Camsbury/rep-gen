@@ -24,30 +24,37 @@ import qualified RepGen.Lichess.History as H
 runAction :: EnumData -> RGM ()
 runAction action = do
   let ucis = action ^. edUcis
-  fen <- liftIO $ PyC.ucisToFen ucis
-  ngnDepth <- view $ engineConfig . engineDepth
-  eMC <- view $ engineConfig . engineMoveCount
-  lcM <- H.lichessMoves fen
-  maybeMM <- H.maybeMastersMoves fen
+  candidates <- fetchCandidates action
+  moveTree . MT.traverseUcis ucis . responses .= fromList candidates
+  sDepth <- view searchDepth
+  let addActions
+        = action ^. edIsPruned && length candidates == 1
+        || action ^. edDepth == sDepth
+  when addActions
+    $ actionStack
+    %= ((toAction action =<< reverse (candidates ^.. folded . _2)) ++)
+
+fetchCandidates :: EnumData -> RGM [(Uci, TreeNode)]
+fetchCandidates action = do
+  let ucis       = action ^. edUcis
+      pPrune     = action ^. edProbP
+  fen            <- liftIO $ PyC.ucisToFen ucis
+  lcM            <- H.lichessMoves fen
+  maybeMM        <- H.maybeMastersMoves fen
+  engineMoves    <- Ngn.fenToEngineCandidates fen
+  maybeOverride  <- preview $ overridesL . ix fen
   let candidates = fromMaybe lcM maybeMM
-  engineMoves <- Ngn.fenToEngineCandidates fen ngnDepth eMC
-  maybeOverride <- preview $ overridesL . ix fen
+      isMasters  = isJust maybeMM
+
   maybeMatch <- findUci candidates fen maybeOverride
   filteredCands
     <- maybe (filterCandidates candidates engineMoves) pure maybeMatch
-  let isMasters = isJust maybeMM
   pAgg <- MT.fetchPAgg ucis
-  let pPrune = action ^. edProbP
+
   let candNodes = initNode isMasters pAgg pPrune fen ucis <$> filteredCands
   let candNodes' = if isMasters then injectLichess lcM <$> candNodes else candNodes
   let candNodes'' = injectEngine engineMoves <$> candNodes'
-  candNodes''' <- if null candNodes'' then firstEngine pPrune fen ucis engineMoves else pure candNodes''
-  moveTree . MT.traverseUcis ucis . responses .= fromList candNodes'''
-  sDepth <- view searchDepth
-  let addActions
-        = action ^. edIsPruned && length candNodes''' == 1
-        || action ^. edDepth == sDepth
-  when addActions $ actionStack %= ((toAction action =<< reverse (candNodes''' ^.. folded . _2)) ++)
+  if null candNodes'' then firstEngine pPrune fen ucis engineMoves else pure candNodes''
 
 toAction :: EnumData -> TreeNode -> [RGAction]
 toAction (EnumData _ probP depth _) node

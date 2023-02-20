@@ -23,10 +23,10 @@ import qualified Data.Aeson.Types as J
 -- | Convert a 'Fen' into a Vector/sequence of 'EngineCandidate'
 fenToEngineCandidates
   :: Fen
-  -> Int
-  -> Int
   -> RGM [EngineCandidate]
-fenToEngineCandidates (Fen fen) depth mCount = do
+fenToEngineCandidates (Fen fen) = do
+  depth <- view $ engineConfig . engineDepth
+  mCount <- view $ engineConfig . engineMoveCount
   cUcis <- liftIO . FC.newCString . unpack $ fen
   cResult <- liftIO $ PyC.fen_to_engine_candidates cUcis depth mCount
   jsonString <- liftIO $ FC.peekCString cResult
