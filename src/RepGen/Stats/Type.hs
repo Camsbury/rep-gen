@@ -14,6 +14,10 @@ data RGStat
   } deriving (Show, Eq)
 makeLenses ''RGStat
 
+-- | Convenience function for a initializing a stat
+mkRGStat :: Double -> RGStat
+mkRGStat d = RGStat d d
+
 -- | Node stats per source (lichess, masters)
 data NodeStats
   = NodeStats

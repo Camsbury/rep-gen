@@ -18,6 +18,7 @@ import qualified RepGen.PyChess as PyC
 import qualified RepGen.MoveTree as MT
 --------------------------------------------------------------------------------
 
+-- | Action runner to enumerate responses
 runAction :: EnumData -> RGM ()
 runAction action = do
   let ucis = action ^. edUcis
@@ -27,6 +28,7 @@ runAction action = do
   toActOn <- filterMinRespProb (action ^. edProbP) pAgg processed
   actionStack %= ((toAction action =<< reverse toActOn) ++)
 
+-- | Action runner to initiate responses for the tree traversal
 initRunAction :: Vector Uci -> RGM ()
 initRunAction ucis = do
   pAgg <- MT.fetchPAgg ucis
@@ -34,6 +36,28 @@ initRunAction ucis = do
   moveTree . MT.traverseUcis ucis . responses .= fromList processed
   toActOn <- filterMinRespProb 1 pAgg processed
   actionStack %= ((initToAction =<< reverse toActOn) ++)
+
+processMoves :: EnumData -> Double -> RGM [(Uci, TreeNode)]
+processMoves action pAgg = do
+  let ucis = action ^. edUcis
+  fen <- liftIO $ PyC.ucisToFen ucis
+  maybeMastersM <- maybeMastersMoves fen
+  lichessM <- filterMoves action pAgg =<< lichessMoves fen
+  let pPrune = action ^. edProbP
+  pure $ maybe
+           (wrapLCStats ucis fen pAgg pPrune <$> lichessM)
+           (mergeMoves ucis fen pAgg pPrune lichessM)
+           maybeMastersM
+
+initProcessMoves :: Vector Uci -> Double -> RGM [(Uci, TreeNode)]
+initProcessMoves ucis pAgg = do
+  fen <- liftIO $ PyC.ucisToFen ucis
+  maybeMastersM <- maybeMastersMoves fen
+  lichessM <- lichessMoves fen
+  pure $ maybe
+           (wrapLCStats ucis fen pAgg 1 <$> lichessM)
+           (mergeMoves ucis fen pAgg 1 lichessM)
+           maybeMastersM
 
 filterMoves
   :: EnumData
@@ -60,17 +84,13 @@ mergeMoves
 mergeMoves ucis fen pAgg pPrune lichessM mastersM
   = f <$> lichessM
   where
-    findBy _ [] = Nothing
-    findBy uci ((mUci, mStats):rest)
-      | uci == mUci = Just mStats
-      | otherwise = lookup uci rest
     f (uci, lcm)
       = ( uci
         , TreeNode
           { _rgStats
             = RGStats
             { _lichessStats = Just lcm
-            , _mastersStats = findBy uci mastersM
+            , _mastersStats = lookup uci mastersM
             , _score        = Nothing
             , _probPrune    = pPrune * lcm ^. prob
             , _probAgg      = pAgg * lcm ^. prob
@@ -98,28 +118,6 @@ wrapLCStats ucis fen pAgg pPrune (uci, lcm)
       , _responses = empty
       }
     )
-
-processMoves :: EnumData -> Double -> RGM [(Uci, TreeNode)]
-processMoves action pAgg = do
-  let ucis = action ^. edUcis
-  fen <- liftIO $ PyC.ucisToFen ucis
-  maybeMastersM <- maybeMastersMoves fen
-  lichessM <- filterMoves action pAgg =<< lichessMoves fen
-  let pPrune = action ^. edProbP
-  pure $ maybe
-           (wrapLCStats ucis fen pAgg pPrune <$> lichessM)
-           (mergeMoves ucis fen pAgg pPrune lichessM)
-           maybeMastersM
-
-initProcessMoves :: Vector Uci -> Double -> RGM [(Uci, TreeNode)]
-initProcessMoves ucis pAgg = do
-  fen <- liftIO $ PyC.ucisToFen ucis
-  maybeMastersM <- maybeMastersMoves fen
-  lichessM <- lichessMoves fen
-  pure $ maybe
-           (wrapLCStats ucis fen pAgg 1 <$> lichessM)
-           (mergeMoves ucis fen pAgg 1 lichessM)
-           maybeMastersM
 
 -- | Turn viable responses into actions
 toAction :: EnumData -> TreeNode -> [RGAction]
