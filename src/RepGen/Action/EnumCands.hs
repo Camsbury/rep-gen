@@ -22,8 +22,7 @@ import qualified RepGen.Lichess.History as H
 
 -- | Action runner to enumerate move candidates
 runAction :: EnumData -> RGM ()
-runAction initAction = do
-  let action = initAction & edDepth %~ succ
+runAction action = do
   let ucis = action ^. edUcis
   fen <- liftIO $ PyC.ucisToFen ucis
   ngnDepth <- view $ engineConfig . engineDepth
@@ -45,13 +44,14 @@ runAction initAction = do
   candNodes''' <- if null candNodes'' then firstEngine pPrune fen ucis engineMoves else pure candNodes''
   moveTree . MT.traverseUcis ucis . responses .= fromList candNodes'''
   sDepth <- view searchDepth
-
-  when ((action ^. edIsPruned) && (length candNodes''' == 1) || (action ^. edDepth == sDepth))
-    $ actionStack %= ((toAction action =<< reverse (candNodes''' ^.. folded . _2)) ++)
+  let addActions
+        = action ^. edIsPruned && length candNodes''' == 1
+        || action ^. edDepth == sDepth
+  when addActions $ actionStack %= ((toAction action =<< reverse (candNodes''' ^.. folded . _2)) ++)
 
 toAction :: EnumData -> TreeNode -> [RGAction]
 toAction (EnumData _ probP depth _) node
-  = [ RGAEnumResps $ EnumData ucis probP depth False
+  = [ RGAEnumResps $ EnumData ucis probP (succ depth) False
     , RGACalcStats ucis
     ]
   where

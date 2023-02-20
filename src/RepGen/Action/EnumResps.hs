@@ -139,7 +139,7 @@ initToAction node
       $ EnumData
       { _edUcis = node ^. uciPath
       , _edProbP = node ^. rgStats . probPrune
-      , _edDepth = 0
+      , _edDepth = 1
       , _edIsPruned = False
       }
     , RGAPruneCands $ node ^. uciPath
