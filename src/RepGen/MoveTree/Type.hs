@@ -13,8 +13,9 @@ data TreeNode
   , _uciPath   :: Vector Uci
   , _nodeFen   :: Fen
   , _responses :: Vector (Uci, TreeNode)
+  , _removed   :: Bool
   } deriving (Show, Eq)
 makeLenses ''TreeNode
 
 instance Default TreeNode where
-  def = TreeNode def empty def empty
+  def = TreeNode def empty def empty False

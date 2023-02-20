@@ -95,9 +95,10 @@ mergeMoves ucis fen pAgg pPrune lichessM mastersM
             , _probPrune    = pPrune * lcm ^. prob
             , _probAgg      = pAgg * lcm ^. prob
             }
-          , _uciPath = snoc ucis uci
-          , _nodeFen = fen
+          , _uciPath   = snoc ucis uci
+          , _nodeFen   = fen
           , _responses = empty
+          , _removed   = False
           }
         )
 
@@ -113,9 +114,10 @@ wrapLCStats ucis fen pAgg pPrune (uci, lcm)
         , _probPrune    = pPrune * lcm ^. prob
         , _probAgg      = pAgg * lcm ^. prob
         }
-      , _uciPath = snoc ucis uci
-      , _nodeFen = fen
+      , _uciPath   = snoc ucis uci
+      , _nodeFen   = fen
       , _responses = empty
+      , _removed   = False
       }
     )
 
