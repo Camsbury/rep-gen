@@ -18,7 +18,7 @@ import qualified RepGen.MoveTree as MT
 setScore :: Maybe RGStat -> Vector Uci -> RGM ()
 setScore Nothing _ = pure ()
 setScore (Just s) ucis = do
-  moveTree . MT.traverseUcis ucis . rgStats . score . _Just . agg .= (s ^. agg)
+  moveTree . MT.traverseUcis ucis . rgStats . rgScore . _Just . agg .= (s ^. agg)
 
 setNodeStats
   :: Maybe NodeStats
@@ -40,7 +40,7 @@ runAction ucis = do
   (choiceUci, child) <- applyStrategy children
   -- NOTE: these are something like natural transformations?
 
-  setScore (child ^. rgStats . score) (ucis <> [choiceUci])
+  setScore (child ^. rgStats . rgScore) (ucis <> [choiceUci])
   setNodeStats
     (child ^. rgStats . lichessStats)
     (ucis <> [choiceUci]) lichessStats (whiteWins . agg)

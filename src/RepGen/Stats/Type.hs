@@ -43,7 +43,7 @@ data RGStats
   = RGStats
   { _lichessStats :: Maybe NodeStats
   , _mastersStats :: Maybe NodeStats
-  , _score        :: Maybe RGStat
+  , _rgScore        :: Maybe RGStat
   , _probPrune    :: ProbPrune
   , _probAgg      :: ProbAgg
   } deriving (Show, Eq)

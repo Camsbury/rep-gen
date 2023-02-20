@@ -96,7 +96,7 @@ probNonChild children
 setScore :: Maybe Double -> Vector Uci -> RGM ()
 setScore Nothing _ = pure ()
 setScore (Just s) ucis = do
-  moveTree . MT.traverseUcis ucis . rgStats . score . _Just . agg .= s
+  moveTree . MT.traverseUcis ucis . rgStats . rgScore . _Just . agg .= s
 
 -- | Calculate the weighted score for a node given the chosen moves
 -- for its children
@@ -119,9 +119,9 @@ calcScore ucis = do
         $ children
         ^.. folded
         . _2
-        . to (\n -> fromMaybe 0 (n ^? rgStats . score . _Just . agg)
+        . to (\n -> fromMaybe 0 (n ^? rgStats . rgScore . _Just . agg)
                  * fromMaybe 0 (n ^? rgStats . lichessStats . _Just . prob))
-  let pScore = parent ^? rgStats . score . _Just . agg
+  let pScore = parent ^? rgStats . rgScore . _Just . agg
   setScore ((\pS -> cScoreAgg + probNonChild children * pS) <$> pScore) ucis
 
 -- | Calculate stats for a candidate node

@@ -84,7 +84,7 @@ injectEngine nCands stats@(uci, _)
   = stats
   & _2
   . rgStats
-  . score
+  . rgScore
   .~ findBy uci nCands
   where
     findBy _ [] = Nothing

@@ -91,7 +91,7 @@ mergeMoves ucis fen pAgg pPrune lichessM mastersM
             = RGStats
             { _lichessStats = Just lcm
             , _mastersStats = lookup uci mastersM
-            , _score        = Nothing
+            , _rgScore      = Nothing
             , _probPrune    = pPrune * lcm ^. prob
             , _probAgg      = pAgg * lcm ^. prob
             }
@@ -109,7 +109,7 @@ wrapLCStats ucis fen pAgg pPrune (uci, lcm)
         = RGStats
         { _lichessStats = Just lcm
         , _mastersStats = Nothing
-        , _score        = Nothing
+        , _rgScore      = Nothing
         , _probPrune    = pPrune * lcm ^. prob
         , _probAgg      = pAgg * lcm ^. prob
         }
