@@ -54,3 +54,11 @@ toMaybe p v =
 
 (/.) :: (Integral a, Fractional b) => a -> a -> b
 a /. b = fromIntegral a / fromIntegral b
+
+-- | Nested functor map
+f2map :: (Functor f, Functor g) => (a -> b) -> f (g a) -> f (g b)
+f2map f = fmap (fmap f)
+
+-- | Straight outta GHC, just apply a function if true
+applyWhen :: Bool -> (a -> a) -> a -> a
+applyWhen p f a = if p then f a else a

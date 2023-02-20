@@ -37,24 +37,24 @@ runAction action = do
 fetchCandidates :: EnumData -> RGM [(Uci, TreeNode)]
 fetchCandidates action = do
   let ucis       = action ^. edUcis
-      pPrune     = action ^. edProbP
+  let pPrune     = action ^. edProbP
   fen            <- liftIO $ PyC.ucisToFen ucis
   lcM            <- H.lichessMoves fen
   maybeMM        <- H.maybeMastersMoves fen
   engineMoves    <- Ngn.fenToEngineCandidates fen
-  maybeOverride  <- preview $ overridesL . ix fen
+  pAgg           <- MT.fetchPAgg ucis
   let candidates = fromMaybe lcM maybeMM
-      isMasters  = isJust maybeMM
-
-  maybeMatch <- findUci candidates fen maybeOverride
-  filteredCands
-    <- maybe (filterCandidates candidates engineMoves) pure maybeMatch
-  pAgg <- MT.fetchPAgg ucis
-
-  let candNodes = initNode isMasters pAgg pPrune fen ucis <$> filteredCands
-  let candNodes' = if isMasters then injectLichess lcM <$> candNodes else candNodes
-  let candNodes'' = injectEngine engineMoves <$> candNodes'
-  if null candNodes'' then firstEngine pPrune fen ucis engineMoves else pure candNodes''
+  let isMasters  = isJust maybeMM
+  candNodes
+    -- mapped over the monad and the list
+    <- f2map (injectEngine engineMoves)
+    . f2map (applyWhen isMasters $ injectLichess lcM)
+    . f2map (initNode isMasters pAgg pPrune fen ucis)
+    . maybe (filterCandidates candidates engineMoves) pure
+    <=< findUci candidates fen <=< preview $ overridesL . ix fen
+  if null candNodes
+    then firstEngine pPrune fen ucis engineMoves
+    else pure candNodes
 
 toAction :: EnumData -> TreeNode -> [RGAction]
 toAction (EnumData _ probP depth _) node
