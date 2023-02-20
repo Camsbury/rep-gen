@@ -25,17 +25,18 @@ fenToEngineCandidates
   :: Fen
   -> Int
   -> Int
-  -> RGM (Vector EngineCandidate)
+  -> RGM [EngineCandidate]
 fenToEngineCandidates (Fen fen) depth mCount = do
   cUcis <- liftIO . FC.newCString . unpack $ fen
   cResult <- liftIO $ PyC.fen_to_engine_candidates cUcis depth mCount
   jsonString <- liftIO $ FC.peekCString cResult
   color <- view colorL
-  fmap (fmap (applyScoreColor color))
-    . throwEither
+  eMoves
+    <- throwEither
     . first pack
     . J.eitherDecode
     $ fromString jsonString
+  extractFilteredMoves $ applyScoreColor color <$> eMoves
 
 instance FromJSON EngineCandidate where
   parseJSON (Object v) =
@@ -47,3 +48,14 @@ instance FromJSON EngineCandidate where
 applyScoreColor :: Color -> EngineCandidate -> EngineCandidate
 applyScoreColor White = id
 applyScoreColor Black = ngnScore . scoreL %~ negate
+
+
+-- | Extract moves that are within a reasonable deviation from the best move
+extractFilteredMoves :: [EngineCandidate] -> RGM [EngineCandidate]
+extractFilteredMoves cands = do
+  let sorted = sortBy (compare `on` view ngnScore) cands
+  aLoss <- view $ engineConfig . engineAllowableLoss
+  bestScore
+    <- throwMaybe "No engine candidates to filter!?"
+    $ sorted ^? ix 0 . ngnScore . scoreL
+  pure $ filter (\x -> aLoss < x ^. ngnScore . scoreL / bestScore) sorted

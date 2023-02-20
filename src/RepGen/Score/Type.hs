@@ -24,5 +24,5 @@ data RawScore
 newtype Score
   = Score
   { _scoreL :: Double
-  } deriving (Show, Eq)
+  } deriving (Show, Eq, Ord)
 makeLenses ''Score

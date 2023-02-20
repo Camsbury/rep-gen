@@ -51,14 +51,13 @@ data RGConfig
   , _historyConfig   :: HistoryConfig
   , _mastersP        :: Bool
   , _maxCandBreadth  :: Int
-  , _minCandProb     :: Double
   , _minPlays        :: Int
   , _minProbAgg      :: Double
   , _initRespProb    :: Double
   , _asymRespProb    :: Double
   , _minTotalMasters :: Int
   , _moves           :: Vector San
-  , _overrides       :: Map Fen Uci
+  , _overridesL      :: Map Fen Uci
   , _searchDepth     :: Int
   , _strategy        :: RGStrategy
   } deriving (Show, Eq)
@@ -76,14 +75,13 @@ instance Default RGConfig where
       , _historyConfig   = def
       , _mastersP        = True
       , _maxCandBreadth  = 5
-      , _minCandProb     = 0.01
       , _minPlays        = 100
       , _minProbAgg      = 0.01
       , _initRespProb    = 0.015
       , _asymRespProb    = 0.25
       , _minTotalMasters = 500
       , _moves           = []
-      , _overrides       = mempty
+      , _overridesL      = mempty
       , _searchDepth     = 5
       , _strategy        = MaxWinOverLoss
       }
