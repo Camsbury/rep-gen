@@ -22,16 +22,16 @@ import qualified RepGen.Lichess.History as H
 
 -- | Action runner to enumerate move candidates
 runAction :: EnumData -> RGM ()
-runAction action = do
+runAction initAction = do
+  let action = initAction & edDepth %~ succ
   let ucis = action ^. edUcis
-  let depth = succ $ action ^. edDepth
   fen <- liftIO $ PyC.ucisToFen ucis
-  eDepth <- view $ engineConfig . engineDepth
+  ngnDepth <- view $ engineConfig . engineDepth
   eMC <- view $ engineConfig . engineMoveCount
   lcM <- H.lichessMoves fen
   maybeMM <- H.maybeMastersMoves fen
   let candidates = fromMaybe lcM maybeMM
-  engineMoves <- Ngn.fenToEngineCandidates fen eDepth eMC
+  engineMoves <- Ngn.fenToEngineCandidates fen ngnDepth eMC
   maybeOverride <- preview $ overridesL . ix fen
   maybeMatch <- findUci candidates fen maybeOverride
   filteredCands
@@ -42,17 +42,42 @@ runAction action = do
   let candNodes = initNode isMasters pAgg pPrune fen ucis <$> filteredCands
   let candNodes' = if isMasters then injectLichess lcM <$> candNodes else candNodes
   let candNodes'' = injectEngine engineMoves <$> candNodes'
-  candNodes''' <- if null candNodes'' then firstEngine engineMoves else pure candNodes''
+  candNodes''' <- if null candNodes'' then firstEngine pPrune fen ucis engineMoves else pure candNodes''
   moveTree . MT.traverseUcis ucis . responses .= fromList candNodes'''
-  toActOn <- undefined
-  actionStack %= ((toAction action =<< reverse toActOn) ++)
+  sDepth <- view searchDepth
+
+  when ((action ^. edIsPruned) && (length candNodes''' == 1) || (action ^. edDepth == sDepth))
+    $ actionStack %= ((toAction action =<< reverse (candNodes''' ^.. folded . _2)) ++)
 
 toAction :: EnumData -> TreeNode -> [RGAction]
-toAction action node = undefined
+toAction (EnumData _ probP depth _) node
+  = [ RGAEnumResps $ EnumData ucis probP depth False
+    , RGACalcStats ucis
+    ]
+  where
+    ucis = node ^. uciPath
 
--- TODO: log in here that this happened
-firstEngine :: [EngineCandidate] -> RGM [(Uci, TreeNode)]
-firstEngine = undefined
+firstEngine
+  :: Double
+  -> Fen
+  -> Vector Uci
+  -> [EngineCandidate]
+  -> RGM [(Uci, TreeNode)]
+firstEngine pPrune fen ucis (ngn:_) = do
+  pAgg <- MT.fetchPAgg ucis
+  logInfoN $ "There are no candidates for FEN: " <> fen ^. fenL
+  logInfoN "Reverting to the top engine move"
+  let uci = ngn ^. ngnUci
+  pure
+    [( uci
+     , def & rgStats .~ mkRGStats pPrune pAgg
+           & uciPath .~ snoc ucis uci
+           & nodeFen .~ fen
+     )]
+firstEngine _ fen _ [] = do
+  logInfoN $ "There are no candidates for FEN: " <> fen ^. fenL
+  logInfoN "Nor are there any engine moves."
+  pure []
 
 injectEngine :: [EngineCandidate] -> (Uci, TreeNode) -> (Uci, TreeNode)
 injectEngine nCands stats@(uci, _)

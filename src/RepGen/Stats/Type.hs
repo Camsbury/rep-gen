@@ -36,15 +36,22 @@ oppWins :: Color -> Lens' NodeStats RGStat
 oppWins White = blackWins
 oppWins Black = whiteWins
 
+type ProbPrune = Double
+type ProbAgg   = Double
+
 data RGStats
   = RGStats
   { _lichessStats :: Maybe NodeStats
   , _mastersStats :: Maybe NodeStats
   , _score        :: Maybe RGStat
-  , _probPrune    :: Double
-  , _probAgg      :: Double
+  , _probPrune    :: ProbPrune
+  , _probAgg      :: ProbAgg
   } deriving (Show, Eq)
 makeLenses ''RGStats
+
+-- | Make an RGStats given a 'ProbPrune' and a 'ProbAgg'
+mkRGStats :: ProbPrune -> ProbAgg -> RGStats
+mkRGStats = RGStats Nothing Nothing Nothing
 
 instance Default RGStats where
   def = RGStats Nothing Nothing Nothing 1 1

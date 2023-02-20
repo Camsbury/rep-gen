@@ -8,7 +8,7 @@ import RepGen.Type
 data EnumData
   = EnumData
   { _edUcis     :: Vector Uci
-  , _edProbP     :: Double
+  , _edProbP    :: Double
   , _edDepth    :: Int
   , _edIsPruned :: Bool
   } deriving (Show, Eq)
