@@ -8,6 +8,7 @@ module RepGen.Action.TransStats
 import RepGen.Monad
 import RepGen.Type
 import RepGen.State.Type
+import RepGen.MoveTree
 import RepGen.MoveTree.Type
 import RepGen.Stats.Type
 import RepGen.Strategy
@@ -36,7 +37,7 @@ runAction ucis = do
     <- use
     $ moveTree
     . MT.traverseUcis ucis
-    . responses
+    . to validChildren
   (choiceUci, child) <- applyStrategy children
   -- NOTE: these are something like natural transformations?
 

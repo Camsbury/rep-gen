@@ -26,3 +26,12 @@ fetchPAgg :: Vector Uci -> RGM Double
 fetchPAgg ucis
   = throwMaybe ("Node doesn't exist at: " <> intercalate "," ucis)
   <=< preuse $ moveTree . traverseUcis ucis . rgStats . probAgg
+
+-- | Get valid children for a node
+validChildren :: TreeNode -> Vector (Uci, TreeNode)
+validChildren node
+  = fromList
+  $ node
+  ^.. responses
+  . folded
+  . filtered (\x -> x ^. _2 . removed)

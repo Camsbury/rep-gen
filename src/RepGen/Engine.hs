@@ -21,6 +21,7 @@ import qualified Data.Aeson.Types as J
 --------------------------------------------------------------------------------
 
 -- | Convert a 'Fen' into a Vector/sequence of 'EngineCandidate'
+-- FIXME: update to use the cloud cache and revert to the engine if empty
 fenToEngineCandidates
   :: Fen
   -> RGM [EngineCandidate]

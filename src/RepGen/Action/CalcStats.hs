@@ -6,6 +6,7 @@ module RepGen.Action.CalcStats
 
 import RepGen.Type
 import RepGen.Monad
+import RepGen.MoveTree
 import RepGen.MoveTree.Type
 import RepGen.State.Type
 import RepGen.Stats.Type
@@ -63,7 +64,7 @@ calcNodeStats ucis statsLens = do
     <- use
     $ moveTree
     . MT.traverseUcis ucis
-    . responses
+    . to validChildren
   let cWhite :: Double = childrenStat children statsLens $ whiteWins . nom
   let cWhiteAgg :: Double = childrenStat children statsLens $ whiteWins . agg
   let cBlack = childrenStat children statsLens $ blackWins . nom
@@ -113,7 +114,7 @@ calcScore ucis = do
     <- use
     $ moveTree
     . MT.traverseUcis ucis
-    . responses
+    . to validChildren
   let cScoreAgg
         = sum
         $ children
