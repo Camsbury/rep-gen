@@ -11,6 +11,7 @@ import RepGen.MoveTree.Type
 import RepGen.State.Type
 --------------------------------------------------------------------------------
 import qualified RepGen.Strategy as Strat
+import qualified RepGen.Export as X
 --------------------------------------------------------------------------------
 runAction :: Vector Uci -> RGM ()
 runAction ucis = do
@@ -32,7 +33,7 @@ runAction ucis = do
 
   actionStack %= (toActions newUcis ++)
 
-  -- FIXME: export the state of the tree
+  X.exportTree
 
   logInfoN
     $ "The tree has been pruned to: "

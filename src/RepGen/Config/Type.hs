@@ -85,7 +85,3 @@ instance Default RGConfig where
       , _searchDepth     = 5
       , _strategy        = MaxWinOverLoss
       }
-
--- | TODO: will take things like move lists and overrides to create the initial config
-mkConfig :: RGConfig
-mkConfig = undefined
