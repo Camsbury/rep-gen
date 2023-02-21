@@ -156,14 +156,17 @@ initialStats
     , MonadError  RGError  m
     , MonadIO m
     )
-  => m RGStats
-initialStats = do
-  lcStats    <- fmap rawToNode . historicMoves =<< getLichessParams def
-  mStats     <- fmap rawToNode . historicMoves =<< getMastersParams def
+  => Fen
+  -> Double
+  -> m RGStats
+initialStats fen pAgg = do
+  lcStats    <- fmap rawToNode . historicMoves =<< getLichessParams fen
+  mStats     <- fmap rawToNode . historicMoves =<< getMastersParams fen
   useMasters <- view mastersP
   pure $ def
        & lichessStats ?~ lcStats
        & mastersStats .~ bool Nothing (Just mStats) useMasters
+       & probAgg .~ pAgg * (lcStats ^. prob)
 
 rawToNode :: RawStats -> NodeStats
 rawToNode rs = NodeStats whiteS blackS 1 total
