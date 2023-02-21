@@ -1,22 +1,21 @@
+--------------------------------------------------------------------------------
 module RepGen.Lichess.History
   ( module RepGen.Lichess.History.Type
   , lichessMoves
   , maybeMastersMoves
+  , initialStats
   ) where
-
+--------------------------------------------------------------------------------
 import RepGen.Config.Type
 import RepGen.Lichess.History.Type
-import RepGen.Monad
 import RepGen.Stats
 import RepGen.Stats.Type
 import RepGen.Type
+--------------------------------------------------------------------------------
 import qualified Control.Concurrent as C
 import qualified Data.Aeson as J
 import qualified Web
-
--- hitting https://explorer.lichess.ovh/{masters,lichess,player}
-
---- type has uci, white, black, play-count, prob
+--------------------------------------------------------------------------------
 
 baseUrl :: Text
 baseUrl = "https://explorer.lichess.ovh/"
@@ -26,7 +25,13 @@ oneMinute :: Int
 oneMinute = 60 * 1000 * 1000
 
 class HistoricFetchable a where
-  historicMoves :: a -> RGM RawStats
+  historicMoves
+    :: ( MonadReader RGConfig m
+      , MonadError  RGError  m
+      , MonadIO m
+      )
+    => a
+    -> m RawStats
 
 instance HistoricFetchable UniversalParams where
   historicMoves params
@@ -59,7 +64,14 @@ fromLichessParams params
   ] <> fromMastersParams (params ^. universals)
 
 -- | get historic Lichess moves for masters games
-fetchMovesFor :: Map Text Text -> Text -> RGM RawStats
+fetchMovesFor
+  :: ( MonadReader RGConfig m
+    , MonadError  RGError  m
+    , MonadIO m
+    )
+  => Map Text Text
+  -> Text
+  -> m RawStats
 fetchMovesFor params path = do
   dbPath <- view cachePath
   (statusCode, response)
@@ -86,14 +98,20 @@ fetchMovesFor params path = do
          <> tshow params
          )
 
-filterMinTotal :: RawStats -> RGM (Maybe RawStats)
+filterMinTotal
+  :: (MonadReader RGConfig m, MonadIO m)
+  => RawStats
+  -> m (Maybe RawStats)
 filterMinTotal rs = do
   mtm <- view minTotalMasters
   pure $ if rs ^. rawTotal > mtm
     then Just rs
     else Nothing
 
-getLichessParams :: Fen -> RGM LichessParams
+getLichessParams
+  :: (MonadReader RGConfig m, MonadIO m)
+  => Fen
+  -> m LichessParams
 getLichessParams fen = do
   hmc <- view $ historyConfig . historyMoveCount
   speeds <- view $ historyConfig . historySpeeds
@@ -101,19 +119,57 @@ getLichessParams fen = do
   let ups = UniversalParams hmc fen
   pure $ LichessParams ratings speeds ups
 
-lichessMoves :: Fen -> RGM [(Uci, NodeStats)]
+lichessMoves
+  :: ( MonadReader RGConfig m
+    , MonadError  RGError  m
+    , MonadIO m
+    )
+  => Fen
+  -> m [(Uci, NodeStats)]
 lichessMoves = fmap parseStats . historicMoves <=< getLichessParams
 
-getMastersParams :: Fen -> RGM UniversalParams
+getMastersParams
+  :: (MonadReader RGConfig m, MonadIO m)
+  => Fen
+  -> m UniversalParams
 getMastersParams fen = do
   hmc <- view $ historyConfig . historyMoveCount
   pure $ UniversalParams hmc fen
 
 -- | Fetches masters moves if they meet our criteria
-maybeMastersMoves :: Fen -> RGM (Maybe [(Uci, NodeStats)])
+maybeMastersMoves
+  :: ( MonadReader RGConfig m
+    , MonadError  RGError  m
+    , MonadIO m
+    )
+  => Fen
+  -> m (Maybe [(Uci, NodeStats)])
 maybeMastersMoves fen = do
   useM <- view mastersP
   mps <- getMastersParams fen
   if useM
     then fmap (fmap parseStats) . filterMinTotal =<< historicMoves mps
     else pure Nothing
+
+initialStats
+  :: ( MonadReader RGConfig m
+    , MonadError  RGError  m
+    , MonadIO m
+    )
+  => m RGStats
+initialStats = do
+  lcStats    <- fmap rawToNode . historicMoves =<< getLichessParams def
+  mStats     <- fmap rawToNode . historicMoves =<< getMastersParams def
+  useMasters <- view mastersP
+  pure $ def
+       & lichessStats ?~ lcStats
+       & mastersStats .~ bool Nothing (Just mStats) useMasters
+
+rawToNode :: RawStats -> NodeStats
+rawToNode rs = NodeStats whiteS blackS 1 total
+  where
+    white = rs ^. whiteTotal
+    black = rs ^. blackTotal
+    total = rs ^. rawTotal
+    whiteS = mkRGStat $ white /. total
+    blackS = mkRGStat $ black /. total

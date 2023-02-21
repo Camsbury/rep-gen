@@ -15,8 +15,8 @@ parseStatsMove :: Int -> RawStatsMove -> (Uci, NodeStats)
 parseStatsMove totalCount rs =
   ( rs ^. rawUci
   , NodeStats
-      { _whiteWins = RGStat whiteP whiteP
-      , _blackWins = RGStat blackP blackP
+      { _whiteWins = mkRGStat whiteP
+      , _blackWins = mkRGStat blackP
       , _prob      = total /. totalCount
       , _playCount = total
       }

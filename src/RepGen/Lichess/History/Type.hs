@@ -94,6 +94,8 @@ instance FromJSON RawStatsMove where
 data RawStats
   = RawStats
   { _rawTotal      :: Int
+  , _whiteTotal    :: Int
+  , _blackTotal    :: Int
   , _rawStatsMoves :: [RawStatsMove]
   } deriving (Eq, Show)
 makeLenses ''RawStats
@@ -105,6 +107,6 @@ instance FromJSON RawStats where
     draws <- v .: "draws"
     moves <- v .: "moves"
     statsMoves <- traverse parseJSON moves
-    pure $ RawStats (white + black + draws) statsMoves
+    pure $ RawStats (white + black + draws) white black statsMoves
 
 

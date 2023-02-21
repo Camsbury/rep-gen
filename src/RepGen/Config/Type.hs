@@ -56,7 +56,7 @@ data RGConfig
   , _initRespProb    :: Double
   , _asymRespProb    :: Double
   , _minTotalMasters :: Int
-  , _moves           :: Vector San
+  , _startingMoves   :: Vector San
   , _overridesL      :: Map Fen Uci
   , _searchDepth     :: Int
   , _strategy        :: RGStrategy
@@ -80,8 +80,12 @@ instance Default RGConfig where
       , _initRespProb    = 0.015
       , _asymRespProb    = 0.25
       , _minTotalMasters = 500
-      , _moves           = []
+      , _startingMoves   = []
       , _overridesL      = mempty
       , _searchDepth     = 5
       , _strategy        = MaxWinOverLoss
       }
+
+-- | TODO: will take things like move lists and overrides to create the initial config
+mkConfig :: RGConfig
+mkConfig = undefined

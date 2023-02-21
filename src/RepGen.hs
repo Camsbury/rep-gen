@@ -1,3 +1,4 @@
+--------------------------------------------------------------------------------
 module RepGen
   ( module RepGen.PyChess
   , module RepGen.Type
@@ -7,7 +8,7 @@ module RepGen
   , module RepGen.Monad
   , buildRepertoire
   ) where
-
+--------------------------------------------------------------------------------
 import RepGen.Action (runAction)
 import RepGen.Config.Type
 import RepGen.Lichess.History
@@ -19,6 +20,7 @@ import RepGen.PyChess
 import RepGen.Type
 import qualified Database.Persist.Sqlite as DP
 import qualified Web
+--------------------------------------------------------------------------------
 
 -- | build the move tree for the repertoire
 buildTree :: RGM TreeNode
@@ -34,10 +36,11 @@ buildRepertoire rgConfig
   . runStdoutLoggingT
   . runExceptT
   . (`runReaderT` rgConfig)
-  . (`runStateT` initState)
   $ do
-    dbPath <- view cachePath
-    liftIO . DP.runSqlite dbPath $ DP.runMigration Web.migrateAll
-    tree <- buildTree
-    undefined -- TODO: Finish this function by exporting or whatever
+    s <- initState
+    (`runStateT` s) $ do
+      dbPath <- view cachePath
+      liftIO . DP.runSqlite dbPath $ DP.runMigration Web.migrateAll
+      tree <- buildTree
+      undefined -- TODO: Finish this function by exporting or whatever
 
