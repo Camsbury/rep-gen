@@ -14,10 +14,9 @@ import qualified RepGen.Strategy as Strat
 --------------------------------------------------------------------------------
 runAction :: Vector Uci -> RGM ()
 runAction ucis = do
-  -- TODO: pull parent as node
   let err = "Node to prune does not exist at: " <> intercalate "," ucis
   node <- throwMaybe err <=< preuse $ moveTree . traverseUcis ucis
-  let children = node ^. responses
+  let children = node ^.. responses . folded
   (choiceUci, _) <- Strat.applyStrategy children
   -- "remove" the others
   moveTree

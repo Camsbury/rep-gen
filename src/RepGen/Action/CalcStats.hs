@@ -60,11 +60,7 @@ calcNodeStats ucis statsLens = do
     <=< preuse
     $ moveTree
     . MT.traverseUcis ucis
-  children
-    <- use
-    $ moveTree
-    . MT.traverseUcis ucis
-    . to validChildren
+  let children = fromList $ parent ^.. validChildrenT
   let cWhite :: Double = childrenStat children statsLens $ whiteWins . nom
   let cWhiteAgg :: Double = childrenStat children statsLens $ whiteWins . agg
   let cBlack = childrenStat children statsLens $ blackWins . nom
@@ -82,7 +78,7 @@ calcNodeStats ucis statsLens = do
 -- empty probabilities mean we don't want to take the child into account
 -- so we use 0
 probNonChild
-  :: Vector (Uci, TreeNode)
+  :: [(Uci, TreeNode)]
   -> Double
 probNonChild children
   = (1 -)
@@ -110,11 +106,7 @@ calcScore ucis = do
     <=< preuse
     $ moveTree
     . MT.traverseUcis ucis
-  children
-    <- use
-    $ moveTree
-    . MT.traverseUcis ucis
-    . to validChildren
+  let children = parent ^.. validChildrenT
   let cScoreAgg
         = sum
         $ children

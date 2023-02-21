@@ -37,7 +37,7 @@ runAction ucis = do
     <- use
     $ moveTree
     . MT.traverseUcis ucis
-    . to validChildren
+    . to collectValidChildren
   (choiceUci, child) <- applyStrategy children
   -- NOTE: these are something like natural transformations?
 
