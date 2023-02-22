@@ -46,8 +46,8 @@ data RGConfig
   , _engineP         :: Bool
   , _engineConfig    :: EngineConfig
   , _exportP         :: Bool
-  , _exportPgnPath   :: Maybe Text
-  , _exportTreePath  :: Maybe Text
+  , _exportPgnPath   :: Text
+  , _exportJSONPath  :: Text
   , _historyConfig   :: HistoryConfig
   , _mastersP        :: Bool
   , _maxCandBreadth  :: Int
@@ -70,8 +70,8 @@ instance Default RGConfig where
       , _engineP         = True
       , _engineConfig    = def
       , _exportP         = True
-      , _exportPgnPath   = Nothing
-      , _exportTreePath  = Nothing
+      , _exportPgnPath   = "/tmp/move-tree.pgn"
+      , _exportJSONPath  = "/tmp/move-tree.json"
       , _historyConfig   = def
       , _mastersP        = True
       , _maxCandBreadth  = 5

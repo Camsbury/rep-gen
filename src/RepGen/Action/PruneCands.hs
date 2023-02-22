@@ -34,7 +34,7 @@ runAction ucis = do
 
   actionStack %= (toActions newUcis ++)
 
-  X.exportTree
+  X.exportJSON
 
   logInfoN
     $ "The tree has been pruned to: "
