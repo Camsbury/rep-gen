@@ -1,8 +1,14 @@
 {-# LANGUAGE TemplateHaskell #-}
-module RepGen.Type where
-
 --------------------------------------------------------------------------------
---- Types
+module RepGen.Type where
+--------------------------------------------------------------------------------
+import Data.Aeson
+  ( FromJSON(..)
+  , ToJSON(..)
+  , withText
+  )
+--------------------------------------------------------------------------------
+import qualified Data.Aeson as J
 --------------------------------------------------------------------------------
 
 data Color
@@ -23,3 +29,9 @@ makeLenses ''Fen
 
 instance Default Fen where
   def = Fen "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+
+instance ToJSON Fen where
+  toJSON (Fen fen) = J.String fen
+
+instance FromJSON Fen where
+  parseJSON = withText "Fen" $ \t -> pure $ Fen t

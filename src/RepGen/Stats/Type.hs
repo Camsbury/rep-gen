@@ -5,6 +5,16 @@ module RepGen.Stats.Type where
 --------------------------------------------------------------------------------
 import RepGen.Type
 --------------------------------------------------------------------------------
+import Data.Aeson
+  ( FromJSON(..)
+  , ToJSON(..)
+  , object
+  , withObject
+  , (.:)
+  )
+--------------------------------------------------------------------------------
+import qualified Data.Aeson as J
+--------------------------------------------------------------------------------
 
 -- | Provide a nominal and aggregate statistic
 data RGStat
@@ -55,3 +65,53 @@ mkRGStats = RGStats Nothing Nothing Nothing
 
 instance Default RGStats where
   def = RGStats Nothing Nothing Nothing 1 1
+
+instance ToJSON RGStats where
+  toJSON stats =
+    object
+      [ "lichessStats" J..= view lichessStats stats
+      , "mastersStats" J..= view mastersStats stats
+      , "rgScore"      J..= view rgScore      stats
+      , "probPrune"    J..= view probPrune    stats
+      , "probAgg"      J..= view probAgg      stats
+      ]
+
+instance ToJSON NodeStats where
+  toJSON ns =
+    object
+      [ "whiteWins" J..= view whiteWins ns
+      , "blackWins" J..= view blackWins ns
+      , "prob"      J..= view prob      ns
+      , "playCount" J..= view playCount ns
+      ]
+
+instance ToJSON RGStat where
+  toJSON stat =
+    object
+      [ "nom" J..= view nom stat
+      , "agg" J..= view agg stat
+      ]
+
+instance FromJSON RGStats where
+  parseJSON
+    = withObject "RGStats"
+    $ \o -> RGStats
+      <$> (o .: "lichessStats")
+      <*> (o .: "mastersStats")
+      <*> (o .: "rgScore")
+      <*> (o .: "probPrune")
+      <*> (o .: "probAgg")
+
+instance FromJSON NodeStats where
+  parseJSON
+    = withObject "NodeStats"
+    $ \o -> NodeStats
+      <$> (o .: "whiteWins")
+      <*> (o .: "blackWins")
+      <*> (o .: "prob")
+      <*> (o .: "playCount")
+
+instance FromJSON RGStat where
+  parseJSON
+    = withObject "RGStat"
+    $ \o -> RGStat <$> (o .: "nom") <*> (o .: "agg")
