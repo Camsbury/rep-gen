@@ -14,6 +14,15 @@ import RepGen.Stats.Type
 import qualified RepGen.MoveTree as MT
 --------------------------------------------------------------------------------
 
+-- | Calculate stats for a candidate node
+-- given the weighted stats of its children
+runAction :: Vector Uci -> RGM ()
+runAction ucis = do
+  logDebugN $ "Calculating Stats for: " <> tshow ucis
+  calcNodeStats ucis lichessStats
+  calcNodeStats ucis mastersStats
+  calcScore ucis
+
 -- | Calculate a stat weighting
 weightedStat
   :: Lens' NodeStats Double
@@ -56,7 +65,7 @@ calcNodeStats
   -> RGM ()
 calcNodeStats ucis statsLens = do
   parent
-    <- throwMaybe ("No node exists for ucis: " <> intercalate ","  ucis)
+    <- throwMaybe ("No node exists for ucis: " <> tshow  ucis)
     <=< preuse
     $ moveTree
     . MT.traverseUcis ucis
@@ -102,7 +111,7 @@ calcScore
   -> RGM ()
 calcScore ucis = do
   parent
-    <- throwMaybe ("No node exists for ucis: " <> intercalate "," ucis)
+    <- throwMaybe ("No node exists for ucis: " <> tshow ucis)
     <=< preuse
     $ moveTree
     . MT.traverseUcis ucis
@@ -116,12 +125,3 @@ calcScore ucis = do
                  * fromMaybe 0 (n ^? rgStats . lichessStats . _Just . prob))
   let pScore = parent ^? rgStats . rgScore . _Just . agg
   setScore ((\pS -> cScoreAgg + probNonChild children * pS) <$> pScore) ucis
-
--- | Calculate stats for a candidate node
--- given the weighted stats of its children
-runAction :: Vector Uci -> RGM ()
-runAction ucis = do
-  logDebugN $ "Calculating Stats for: " <> intercalate "," ucis
-  calcNodeStats ucis lichessStats
-  calcNodeStats ucis mastersStats
-  calcScore ucis

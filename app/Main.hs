@@ -56,5 +56,6 @@ main = do
   -- print historicMoves
 
   buildRepertoire $
-    def & colorL       .~ Black
+    def & colorL       .~ White
+        & searchDepth  .~ 1
         & engineConfig . engineAllowableLoss .~ 0.05

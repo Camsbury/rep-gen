@@ -15,30 +15,41 @@ import qualified RepGen.Export as X
 --------------------------------------------------------------------------------
 runAction :: Vector Uci -> RGM ()
 runAction ucis = do
-  logDebugN $ "Pruning Candidates for: " <> intercalate "," ucis
-  let err = "Node to prune does not exist at: " <> intercalate "," ucis
+  logDebugN $ "Pruning Candidates for: " <> tshow ucis
+  let err = "Node to prune does not exist at: " <> tshow ucis
   node <- throwMaybe err <=< preuse $ moveTree . traverseUcis ucis
   let children = node ^.. responses . folded
-  (choiceUci, _) <- Strat.applyStrategy children
-  -- "remove" the others
-  moveTree
-    . traverseUcis ucis
-    . responses
-    . traversed
-    . filtered (\x -> x ^. _1 /= choiceUci)
-    . _2
-    . removed
-    .= True
+  -- logDebugN $ "Children: " <> tshow children
 
-  let newUcis = snoc ucis choiceUci
+  case fromNullable children of
+    Nothing
+      -> logDebugN
+      $ "No children when pruning at: "
+      <> tshow ucis
+    Just _ -> do
+      (choiceUci, _) <- Strat.applyStrategy children
+      -- "remove" the others
+      moveTree
+        . traverseUcis ucis
+        . responses
+        . traversed
+        . filtered (\x -> x ^. _1 /= choiceUci)
+        . _2
+        . removed
+        .= True
 
-  actionStack %= (toActions newUcis ++)
+      let newUcis = snoc ucis choiceUci
 
-  X.exportJSON
+      let actions = toActions newUcis
+      -- logDebugN $ "Actions: " <> tshow actions
 
-  logInfoN
-    $ "The tree has been pruned to: "
-    <> intercalate "," newUcis
+      actionStack %= (actions ++)
+
+      X.exportJSON
+
+      logInfoN
+        $ "The tree has been pruned to: "
+        <> tshow newUcis
 
 toActions :: Vector Uci -> [RGAction]
 toActions ucis

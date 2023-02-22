@@ -1,3 +1,4 @@
+--------------------------------------------------------------------------------
 module Prelude
   ( module ClassyPrelude
   , module Text.Pretty.Simple
@@ -17,9 +18,9 @@ module Prelude
   , runStateT
   , runStdoutLoggingT
   ) where
-
+--------------------------------------------------------------------------------
 import ClassyPrelude
-
+--------------------------------------------------------------------------------
 import Control.Lens.Operators hiding ((<|), (<.>))
 import Control.Lens.Combinators hiding
   ( children
@@ -36,6 +37,7 @@ import Control.Monad.State
 import Control.Monad.Logger
 import Data.Default
 import Text.Pretty.Simple hiding (Color(..))
+--------------------------------------------------------------------------------
 
 -- | throws error if Nothing
 throwMaybe :: MonadError e m => e -> Maybe a -> m a

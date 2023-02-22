@@ -29,7 +29,7 @@ import qualified Database.Persist as DP
 getRequest
   :: Url
   -> Map Text Text
-  -> IO (Int, Text)
+  -> IO (Int, ByteString)
 getRequest url queryParams = do
   manager <- H.newManager H.tlsManagerSettings
   request <- H.parseRequest . unpack $ url
@@ -42,33 +42,33 @@ getRequest url queryParams = do
   let requestWithParams = H.setQueryString bsParams request
   response <- H.httpLbs requestWithParams manager
   let code = statusCode $ H.responseStatus response
-  let responseBody = decodeUtf8 . toStrict $ H.responseBody response
+  let responseBody = toStrict $ H.responseBody response
   pure (code, responseBody)
 
 share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
 Cache
     key Text
-    response Text
+    response ByteString
     deriving Eq Show
 |]
 
 mkCacheKey :: Text -> Map Text Text -> Text
 mkCacheKey url qps = "cache:" <> url <> ":" <> tshow qps
 
-cacheGet :: Text -> Text -> Map Text Text -> IO (Maybe Text)
+cacheGet :: Text -> Text -> Map Text Text -> IO (Maybe ByteString)
 cacheGet dbPath url query =
     runSqlite dbPath $ do
         result <- DP.selectFirst [CacheKey ==. mkCacheKey url query] []
         pure $ (\(Entity _ val) -> cacheResponse val) <$> result
 
-cacheSet :: Text -> Text -> Map Text Text -> Text -> IO ()
+cacheSet :: Text -> Text -> Map Text Text -> ByteString -> IO ()
 cacheSet dbPath url query response =
     runSqlite dbPath $ do
         let key = mkCacheKey url query
         DP.deleteWhere [CacheKey ==. key]
         void $ DP.insert (Cache key response)
 
-cachedGetRequest :: Text -> Text -> Map Text Text -> IO (Int, Text)
+cachedGetRequest :: Text -> Text -> Map Text Text -> IO (Int, ByteString)
 cachedGetRequest dbPath url queryParams = do
     cachedResult <- cacheGet dbPath url queryParams
     case cachedResult of

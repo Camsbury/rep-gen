@@ -1,6 +1,7 @@
 --------------------------------------------------------------------------------
 module RepGen.Strategy
-  ( module RepGen.Strategy
+  ( applyStrategy
+  , strategicCompare
   ) where
 --------------------------------------------------------------------------------
 
@@ -12,6 +13,25 @@ import RepGen.Stats.Type
 import RepGen.Type
 --------------------------------------------------------------------------------
 
+-- | Apply a strategy to select the best move option
+applyStrategy :: [(Uci, TreeNode)] -> RGM (Uci, TreeNode)
+applyStrategy options = do
+  sComp <- strategicCompare <$> view strategy <*> view colorL
+  -- FIXME: update the callsite of this function so this never happens
+  opts <- throwMaybe "No moves to apply the strategy to!"
+       $ fromNullable options
+  let choice = maximumBy sComp opts
+  pure choice
+
+-- | Get the 'Ordering' needed to fulfill the chosen 'RGStrategy'
+strategicCompare
+  :: RGStrategy
+  -> Color
+  -> (Uci, TreeNode)
+  -> (Uci, TreeNode)
+  -> Ordering
+strategicCompare MaxWinOverLoss = maxWinOverLoss
+strategicCompare MinLoss        = minLoss
 
 -- | Comparison for MinLoss
 minLoss :: Color -> (Uci, TreeNode) -> (Uci, TreeNode) -> Ordering
@@ -48,22 +68,3 @@ maxWinOverLoss c (_, a) (_, b) = fromMaybe EQ $ compM <|> comp
       l /? w
     compM = compare <$> lossWinMA <*> lossWinMB
     comp = compare <$> lossWinA <*> lossWinB
-
--- | Get the 'Ordering' needed to fulfill the chosen 'RGStrategy'
-strategicCompare
-  :: RGStrategy
-  -> Color
-  -> (Uci, TreeNode)
-  -> (Uci, TreeNode)
-  -> Ordering
-strategicCompare MaxWinOverLoss = maxWinOverLoss
-strategicCompare MinLoss        = minLoss
-
--- | Apply a strategy to select the best move option
-applyStrategy :: [(Uci, TreeNode)] -> RGM (Uci, TreeNode)
-applyStrategy options = do
-  sComp <- strategicCompare <$> view strategy <*> view colorL
-  opts <- throwMaybe "No options to apply the strategy to!"
-       $ fromNullable options
-  let choice = maximumBy sComp opts
-  pure choice

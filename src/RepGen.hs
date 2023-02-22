@@ -5,6 +5,7 @@ module RepGen
   , module RepGen.Config.Type
   , module RepGen.Lichess.History
   , module RepGen.State.Type
+  , module RepGen.Strategy.Type
   , module RepGen.Monad
   , buildRepertoire
   ) where
@@ -15,6 +16,7 @@ import RepGen.Lichess.History
 import RepGen.Monad
 import RepGen.State (initState)
 import RepGen.State.Type
+import RepGen.Strategy.Type
 import RepGen.PyChess
 import RepGen.Type
 
@@ -28,20 +30,20 @@ import qualified Web
 buildRepertoire :: RGConfig -> IO ()
 buildRepertoire rgConfig
   = void
-  . runStdoutLoggingT
+  . either print pure
+  <=< runStdoutLoggingT
   . runExceptT
   . (`runReaderT` rgConfig)
   $ do
     dbPath <- view cachePath
     liftIO . DP.runSqlite dbPath $ DP.runMigration Web.migrateAll
-    s <- initState
-    (`runStateT` s) $ do
-      buildTree
-      X.exportPgn
+    evalStateT (buildTree >> X.exportPgn) =<< initState
 
 buildTree :: RGM ()
 buildTree = do
   action <- uses actionStack . preview $ ix 0
   actionStack %= fromMaybe empty . tailMay
+  -- aStack <- use actionStack
+  -- logDebugN $ tshow aStack
   maybe (pure ()) ((>> buildTree) . runAction) action
 

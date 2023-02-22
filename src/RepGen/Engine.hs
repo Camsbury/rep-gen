@@ -35,6 +35,8 @@ lcDeepBreadth = 5
 lcWideBreadth :: Int
 lcWideBreadth = 10
 
+-- NOTE: currently just stops at 5 if there are no "wide" candidates,
+-- so not as many options
 fenToEngineCandidates
   :: Fen
   -> RGM [EngineCandidate]
@@ -78,10 +80,6 @@ fenToLocalCandidates (Fen fen) = do
     . J.eitherDecode
     $ fromString jsonString
 
--- FIXME: need to pass moveCount and maybe call twice
--- , once with 5
--- , and one with the Config move count
--- maybe have a separate move count in the config for this
 fenToCloudCandidates
   :: ( MonadReader RGConfig m
     , MonadError  RGError  m
@@ -102,8 +100,8 @@ fenToCloudCandidates (Fen fen) breadth = do
     200 -> throwEither
         . bimap pack (pure . view cloudCands)
         . J.eitherDecode
-        . fromString
-        $ unpack response
+        . fromStrict
+        $ response
     404 -> do
       logInfoN
         $ "FEN missing from cache: "

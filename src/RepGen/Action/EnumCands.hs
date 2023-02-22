@@ -3,7 +3,6 @@ module RepGen.Action.EnumCands
   ( runAction
   ) where
 --------------------------------------------------------------------------------
-
 import RepGen.Action.Type
 import RepGen.Config.Type
 import RepGen.Engine.Type
@@ -18,23 +17,30 @@ import qualified RepGen.PyChess         as PyC
 import qualified RepGen.Engine          as Ngn
 import qualified RepGen.MoveTree        as MT
 import qualified RepGen.Lichess.History as H
+import qualified RepGen.Strategy        as Strat
 --------------------------------------------------------------------------------
 
 -- | Action runner to enumerate move candidates
 runAction :: EnumData -> RGM ()
 runAction action = do
   let ucis = action ^. edUcis
-  logDebugN $ "Enumerating Candidates for: " <> intercalate "," ucis
+  logDebugN $ "Enumerating Candidates for: " <> tshow ucis
   candidates <- fetchCandidates action
   moveTree . MT.traverseUcis ucis . responses .= fromList candidates
   sDepth <- view searchDepth
   let addActions
-        = action ^. edIsPruned && length candidates == 1
-        || action ^. edDepth == sDepth
-  when addActions
-    $ actionStack
-    %= ((toAction action =<< reverse (candidates ^.. folded . _2)) ++)
+        = (not (action ^. edIsPruned) || length candidates /= 1)
+        && action ^. edDepth /= sDepth
+  -- logDebugN $ "candidates: " <> tshow candidates
+  -- logDebugN $ "pruned?: " <> tshow (action ^. edIsPruned)
+  -- logDebugN $ "depth: " <> tshow (action ^. edDepth)
+  -- logDebugN $ "search depth: " <> tshow sDepth
+  -- logDebugN $ "addActions: " <> tshow addActions
+  let actions = toAction action =<< reverse (candidates ^.. folded . _2)
+  -- logDebugN $ "Actions: " <> tshow actions
+  when addActions $ actionStack %= (actions ++)
 
+-- TODO: remove all engine interaction here and move to Strategy
 fetchCandidates :: EnumData -> RGM [(Uci, TreeNode)]
 fetchCandidates action = do
   let ucis       = action ^. edUcis
@@ -44,15 +50,22 @@ fetchCandidates action = do
   maybeMM        <- H.maybeMastersMoves fen
   engineMoves    <- Ngn.fenToEngineCandidates fen
   pAgg           <- MT.fetchPAgg ucis
+  color          <- view colorL
+  strat          <- view strategy
+  breadth        <- view maxCandBreadth
   let candidates = fromMaybe lcM maybeMM
   let isMasters  = isJust maybeMM
-  candNodes
-    -- mapped over the monad and the list
-    <- f2map (injectEngine engineMoves)
-    . f2map (applyWhen isMasters $ injectLichess lcM)
-    . f2map (initNode isMasters pAgg pPrune fen ucis)
-    . maybe (filterCandidates candidates engineMoves) pure
+  initCands
+    <- maybe (filterCandidates candidates engineMoves) pure
     <=< findUci candidates fen <=< preview $ overridesL . ix fen
+   -- mapped over the monad and the list
+  let candNodes
+        =   take breadth
+        .   sortBy (Strat.strategicCompare strat color)
+        $   injectEngine engineMoves
+        .   applyWhen isMasters (injectLichess lcM)
+        .   initNode isMasters pAgg pPrune fen ucis
+        <$> initCands
   if null candNodes
     then firstEngine pPrune fen ucis engineMoves
     else pure candNodes
@@ -73,7 +86,7 @@ firstEngine
   -> RGM [(Uci, TreeNode)]
 firstEngine pPrune fen ucis (ngn:_) = do
   pAgg <- MT.fetchPAgg ucis
-  logInfoN $ "There are no candidates for FEN: " <> fen ^. fenL
+  logWarnN $ "There are no candidates for FEN: " <> fen ^. fenL
   logInfoN "Reverting to the top engine move"
   let uci = ngn ^. ngnUci
   pure

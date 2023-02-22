@@ -22,21 +22,28 @@ import qualified RepGen.MoveTree as MT
 runAction :: EnumData -> RGM ()
 runAction action = do
   let ucis = action ^. edUcis
-  logDebugN $ "Enumerating Responses for: " <> intercalate "," ucis
+  logDebugN $ "Enumerating Responses for: " <> tshow ucis
   pAgg <- MT.fetchPAgg ucis
   processed <- processMoves action pAgg
+  -- logDebugN $ "processed: " <> tshow processed
   moveTree . MT.traverseUcis ucis . responses .= fromList processed
   toActOn <- filterMinRespProb (action ^. edProbP) pAgg processed
-  actionStack %= ((toAction action =<< reverse toActOn) ++)
+  -- logDebugN $ "To act on: " <> tshow toActOn
+  let actions = toAction action =<< toActOn
+  -- logDebugN $ "Actions: " <> tshow actions
+  actionStack %= (actions ++)
 
 -- | Action runner to initiate responses for the tree traversal
 initRunAction :: Vector Uci -> RGM ()
 initRunAction ucis = do
+  logDebugN $ "Initializing Responses for: " <> tshow ucis
   pAgg <- MT.fetchPAgg ucis
   processed <- initProcessMoves ucis pAgg
   moveTree . MT.traverseUcis ucis . responses .= fromList processed
   toActOn <- filterMinRespProb 1 pAgg processed
-  actionStack %= ((initToAction =<< reverse toActOn) ++)
+  let actions = initToAction =<< toActOn
+  -- logDebugN $ "Actions: " <> tshow actions
+  actionStack %= (actions ++)
 
 processMoves :: EnumData -> Double -> RGM [(Uci, TreeNode)]
 processMoves action pAgg = do
@@ -156,9 +163,14 @@ filterMinRespProb
   -> [(Uci, TreeNode)]
   -> RGM [TreeNode]
 filterMinRespProb pPrune pAgg resps = do
+  -- logDebugN $ "pAgg: " <> tshow pAgg
+  -- logDebugN $ "pPrune: " <> tshow pPrune
   irp <- view initRespProb
+  -- logDebugN $ "initial response probability: " <> tshow irp
   arp <- view asymRespProb
-  let minProb = exp (negate pAgg) * succ (arp + irp) + irp - 1
+  -- logDebugN $ "asymptotic response probability: " <> tshow arp
+  let minProb = exp (log (irp / arp) * pAgg) * arp
+  -- logDebugN $ "minimum response probability: " <> tshow minProb
   let f (_, rNode) =
         maybe
           False

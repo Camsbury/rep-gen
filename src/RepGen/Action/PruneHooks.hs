@@ -16,7 +16,7 @@ import RepGen.Stats.Type
 
 runAction :: Vector Uci -> RGM ()
 runAction ucis = do
-  logDebugN $ "Running Prune Hooks for: " <> intercalate "," ucis
+  logDebugN $ "Running Prune Hooks for: " <> tshow ucis
   mpa <- view minProbAgg
   moveTree
     . traverseUcis ucis
@@ -27,7 +27,10 @@ runAction ucis = do
     . removed
     .= True
   children <- use $ moveTree . traverseUcis ucis . to collectValidChildren
-  actionStack %= (toActions (children ^.. folded . _2) ++)
+
+  let actions = toActions (children ^.. folded . _2)
+  -- logDebugN $ "Actions: " <> tshow actions
+  actionStack %= (actions ++)
 
 toActions :: [TreeNode] -> [RGAction]
 toActions nodes = addHooks =<< nodes

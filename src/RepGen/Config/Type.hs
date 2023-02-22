@@ -1,9 +1,11 @@
 {-# LANGUAGE TemplateHaskell #-}
+--------------------------------------------------------------------------------
 module RepGen.Config.Type where
-
+--------------------------------------------------------------------------------
 import RepGen.Lichess.History.Type
 import RepGen.Type
 import RepGen.Strategy.Type
+--------------------------------------------------------------------------------
 
 data EngineConfig
   = EngineConfig
@@ -42,7 +44,7 @@ instance Default HistoryConfig where
 data RGConfig
   = RGConfig
   { _cachePath       :: Text
-  , _colorL           :: Color
+  , _colorL          :: Color
   , _engineP         :: Bool
   , _engineConfig    :: EngineConfig
   , _exportP         :: Bool

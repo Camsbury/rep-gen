@@ -11,9 +11,9 @@ import RepGen.State.Type
 import RepGen.MoveTree
 import RepGen.MoveTree.Type
 import RepGen.Stats.Type
-import RepGen.Strategy
 --------------------------------------------------------------------------------
 import qualified RepGen.MoveTree as MT
+import qualified RepGen.Strategy as Strat
 --------------------------------------------------------------------------------
 
 setScore :: Maybe RGStat -> Vector Uci -> RGM ()
@@ -33,28 +33,26 @@ setNodeStats (Just s) ucis nodeStats aggStats = do
 
 runAction :: Vector Uci -> RGM ()
 runAction ucis = do
-  logDebugN $ "Transferring Stats for: " <> intercalate "," ucis
+  logDebugN $ "Transferring Stats for: " <> tshow ucis
   children
     <- use
     $ moveTree
     . MT.traverseUcis ucis
     . to collectValidChildren
-  (choiceUci, child) <- applyStrategy children
-  -- NOTE: these are something like natural transformations?
 
-  setScore (child ^. rgStats . rgScore) (ucis <> [choiceUci])
-  setNodeStats
-    (child ^. rgStats . lichessStats)
-    (ucis <> [choiceUci]) lichessStats (whiteWins . agg)
-  setNodeStats
-    (child ^. rgStats . lichessStats)
-    (ucis <> [choiceUci]) lichessStats (blackWins . agg)
-  setNodeStats
-    (child ^. rgStats . mastersStats)
-    (ucis <> [choiceUci]) mastersStats (whiteWins . agg)
-  setNodeStats
-    (child ^. rgStats . mastersStats)
-    (ucis <> [choiceUci]) mastersStats (blackWins . agg)
+  when (isJust $ fromNullable children) $ do
+    (choiceUci, child) <- Strat.applyStrategy children
 
-
-
+    setScore (child ^. rgStats . rgScore) (ucis <> [choiceUci])
+    setNodeStats
+      (child ^. rgStats . lichessStats)
+      (ucis <> [choiceUci]) lichessStats (whiteWins . agg)
+    setNodeStats
+      (child ^. rgStats . lichessStats)
+      (ucis <> [choiceUci]) lichessStats (blackWins . agg)
+    setNodeStats
+      (child ^. rgStats . mastersStats)
+      (ucis <> [choiceUci]) mastersStats (whiteWins . agg)
+    setNodeStats
+      (child ^. rgStats . mastersStats)
+      (ucis <> [choiceUci]) mastersStats (blackWins . agg)

@@ -27,6 +27,7 @@ oneMinute = 60 * 1000 * 1000
 class HistoricFetchable a where
   historicMoves
     :: ( MonadReader RGConfig m
+      , MonadLogger m
       , MonadError  RGError  m
       , MonadIO m
       )
@@ -66,6 +67,7 @@ fromLichessParams params
 -- | get historic Lichess moves for masters games
 fetchMovesFor
   :: ( MonadReader RGConfig m
+    , MonadLogger m
     , MonadError  RGError  m
     , MonadIO m
     )
@@ -82,8 +84,8 @@ fetchMovesFor params path = do
     200 -> throwEither
         . first pack
         . J.eitherDecode
-        . fromString
-        $ unpack response
+        . fromStrict
+        $ response
     429 -> do
       liftIO $ C.threadDelay oneMinute
       fetchMovesFor params path
@@ -121,6 +123,7 @@ getLichessParams fen = do
 
 lichessMoves
   :: ( MonadReader RGConfig m
+    , MonadLogger m
     , MonadError  RGError  m
     , MonadIO m
     )
@@ -139,6 +142,7 @@ getMastersParams fen = do
 -- | Fetches masters moves if they meet our criteria
 maybeMastersMoves
   :: ( MonadReader RGConfig m
+    , MonadLogger m
     , MonadError  RGError  m
     , MonadIO m
     )
@@ -153,6 +157,7 @@ maybeMastersMoves fen = do
 
 initialStats
   :: ( MonadReader RGConfig m
+    , MonadLogger m
     , MonadError  RGError  m
     , MonadIO m
     )

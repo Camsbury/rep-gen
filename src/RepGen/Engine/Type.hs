@@ -46,7 +46,7 @@ instance FromJSON CloudEngineCandidates where
     where
       parsePV pv = do
         moves <- pv .: "moves"
-        case reverse $ words moves of
+        case words moves of
           [] -> J.parseFail "No moves in the moves string"
           (move : _) -> do
             cp <- pv .:? "cp"

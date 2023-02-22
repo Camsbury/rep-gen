@@ -21,4 +21,6 @@ exportJSON = do
 
 -- | Write the current MoveTree as a PGN file
 exportPgn :: RGM ()
-exportPgn = undefined
+exportPgn = do
+  tree <- use moveTree
+  undefined

@@ -24,11 +24,14 @@ initState
     )
   => m RGState
 initState = do
+  logInfoN "Initializing State"
   color <- view colorL
   node <- initTree
+  let actions = initActions color node
+  -- logDebugN $ "Actions: " <> tshow actions
   pure $ def
        & moveTree .~ node
-       & actionStack .~ initActions color node
+       & actionStack .~ actions
 
 initTree
   :: ( MonadReader RGConfig m
