@@ -9,7 +9,10 @@ module Prelude
   , MonadState(..)
   , MonadLogger(..)
   , evalStateT
+  , logDebugN
+  , logErrorN
   , logInfoN
+  , logWarnN
   , runExceptT
   , runStateT
   , runStdoutLoggingT

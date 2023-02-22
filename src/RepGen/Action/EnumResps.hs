@@ -22,6 +22,7 @@ import qualified RepGen.MoveTree as MT
 runAction :: EnumData -> RGM ()
 runAction action = do
   let ucis = action ^. edUcis
+  logDebugN $ "Enumerating Responses for: " <> intercalate "," ucis
   pAgg <- MT.fetchPAgg ucis
   processed <- processMoves action pAgg
   moveTree . MT.traverseUcis ucis . responses .= fromList processed

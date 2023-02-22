@@ -24,6 +24,7 @@ import qualified RepGen.Lichess.History as H
 runAction :: EnumData -> RGM ()
 runAction action = do
   let ucis = action ^. edUcis
+  logDebugN $ "Enumerating Candidates for: " <> intercalate "," ucis
   candidates <- fetchCandidates action
   moveTree . MT.traverseUcis ucis . responses .= fromList candidates
   sDepth <- view searchDepth

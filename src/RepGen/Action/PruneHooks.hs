@@ -16,6 +16,7 @@ import RepGen.Stats.Type
 
 runAction :: Vector Uci -> RGM ()
 runAction ucis = do
+  logDebugN $ "Running Prune Hooks for: " <> intercalate "," ucis
   mpa <- view minProbAgg
   moveTree
     . traverseUcis ucis

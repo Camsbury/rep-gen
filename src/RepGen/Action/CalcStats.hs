@@ -1,6 +1,6 @@
 {-# LANGUAGE RankNTypes #-}
 module RepGen.Action.CalcStats
-  ( module RepGen.Action.CalcStats
+  ( runAction
   ) where
 --------------------------------------------------------------------------------
 
@@ -121,6 +121,7 @@ calcScore ucis = do
 -- given the weighted stats of its children
 runAction :: Vector Uci -> RGM ()
 runAction ucis = do
+  logDebugN $ "Calculating Stats for: " <> intercalate "," ucis
   calcNodeStats ucis lichessStats
   calcNodeStats ucis mastersStats
   calcScore ucis

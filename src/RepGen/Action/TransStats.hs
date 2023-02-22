@@ -1,7 +1,7 @@
 {-# LANGUAGE RankNTypes #-}
 --------------------------------------------------------------------------------
 module RepGen.Action.TransStats
-  ( module RepGen.Action.TransStats
+  ( runAction
   ) where
 --------------------------------------------------------------------------------
 
@@ -33,6 +33,7 @@ setNodeStats (Just s) ucis nodeStats aggStats = do
 
 runAction :: Vector Uci -> RGM ()
 runAction ucis = do
+  logDebugN $ "Transferring Stats for: " <> intercalate "," ucis
   children
     <- use
     $ moveTree

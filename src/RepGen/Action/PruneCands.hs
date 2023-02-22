@@ -15,6 +15,7 @@ import qualified RepGen.Export as X
 --------------------------------------------------------------------------------
 runAction :: Vector Uci -> RGM ()
 runAction ucis = do
+  logDebugN $ "Pruning Candidates for: " <> intercalate "," ucis
   let err = "Node to prune does not exist at: " <> intercalate "," ucis
   node <- throwMaybe err <=< preuse $ moveTree . traverseUcis ucis
   let children = node ^.. responses . folded
