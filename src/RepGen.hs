@@ -17,6 +17,7 @@ import RepGen.State (initState)
 import RepGen.State.Type
 import RepGen.PyChess
 import RepGen.Type
+
 --------------------------------------------------------------------------------
 import qualified RepGen.Export as X
 import qualified Database.Persist.Sqlite as DP
@@ -31,10 +32,10 @@ buildRepertoire rgConfig
   . runExceptT
   . (`runReaderT` rgConfig)
   $ do
+    dbPath <- view cachePath
+    liftIO . DP.runSqlite dbPath $ DP.runMigration Web.migrateAll
     s <- initState
     (`runStateT` s) $ do
-      dbPath <- view cachePath
-      liftIO . DP.runSqlite dbPath $ DP.runMigration Web.migrateAll
       buildTree
       X.exportPgn
 

@@ -22,6 +22,7 @@ library
                        , RepGen.Config.Type
                        , RepGen.Engine
                        , RepGen.Engine.Type
+                       , RepGen.Export
                        , RepGen.Lichess
                        , RepGen.Lichess.History
                        , RepGen.Lichess.History.Type

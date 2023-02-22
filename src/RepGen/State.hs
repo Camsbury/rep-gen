@@ -19,17 +19,21 @@ import qualified RepGen.Engine as Ngn
 initState
   :: ( MonadReader RGConfig m
     , MonadError  RGError  m
+    , MonadLogger m
     , MonadIO m
     )
   => m RGState
 initState = do
   color <- view colorL
   node <- initTree
-  pure . RGState node $ initActions color node
+  pure $ def
+       & moveTree .~ node
+       & actionStack .~ initActions color node
 
 initTree
   :: ( MonadReader RGConfig m
     , MonadError  RGError  m
+    , MonadLogger m
     , MonadIO m
     )
   => m TreeNode
@@ -59,6 +63,7 @@ initActions color node
 baseNode
   :: ( MonadReader RGConfig m
     , MonadError  RGError  m
+    , MonadLogger m
     , MonadIO m
     )
   => Vector Uci
@@ -75,6 +80,7 @@ baseNode ucis pAgg = do
 addChild
   :: ( MonadReader RGConfig m
     , MonadError  RGError  m
+    , MonadLogger m
     , MonadIO m
     )
   => m TreeNode

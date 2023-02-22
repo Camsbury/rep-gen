@@ -8,10 +8,11 @@ import RepGen.MoveTree.Type
 
 data RGState
   = RGState
-  { _moveTree :: TreeNode
-  , _actionStack :: [RGAction]
+  { _cloudLimitReached :: Bool
+  , _moveTree          :: TreeNode
+  , _actionStack       :: [RGAction]
   } deriving (Show, Eq)
 makeLenses ''RGState
 
 instance Default RGState where
-  def = RGState def empty
+  def = RGState False def empty

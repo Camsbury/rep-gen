@@ -8,10 +8,11 @@ module Prelude
   , MonadError(..)
   , MonadState(..)
   , MonadLogger(..)
+  , evalStateT
+  , logInfoN
   , runExceptT
   , runStateT
   , runStdoutLoggingT
-  , logInfoN
   ) where
 
 import ClassyPrelude

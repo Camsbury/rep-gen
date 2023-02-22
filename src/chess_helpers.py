@@ -6,14 +6,20 @@ import os
 STOCKFISH_PATH = os.getenv("STOCKFISH_PATH")
 
 def ucis_to_fen(ucis):
-    ucis = ucis.split(",")
+    if len(ucis) == 0:
+        ucis = []
+    else:
+        ucis = ucis.split(",")
     board = chess.Board()
     for uci in ucis:
         board.push_uci(uci)
     return board.fen()
 
 def sans_to_ucis(sans):
-    sans = sans.split(",")
+    if len(sans) == 0:
+        sans = []
+    else:
+        sans = sans.split(",")
     board = chess.Board()
     for san in sans:
         board.push_san(san)

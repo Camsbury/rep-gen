@@ -3,10 +3,19 @@ module Main where
 
 import RepGen
 
+
 main :: IO ()
 main = do
   -- fen <- ucisToFen (["e2e4", "e7e5"] :: Vector Text)
-  -- print fen
+  -- -- let fen = Fen "r1bqkb1r/pppp1ppp/2n2n2/4p2Q/2B1P3/8/PPPP1PPP/RNB1K1NR w KQkq - 0 1"
+  -- cands
+  --   <- runStdoutLoggingT
+  --   . runExceptT
+  --   . (`runReaderT` (def & engineConfig . engineAllowableLoss .~ 0.1))
+  --   . (`runStateT` def)
+  --   $ do
+  --     fenToEngineCandidates fen
+  -- print cands
 
   -- ucis <- sansToUcis (["e4", "e5"] :: Vector Text)
   -- print ucis
