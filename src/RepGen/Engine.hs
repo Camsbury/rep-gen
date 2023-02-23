@@ -157,7 +157,7 @@ instance FromJSON EngineCandidate where
 
 applyScoreColor :: Color -> EngineCandidate -> EngineCandidate
 applyScoreColor White = id
-applyScoreColor Black = ngnScore . scoreL %~ negate
+applyScoreColor Black = ngnScore . scoreL %~ (1 -)
 
 
 -- | Extract moves that are within a reasonable deviation from the best move
