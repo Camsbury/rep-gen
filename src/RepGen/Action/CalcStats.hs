@@ -78,10 +78,10 @@ calcNodeStats ucis statsLens = do
   let pBlack = parent ^? rgStats . statsLens . _Just . blackWins . agg
   setAggStat
     ((\pW -> cWhiteAgg + (pW - cWhite)) <$> pWhite)
-    ucis statsLens (whiteWins . nom)
+    ucis statsLens (whiteWins . agg)
   setAggStat
     ((\pB -> cBlackAgg + (pB - cBlack)) <$> pBlack)
-    ucis statsLens (blackWins . nom)
+    ucis statsLens (blackWins . agg)
 
 -- | Decrement the sum of the child probabilities
 -- empty probabilities mean we don't want to take the child into account

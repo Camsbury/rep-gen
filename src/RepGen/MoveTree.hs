@@ -33,7 +33,7 @@ validChildrenT :: Traversal' TreeNode (Uci, TreeNode)
 validChildrenT
   = responses
   . traversed
-  . filtered (\x -> x ^. _2 . removed)
+  . filtered (\x -> x ^. _2 . removed . to not)
 
 -- | Convenience to get all valid children as a list
 collectValidChildren :: TreeNode -> [(Uci, TreeNode)]
