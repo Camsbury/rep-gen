@@ -20,20 +20,20 @@ applyStrategy options = do
   opts <- throwMaybe "No moves to apply the strategy to!"
        $ fromNullable options
   let choice = minimumBy sComp opts
-  -- logErrorN
+  -- logInfoN
   --   . ("Comparing the following children: " <>)
   --   . tshow
   --   $ view _1
   --   <$> options
-  -- logErrorN
+  -- logInfoN
   --   . ("With white wins: " <>)
   --   . tshow
-  --   $ options ^.. folded . _2 . rgStats . mastersStats . _Just . whiteWins . agg
-  -- logErrorN
+  --   $ options ^.. folded . _2 . rgStats . lichessStats . _Just . whiteWins . agg
+  -- logInfoN
   --   . ("With black wins: " <>)
   --   . tshow
-  --   $ options ^.. folded . _2 . rgStats . mastersStats . _Just . blackWins . agg
-  pure choice
+  --   $ options ^.. folded . _2 . rgStats . lichessStats . _Just . blackWins . agg
+  -- pure choice
 
 -- | Get the 'Ordering' needed to fulfill the chosen 'RGStrategy'
 strategicCompare

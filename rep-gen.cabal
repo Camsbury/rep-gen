@@ -56,6 +56,7 @@ library
                        , aeson
                        , bytestring
                        , classy-prelude
+                       , command
                        , data-default
                        , http-client
                        , http-client-tls

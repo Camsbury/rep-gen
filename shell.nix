@@ -11,6 +11,7 @@ in
   buildInputs = [
     python-custom
     pkgs.ghcid
+    pkgs.nodePackages.prettier
     pkgs.pcre
     pkgs.stockfish
     pkgs.zlib

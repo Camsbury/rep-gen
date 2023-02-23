@@ -15,11 +15,15 @@ import qualified RepGen.Export as X
 --------------------------------------------------------------------------------
 runAction :: Vector Uci -> RGM ()
 runAction ucis = do
-  logDebugN $ "Pruning Candidates for: " <> tshow ucis
+  logInfoN $ "Pruning Candidates for: " <> tshow ucis
   let err = "Node to prune does not exist at: " <> tshow ucis
   node <- throwMaybe err <=< preuse $ moveTree . traverseUcis ucis
   let children = node ^.. responses . folded
-  -- logDebugN $ "Children: " <> tshow children
+  -- logDebugN $ "Prune Children: " <> tshow children
+  logInfoN
+    $ ("Prune Candidates: " <>)
+    . tshow
+    $ children ^.. folded . _1
 
   case fromNullable children of
     Nothing

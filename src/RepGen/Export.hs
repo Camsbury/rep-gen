@@ -7,7 +7,6 @@ module RepGen.Export
 import RepGen.Monad
 import RepGen.Config.Type
 import RepGen.State.Type
-import RepGen.MoveTree.Type
 --------------------------------------------------------------------------------
 import qualified Data.Aeson as J
 import qualified Foreign.C.String as FC
@@ -20,6 +19,7 @@ exportJSON = do
   tree <- use moveTree
   path <- view exportJSONPath
   writeFile (unpack path) (toStrict $ J.encode tree)
+  liftIO . command_ [] "prettier" $ ["-w"] <> [unpack path]
 
 -- | Write the current MoveTree as a PGN file
 exportPgn :: RGM ()

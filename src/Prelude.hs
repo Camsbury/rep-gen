@@ -10,6 +10,8 @@ module Prelude
   , MonadError(..)
   , MonadState(..)
   , MonadLogger(..)
+  , command
+  , command_
   , evalStateT
   , filterLogger
   , logDebugN
@@ -38,6 +40,7 @@ import Control.Monad.Except
 import Control.Monad.State
 import Control.Monad.Logger
 import Data.Default
+import System.Command (command, command_)
 import Text.Pretty.Simple hiding (Color(..))
 --------------------------------------------------------------------------------
 

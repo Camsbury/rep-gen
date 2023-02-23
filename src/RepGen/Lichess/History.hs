@@ -24,6 +24,52 @@ baseUrl = "https://explorer.lichess.ovh/"
 oneMinute :: Int
 oneMinute = 60 * 1000 * 1000
 
+--------------------------------------------------------------------------------
+
+lichessMoves
+  :: ( MonadReader RGConfig m
+    , MonadLogger m
+    , MonadError  RGError  m
+    , MonadIO m
+    )
+  => Fen
+  -> m [(Uci, NodeStats)]
+lichessMoves = fmap parseStats . historicMoves <=< getLichessParams
+
+-- | Fetches masters moves if they meet our criteria
+maybeMastersMoves
+  :: ( MonadReader RGConfig m
+    , MonadLogger m
+    , MonadError  RGError  m
+    , MonadIO m
+    )
+  => Fen
+  -> m (Maybe [(Uci, NodeStats)])
+maybeMastersMoves fen = do
+  useM <- view mastersP
+  mps <- getMastersParams fen
+  if useM
+    then fmap (fmap parseStats) . filterMinTotal =<< historicMoves mps
+    else pure Nothing
+
+initialStats
+  :: ( MonadReader RGConfig m
+    , MonadLogger m
+    , MonadError  RGError  m
+    , MonadIO m
+    )
+  => Fen
+  -> Double
+  -> m RGStats
+initialStats fen pAgg = do
+  lcStats    <- fmap rawToNode . historicMoves =<< getLichessParams fen
+  mStats     <- fmap rawToNode . historicMoves =<< getMastersParams fen
+  useMasters <- view mastersP
+  pure $ def
+       & lichessStats ?~ lcStats
+       & mastersStats .~ bool Nothing (Just mStats) useMasters
+       & probAgg .~ pAgg * (lcStats ^. prob)
+
 class HistoricFetchable a where
   historicMoves
     :: ( MonadReader RGConfig m
@@ -121,16 +167,6 @@ getLichessParams fen = do
   let ups = UniversalParams hmc fen
   pure $ LichessParams ratings speeds ups
 
-lichessMoves
-  :: ( MonadReader RGConfig m
-    , MonadLogger m
-    , MonadError  RGError  m
-    , MonadIO m
-    )
-  => Fen
-  -> m [(Uci, NodeStats)]
-lichessMoves = fmap parseStats . historicMoves <=< getLichessParams
-
 getMastersParams
   :: (MonadReader RGConfig m, MonadIO m)
   => Fen
@@ -138,40 +174,6 @@ getMastersParams
 getMastersParams fen = do
   hmc <- view $ historyConfig . historyMoveCount
   pure $ UniversalParams hmc fen
-
--- | Fetches masters moves if they meet our criteria
-maybeMastersMoves
-  :: ( MonadReader RGConfig m
-    , MonadLogger m
-    , MonadError  RGError  m
-    , MonadIO m
-    )
-  => Fen
-  -> m (Maybe [(Uci, NodeStats)])
-maybeMastersMoves fen = do
-  useM <- view mastersP
-  mps <- getMastersParams fen
-  if useM
-    then fmap (fmap parseStats) . filterMinTotal =<< historicMoves mps
-    else pure Nothing
-
-initialStats
-  :: ( MonadReader RGConfig m
-    , MonadLogger m
-    , MonadError  RGError  m
-    , MonadIO m
-    )
-  => Fen
-  -> Double
-  -> m RGStats
-initialStats fen pAgg = do
-  lcStats    <- fmap rawToNode . historicMoves =<< getLichessParams fen
-  mStats     <- fmap rawToNode . historicMoves =<< getMastersParams fen
-  useMasters <- view mastersP
-  pure $ def
-       & lichessStats ?~ lcStats
-       & mastersStats .~ bool Nothing (Just mStats) useMasters
-       & probAgg .~ pAgg * (lcStats ^. prob)
 
 rawToNode :: RawStats -> NodeStats
 rawToNode rs = NodeStats whiteS blackS 1 total

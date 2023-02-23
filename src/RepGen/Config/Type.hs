@@ -37,7 +37,7 @@ makeLenses ''HistoryConfig
 instance Default HistoryConfig where
   def = HistoryConfig
       { _historyRatings = [L2000, L2200, L2500]
-      , _historySpeeds  = [Bullet, Blitz, Rapid]
+      , _historySpeeds  = [Blitz, Rapid]
       , _historyMoveCount = 30
       }
 
@@ -67,13 +67,13 @@ makeLenses ''RGConfig
 
 instance Default RGConfig where
   def = RGConfig
-      { _cachePath       = "/tmp/cache.db"
+      { _cachePath       = "./resources/cache.db"
       , _colorL          = White
       , _engineP         = True
       , _engineConfig    = def
       , _exportP         = True
-      , _exportPgnPath   = "/tmp/move-tree.pgn"
-      , _exportJSONPath  = "/tmp/move-tree.json"
+      , _exportPgnPath   = "./resources/move-tree.pgn"
+      , _exportJSONPath  = "./resources/move-tree.json"
       , _historyConfig   = def
       , _mastersP        = True
       , _maxCandBreadth  = 5
