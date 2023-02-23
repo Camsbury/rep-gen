@@ -56,6 +56,6 @@ main = do
   -- print historicMoves
 
   buildRepertoire $
-    def & colorL       .~ White
-        & searchDepth  .~ 1
-        & engineConfig . engineAllowableLoss .~ 0.05
+    def & colorL      .~ White -- then verify black!!
+        & searchDepth .~ 3
+        & minProbAgg  .~ 0.1

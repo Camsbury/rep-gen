@@ -54,6 +54,9 @@ setAggStat
   -> RGM ()
 setAggStat Nothing _ _ _ = pure ()
 setAggStat (Just s) ucis nodeStats aggStats = do
+  logDebugN
+    $ "Setting Agg Stat for: "
+    <> tshow ucis
   moveTree . MT.traverseUcis ucis . rgStats . nodeStats . _Just . aggStats .= s
 
 -- | Calculate the win probabilites per color for a given node
@@ -70,12 +73,18 @@ calcNodeStats ucis statsLens = do
     $ moveTree
     . MT.traverseUcis ucis
   let children = fromList $ parent ^.. validChildrenT
-  let cWhite :: Double = childrenStat children statsLens $ whiteWins . nom
-  let cWhiteAgg :: Double = childrenStat children statsLens $ whiteWins . agg
+  let cWhite = childrenStat children statsLens $ whiteWins . nom
+  let cWhiteAgg = childrenStat children statsLens $ whiteWins . agg
   let cBlack = childrenStat children statsLens $ blackWins . nom
   let cBlackAgg = childrenStat children statsLens $ blackWins . agg
-  let pWhite :: Maybe Double = parent ^? rgStats . statsLens . _Just . whiteWins . agg
+  let pWhite = parent ^? rgStats . statsLens . _Just . whiteWins . agg
   let pBlack = parent ^? rgStats . statsLens . _Just . blackWins . agg
+  -- logDebugN $ "cWhiteAgg: " <> tshow cWhiteAgg
+  -- logDebugN $ "cWhite: " <> tshow cWhite
+  -- logDebugN $ "pWhite: " <> tshow pWhite
+  -- logDebugN $ "cBlackAgg: " <> tshow cBlackAgg
+  -- logDebugN $ "cBlack: " <> tshow cBlack
+  -- logDebugN $ "pBlack: " <> tshow pBlack
   setAggStat
     ((\pW -> cWhiteAgg + (pW - cWhite)) <$> pWhite)
     ucis statsLens (whiteWins . agg)

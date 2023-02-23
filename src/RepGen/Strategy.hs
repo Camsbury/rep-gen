@@ -17,10 +17,22 @@ import RepGen.Type
 applyStrategy :: [(Uci, TreeNode)] -> RGM (Uci, TreeNode)
 applyStrategy options = do
   sComp <- strategicCompare <$> view strategy <*> view colorL
-  -- FIXME: update the callsite of this function so this never happens
   opts <- throwMaybe "No moves to apply the strategy to!"
        $ fromNullable options
-  let choice = maximumBy sComp opts
+  let choice = minimumBy sComp opts
+  -- logErrorN
+  --   . ("Comparing the following children: " <>)
+  --   . tshow
+  --   $ view _1
+  --   <$> options
+  -- logErrorN
+  --   . ("With white wins: " <>)
+  --   . tshow
+  --   $ options ^.. folded . _2 . rgStats . mastersStats . _Just . whiteWins . agg
+  -- logErrorN
+  --   . ("With black wins: " <>)
+  --   . tshow
+  --   $ options ^.. folded . _2 . rgStats . mastersStats . _Just . blackWins . agg
   pure choice
 
 -- | Get the 'Ordering' needed to fulfill the chosen 'RGStrategy'

@@ -36,7 +36,7 @@ runAction action = do
   -- logDebugN $ "depth: " <> tshow (action ^. edDepth)
   -- logDebugN $ "search depth: " <> tshow sDepth
   -- logDebugN $ "addActions: " <> tshow addActions
-  let actions = toAction action =<< reverse (candidates ^.. folded . _2)
+  let actions = toAction action =<< (candidates ^.. folded . _2)
   -- logDebugN $ "Actions: " <> tshow actions
   when addActions $ actionStack %= (actions ++)
 
@@ -66,6 +66,7 @@ fetchCandidates action = do
         .   applyWhen isMasters (injectLichess lcM)
         .   initNode isMasters pAgg pPrune fen ucis
         <$> initCands
+  -- logDebugN $ tshow candNodes
   if null candNodes
     then firstEngine pPrune fen ucis engineMoves
     else pure candNodes
