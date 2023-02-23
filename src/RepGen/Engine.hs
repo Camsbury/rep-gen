@@ -103,16 +103,17 @@ fenToCloudCandidates (Fen fen) breadth = do
         . fromStrict
         $ response
     404 -> do
-      logInfoN
+      logDebugN
         $ "FEN missing from cache: "
         <> tshow fen
       pure Nothing
     code -> do
-      logInfoN
+      logWarnN
         $ "HTTP error code: "
         <> tshow code
         <> " for FEN: "
         <> tshow fen
+      logWarnN "Stopping cloud eval usage to avoid getting banned"
       put True
       pure Nothing
 

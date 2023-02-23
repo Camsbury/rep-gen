@@ -56,6 +56,5 @@ main = do
   -- print historicMoves
 
   buildRepertoire $
-    def & colorL      .~ White -- then verify black!!
-        & searchDepth .~ 3
-        & minProbAgg  .~ 0.1
+    def & colorL      .~ White
+        -- & searchDepth .~ 3

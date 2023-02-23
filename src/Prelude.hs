@@ -6,10 +6,12 @@ module Prelude
   , module Control.Lens.Combinators
   , module Data.Default
   , module Prelude
+  , LogLevel(..)
   , MonadError(..)
   , MonadState(..)
   , MonadLogger(..)
   , evalStateT
+  , filterLogger
   , logDebugN
   , logErrorN
   , logInfoN

@@ -15,7 +15,6 @@ import qualified RepGen.Export as X
 --------------------------------------------------------------------------------
 runAction :: Vector Uci -> RGM ()
 runAction ucis = do
-  putStrLn "\n\n\n\nWOOO\n\n\n"
   logDebugN $ "Pruning Candidates for: " <> tshow ucis
   let err = "Node to prune does not exist at: " <> tshow ucis
   node <- throwMaybe err <=< preuse $ moveTree . traverseUcis ucis

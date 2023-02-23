@@ -32,12 +32,15 @@ buildRepertoire rgConfig
   = void
   . either print pure
   <=< runStdoutLoggingT
+  . filterLogger lFilter
   . runExceptT
   . (`runReaderT` rgConfig)
   $ do
     dbPath <- view cachePath
     liftIO . DP.runSqlite dbPath $ DP.runMigration Web.migrateAll
     evalStateT (buildTree >> X.exportPgn) =<< initState
+  where
+    lFilter _ lvl = lvl > LevelDebug
 
 buildTree :: RGM ()
 buildTree = do
