@@ -10,6 +10,8 @@ import RepGen.State.Type
 import RepGen.MoveTree.Type
 --------------------------------------------------------------------------------
 import qualified Data.Aeson as J
+import qualified Foreign.C.String as FC
+import qualified RepGen.PyChess as PyC
 --------------------------------------------------------------------------------
 
 -- | Write the current MoveTree as a JSON file
@@ -23,4 +25,8 @@ exportJSON = do
 exportPgn :: RGM ()
 exportPgn = do
   tree <- use moveTree
-  undefined
+  cTree <- liftIO . FC.newCString . unpack . decodeUtf8 . toStrict $ J.encode tree
+  cResult <- liftIO $ PyC.tree_to_pgn cTree
+  pgn <- liftIO $ FC.peekCString cResult
+  path <- view exportPgnPath
+  writeFile (unpack path) (encodeUtf8 $ pack pgn)

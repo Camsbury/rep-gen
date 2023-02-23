@@ -118,3 +118,27 @@ char* fen_to_engine_candidates(
     Py_Finalize();
     return result;
 }
+
+char* tree_to_pgn(
+  const char* tree
+) {
+    PyObject *pModule, *pFunc, *pArgs, *pValue;
+    char *result;
+
+    py_setup();
+
+    pModule = PyImport_ImportModule("chess_helpers");
+    pFunc = PyObject_GetAttrString(pModule, "tree_to_pgn");
+    pArgs = PyTuple_Pack(1, PyUnicode_FromString(tree));
+    pValue = PyObject_CallObject(pFunc, pArgs);
+
+    if (pValue != NULL) {
+        result = (char*)PyUnicode_AsUTF8(pValue);
+    } else {
+        PyErr_Print();
+        result = NULL;
+    }
+
+    Py_Finalize();
+    return result;
+}
