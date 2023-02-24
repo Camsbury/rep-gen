@@ -11,9 +11,10 @@ import Control.Monad.Logger
 
 type RGM
   = StateT RGState
-  ( ReaderT RGConfig
-    ( ExceptT RGError
-      ( LoggingT IO
+  ( LoggingT
+    ( ReaderT RGConfig
+      ( ExceptT RGError
+        IO
       )
     )
   )

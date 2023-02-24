@@ -54,6 +54,7 @@ data RGConfig
   , _mastersP        :: Bool
   , _initCandBreadth :: Int
   , _asymCandBreadth :: Int
+  , _minLogLevel     :: LogLevel
   , _minPlays        :: Int
   , _minProbAgg      :: Double
   , _initRespProb    :: Double
@@ -79,6 +80,7 @@ instance Default RGConfig where
       , _mastersP        = True
       , _initCandBreadth = 25
       , _asymCandBreadth = 5
+      , _minLogLevel     = LevelInfo
       , _minPlays        = 100
       , _minProbAgg      = 0.0003
       , _initRespProb    = 0.01

@@ -31,16 +31,16 @@ buildRepertoire :: RGConfig -> IO ()
 buildRepertoire rgConfig
   = void
   . either print pure
-  <=< runStdoutLoggingT
-  . filterLogger lFilter
-  . runExceptT
+  <=< runExceptT
   . (`runReaderT` rgConfig)
-  $ do
-    dbPath <- view cachePath
-    liftIO . DP.runSqlite dbPath $ DP.runMigration Web.migrateAll
-    evalStateT (buildTree >> X.exportPgn) =<< initState
+  . runStdoutLoggingT $ do
+    mLvl <- view minLogLevel
+    filterLogger (lFilter mLvl) $ do
+      dbPath <- view cachePath
+      liftIO . DP.runSqlite dbPath $ DP.runMigration Web.migrateAll
+      evalStateT (buildTree >> X.exportPgn) =<< initState
   where
-    lFilter _ lvl = lvl >= LevelInfo -- TODO: read this from config
+    lFilter mLvl _ lvl = lvl >= mLvl
 
 buildTree :: RGM ()
 buildTree = do
