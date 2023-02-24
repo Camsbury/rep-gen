@@ -77,8 +77,8 @@ calcNodeStats ucis statsLens = do
   let cWhiteAgg = childrenStat children statsLens $ whiteWins . agg
   let cBlack = childrenStat children statsLens $ blackWins . nom
   let cBlackAgg = childrenStat children statsLens $ blackWins . agg
-  let pWhite = parent ^? rgStats . statsLens . _Just . whiteWins . agg
-  let pBlack = parent ^? rgStats . statsLens . _Just . blackWins . agg
+  let pWhite = parent ^? rgStats . statsLens . _Just . whiteWins . nom
+  let pBlack = parent ^? rgStats . statsLens . _Just . blackWins . nom
   -- logDebugN $ "cWhiteAgg: " <> tshow cWhiteAgg
   -- logDebugN $ "cWhite: " <> tshow cWhite
   -- logDebugN $ "pWhite: " <> tshow pWhite
