@@ -39,8 +39,8 @@ addHooks
   :: TreeNode
   -> [RGAction]
 addHooks node
-  =  doAddHooks (RGACalcStats, RGATransStats) node
-  ++ [RGATransStats ucis, RGAPruneCands ucis]
+  =  doAddHooks (RGATransStats, RGACalcStats) node
+  ++ [RGAPruneCands ucis]
   where
     ucis = node ^. uciPath
 
