@@ -60,7 +60,7 @@ data RGConfig
   , _initRespProb    :: Double
   , _asymRespProb    :: Double
   , _minTotalMasters :: Int
-  , _startingMoves   :: Vector San
+  , _startingMoves   :: [San]
   , _mOverrides      :: Map [San] San
   , _overridesL      :: Map Fen Uci
   , _searchDepth     :: Int

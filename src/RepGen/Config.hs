@@ -5,6 +5,7 @@ module RepGen.Config where
 import RepGen.Type
 import RepGen.Config.Type
 --------------------------------------------------------------------------------
+import qualified Data.List as L
 import qualified RepGen.PyChess as PyC
 --------------------------------------------------------------------------------
 
@@ -16,17 +17,22 @@ compileConfig
   => RGConfig
   -> m RGConfig
 compileConfig config = do
-  overrides
-    <- fmap mapFromList
-    . traverse toFenORs
-    . mapToList
-    $ config ^. mOverrides
-  pure $ config & overridesL .~ overrides
+  overrides <- toFenORs $ config ^. mOverrides
+  smORs <- toFenORs . toSanORs $ config ^. startingMoves
+  pure $ config & overridesL .~ (overrides `union` smORs)
   where
-    toFenORs (sans, san) = do
+    toFenOR (sans, san) = do
       rawUcis <- liftIO . PyC.sansToUcis $ snoc sans san
       (ucis, uci)
         <- throwMaybe "Bad ucis from sans during override creation"
         $ unsnoc rawUcis
       fen <- liftIO $ PyC.ucisToFen ucis
       pure (fen, uci)
+    toFenORs
+      = fmap mapFromList
+      . traverse toFenOR
+      . mapToList
+    toSanORs moves
+      = mapFromList
+      $ L.inits moves ^.. folded . to unsnoc . _Just
+
