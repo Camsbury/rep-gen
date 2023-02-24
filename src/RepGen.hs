@@ -11,6 +11,7 @@ module RepGen
   ) where
 --------------------------------------------------------------------------------
 import RepGen.Action (runAction)
+import RepGen.Config
 import RepGen.Config.Type
 import RepGen.Lichess.History
 import RepGen.Monad
@@ -31,14 +32,14 @@ buildRepertoire :: RGConfig -> IO ()
 buildRepertoire rgConfig
   = void
   . either print pure
-  <=< runExceptT
-  . (`runReaderT` rgConfig)
-  . runStdoutLoggingT $ do
-    mLvl <- view minLogLevel
-    filterLogger (lFilter mLvl) $ do
-      dbPath <- view cachePath
-      liftIO . DP.runSqlite dbPath $ DP.runMigration Web.migrateAll
-      evalStateT (buildTree >> X.exportPgn) =<< initState
+  <=< runExceptT $ do
+    compiled <- compileConfig rgConfig
+    (`runReaderT` compiled) . runStdoutLoggingT $ do
+      mLvl <- view minLogLevel
+      filterLogger (lFilter mLvl) $ do
+        dbPath <- view cachePath
+        liftIO . DP.runSqlite dbPath $ DP.runMigration Web.migrateAll
+        evalStateT (buildTree >> X.exportPgn) =<< initState
   where
     lFilter mLvl _ lvl = lvl >= mLvl
 

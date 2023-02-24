@@ -61,6 +61,7 @@ data RGConfig
   , _asymRespProb    :: Double
   , _minTotalMasters :: Int
   , _startingMoves   :: Vector San
+  , _mOverrides      :: Map [San] San
   , _overridesL      :: Map Fen Uci
   , _searchDepth     :: Int
   , _strategy        :: RGStrategy
@@ -87,6 +88,7 @@ instance Default RGConfig where
       , _asymRespProb    = 0.25
       , _minTotalMasters = 500
       , _startingMoves   = []
+      , _mOverrides      = mempty
       , _overridesL      = mempty
       , _searchDepth     = 6
       , _strategy        = MaxWinOverLoss

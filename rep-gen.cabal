@@ -19,6 +19,7 @@ library
                        , RepGen.Action.PruneHooks
                        , RepGen.Action.TransStats
                        , RepGen.Action.Type
+                       , RepGen.Config
                        , RepGen.Config.Type
                        , RepGen.Engine
                        , RepGen.Engine.Type
