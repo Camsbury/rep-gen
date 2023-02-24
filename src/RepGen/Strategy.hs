@@ -16,7 +16,7 @@ import RepGen.Type
 -- | Apply a strategy to select the best move option
 applyStrategy :: [(Uci, TreeNode)] -> RGM (Uci, TreeNode)
 applyStrategy options = do
-  sComp <- strategicCompare <$> view strategy <*> view colorL
+  sComp <- strategicCompare <$> view (strategy . optimizer) <*> view colorL
   opts <- throwMaybe "No moves to apply the strategy to!"
        $ fromNullable options
   let choice = minimumBy sComp opts
@@ -37,7 +37,7 @@ applyStrategy options = do
 
 -- | Get the 'Ordering' needed to fulfill the chosen 'RGStrategy'
 strategicCompare
-  :: RGStrategy
+  :: RGOptimizer
   -> Color
   -> (Uci, TreeNode)
   -> (Uci, TreeNode)

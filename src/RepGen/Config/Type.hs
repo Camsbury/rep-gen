@@ -91,5 +91,5 @@ instance Default RGConfig where
       , _mOverrides      = mempty
       , _overridesL      = mempty
       , _searchDepth     = 6
-      , _strategy        = MaxWinOverLoss
+      , _strategy        = def
       }

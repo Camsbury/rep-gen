@@ -11,6 +11,7 @@ import RepGen.MoveTree.Type
 import RepGen.Score.Type
 import RepGen.State.Type
 import RepGen.Stats.Type
+import RepGen.Strategy.Type
 import RepGen.Type
 --------------------------------------------------------------------------------
 import qualified RepGen.PyChess         as PyC
@@ -51,7 +52,7 @@ fetchCandidates action = do
   engineMoves    <- Ngn.fenToEngineCandidates fen
   pAgg           <- MT.fetchPAgg ucis
   color          <- view colorL
-  strat          <- view strategy
+  strat          <- view $ strategy . optimizer
   breadth        <- maxCandBreadth pAgg
   let candidates = fromMaybe lcM maybeMM
   let isMasters  = isJust maybeMM
