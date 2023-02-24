@@ -18,11 +18,12 @@ data EngineFilter = EngineFilter
   { _engineAllowableLoss :: Double
   , _engineMoveCount :: Int
   , _engineDepth :: Int
+  , _engineP :: Bool
   } deriving (Show, Eq)
 makeLenses ''EngineFilter
 
 instance Default EngineFilter where
-  def = EngineFilter 0.9 10 20
+  def = EngineFilter 0.9 10 20 True
 
 data RGSatisficers = RGSatisficers
   { _engineFilter :: EngineFilter

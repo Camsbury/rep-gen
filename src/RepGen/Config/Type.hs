@@ -39,7 +39,6 @@ data RGConfig
   = RGConfig
   { _cachePath       :: Text
   , _colorL          :: Color
-  , _engineP         :: Bool
   , _engineConfig    :: EngineConfig
   , _exportP         :: Bool
   , _exportPgnPath   :: Text
@@ -66,7 +65,6 @@ instance Default RGConfig where
   def = RGConfig
       { _cachePath       = "./resources/cache.db"
       , _colorL          = White
-      , _engineP         = True
       , _engineConfig    = def
       , _exportP         = True
       , _exportPgnPath   = "./resources/move-tree.pgn"

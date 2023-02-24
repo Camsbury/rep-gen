@@ -32,16 +32,9 @@ runAction action = do
   let addActions
         = (not (action ^. edIsPruned) || length candidates /= 1)
         && action ^. edDepth /= sDepth
-  -- logDebugN $ "candidates: " <> tshow candidates
-  -- logDebugN $ "pruned?: " <> tshow (action ^. edIsPruned)
-  -- logDebugN $ "depth: " <> tshow (action ^. edDepth)
-  -- logDebugN $ "search depth: " <> tshow sDepth
-  -- logDebugN $ "addActions: " <> tshow addActions
   let actions = toAction action =<< (candidates ^.. folded . _2)
-  -- logDebugN $ "Actions: " <> tshow actions
   when addActions $ actionStack %= (actions ++)
 
--- TODO: remove all engine interaction here and move to Strategy
 fetchCandidates :: EnumData -> RGM [(Uci, TreeNode)]
 fetchCandidates action = do
   let ucis       = action ^. edUcis
@@ -52,22 +45,22 @@ fetchCandidates action = do
   engineMoves    <- Ngn.fenToEngineCandidates fen
   pAgg           <- MT.fetchPAgg ucis
   color          <- view colorL
-  strat          <- view $ strategy . optimizer
+  stratSats      <- view $ strategy . satisficers
+  stratOpt       <- view $ strategy . optimizer
   breadth        <- maxCandBreadth pAgg
   let candidates = fromMaybe lcM maybeMM
   let isMasters  = isJust maybeMM
   initCands
     <- maybe (filterCandidates candidates engineMoves) pure
     <=< findUci candidates fen <=< preview $ overridesL . ix fen
-   -- mapped over the monad and the list
   let candNodes
         =   take breadth
-        .   sortBy (Strat.strategicCompare strat color)
+        .   Strat.strategicFilter stratSats
+        .   sortBy (Strat.strategicCompare stratOpt color)
         $   injectEngine engineMoves
         .   applyWhen isMasters (injectLichess lcM)
         .   initNode isMasters pAgg pPrune fen ucis
         <$> initCands
-  -- logDebugN $ tshow candNodes
   if null candNodes
     then firstEngine pPrune fen ucis engineMoves
     else pure candNodes

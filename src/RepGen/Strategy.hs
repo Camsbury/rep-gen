@@ -1,6 +1,7 @@
 --------------------------------------------------------------------------------
 module RepGen.Strategy
   ( applyStrategy
+  , strategicFilter
   , strategicCompare
   ) where
 --------------------------------------------------------------------------------
@@ -16,9 +17,11 @@ import RepGen.Type
 -- | Apply a strategy to select the best move option
 applyStrategy :: [(Uci, TreeNode)] -> RGM (Uci, TreeNode)
 applyStrategy options = do
+  sats <- view $ strategy . satisficers
   sComp <- strategicCompare <$> view (strategy . optimizer) <*> view colorL
   opts <- throwMaybe "No moves to apply the strategy to!"
-       $ fromNullable options
+       . fromNullable
+       $ strategicFilter sats options
   let choice = minimumBy sComp opts
   -- logInfoN
   --   . ("Comparing the following children: " <>)
@@ -35,7 +38,29 @@ applyStrategy options = do
   --   $ options ^.. folded . _2 . rgStats . lichessStats . _Just . blackWins . agg
   pure choice
 
--- | Get the 'Ordering' needed to fulfill the chosen 'RGStrategy'
+-- | Filter options based on 'RGSatisficers'
+strategicFilter
+  :: RGSatisficers
+  -> [(Uci, TreeNode)]
+  -> [(Uci, TreeNode)]
+strategicFilter sats opts
+  = if sats ^. engineFilter . engineP
+    then
+      maybe opts toFiltered maybeBestScore
+    else
+      opts
+  where
+    maybeBestScore
+      = maximumMay
+      $ opts ^.. folded . _2 . rgStats . rgScore . _Just . agg
+    toFiltered bestScore = filter (allowable bestScore) opts
+    aLoss = sats ^. engineFilter . engineAllowableLoss
+    allowable bestScore opt
+      = maybe False (\x -> x > (bestScore * aLoss))
+      $ opt ^? _2 . rgStats . rgScore . _Just . agg
+
+
+-- | Get the 'Ordering' needed to fulfill the chosen 'RGOptimizer'
 strategicCompare
   :: RGOptimizer
   -> Color
