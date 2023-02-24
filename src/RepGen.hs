@@ -37,8 +37,8 @@ buildRepertoire rgConfig
     (`runReaderT` compiled) . runStdoutLoggingT $ do
       mLvl <- view minLogLevel
       filterLogger (lFilter mLvl) $ do
-        dbPath <- view cachePath
-        liftIO . DP.runSqlite dbPath $ DP.runMigration Web.migrateAll
+        hcPath <- view httpCachePath
+        liftIO . DP.runSqlite hcPath $ DP.runMigration Web.migrateAll
         evalStateT (buildTree >> X.exportPgn) =<< initState
   where
     lFilter mLvl _ lvl = lvl >= mLvl
