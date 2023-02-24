@@ -52,7 +52,7 @@ fetchCandidates action = do
   pAgg           <- MT.fetchPAgg ucis
   color          <- view colorL
   strat          <- view strategy
-  breadth        <- view maxCandBreadth
+  breadth        <- maxCandBreadth pAgg
   let candidates = fromMaybe lcM maybeMM
   let isMasters  = isJust maybeMM
   initCands
@@ -174,3 +174,8 @@ filterCandidates mvs eCands = do
     f mpl (_, s) = mpl < s ^. playCount
     g eUcis (u, _) = u `elem` eUcis
 
+maxCandBreadth :: Double -> RGM Int
+maxCandBreadth pAgg = do
+  initBreadth <- view initCandBreadth
+  asymBreadth <- view asymCandBreadth
+  pure . round $ exp (log (initBreadth /. asymBreadth) * pAgg) * fromIntegral asymBreadth

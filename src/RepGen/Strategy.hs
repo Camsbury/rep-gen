@@ -33,7 +33,7 @@ applyStrategy options = do
   --   . ("With black wins: " <>)
   --   . tshow
   --   $ options ^.. folded . _2 . rgStats . lichessStats . _Just . blackWins . agg
-  -- pure choice
+  pure choice
 
 -- | Get the 'Ordering' needed to fulfill the chosen 'RGStrategy'
 strategicCompare

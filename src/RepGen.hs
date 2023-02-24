@@ -40,7 +40,7 @@ buildRepertoire rgConfig
     liftIO . DP.runSqlite dbPath $ DP.runMigration Web.migrateAll
     evalStateT (buildTree >> X.exportPgn) =<< initState
   where
-    lFilter _ lvl = lvl >= LevelInfo
+    lFilter _ lvl = lvl >= LevelInfo -- TODO: read this from config
 
 buildTree :: RGM ()
 buildTree = do

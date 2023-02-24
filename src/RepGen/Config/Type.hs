@@ -52,7 +52,8 @@ data RGConfig
   , _exportJSONPath  :: Text
   , _historyConfig   :: HistoryConfig
   , _mastersP        :: Bool
-  , _maxCandBreadth  :: Int
+  , _initCandBreadth :: Int
+  , _asymCandBreadth :: Int
   , _minPlays        :: Int
   , _minProbAgg      :: Double
   , _initRespProb    :: Double
@@ -76,9 +77,10 @@ instance Default RGConfig where
       , _exportJSONPath  = "./resources/move-tree.json"
       , _historyConfig   = def
       , _mastersP        = True
-      , _maxCandBreadth  = 5
+      , _initCandBreadth = 10
+      , _asymCandBreadth = 1
       , _minPlays        = 100
-      , _minProbAgg      = 0.01
+      , _minProbAgg      = 0.0003
       , _initRespProb    = 0.015
       , _asymRespProb    = 0.25
       , _minTotalMasters = 500
