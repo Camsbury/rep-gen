@@ -93,9 +93,10 @@ addChild
 addChild mNode uci = do
   node <- mNode
   let leaf = leafNode node
-  let ucis = snoc (leaf ^. uciPath) uci
-  newLeaf <- baseNode ucis $ node ^. rgStats . probAgg
-  pure $ node & traverseUcis ucis .~ newLeaf
+  let pUcis = leaf ^. uciPath
+  let cUcis = snoc pUcis uci
+  newLeaf <- baseNode cUcis $ node ^. rgStats . probAgg
+  pure $ node & traverseUcis pUcis . responses %~ (\x -> snoc x (uci, newLeaf))
 
 leafNode :: TreeNode -> TreeNode
 leafNode node = f $ node ^? responses . folded . _2
