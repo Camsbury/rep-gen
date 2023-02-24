@@ -36,4 +36,7 @@ sansToUcis sans = do
   cSans <- newCString . unpack $ intercalate "," sans
   cResult <- sans_to_ucis cSans
   result <- peekCString cResult
-  pure . fromList . T.splitOn "," . pack $ result
+  pure . fromList . filter nonEmpty . T.splitOn "," . pack $ result
+  where
+    nonEmpty "" = False
+    nonEmpty _  = True
