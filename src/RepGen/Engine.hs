@@ -5,11 +5,6 @@ module RepGen.Engine
   , fenToScore
   ) where
 --------------------------------------------------------------------------------
-import Data.Aeson
-  ( FromJSON(..)
-  , Value(..)
-  , (.:)
-  )
 import RepGen.Config.Type
 import RepGen.Engine.Type
 import RepGen.Monad
@@ -19,10 +14,8 @@ import RepGen.State.Type
 import RepGen.Strategy.Type
 import RepGen.Type
 --------------------------------------------------------------------------------
-import qualified Foreign.C.String as FC
-import qualified RepGen.PyChess as PyC
+import qualified RepGen.Engine.Local as L
 import qualified Data.Aeson as J
-import qualified Data.Aeson.Types as J
 import qualified Web
 --------------------------------------------------------------------------------
 
@@ -49,7 +42,7 @@ fenToEngineCandidates fen = do
       else pure Nothing
     pure $ maybe deepCands (\x -> mergeCands x <$> deepCands) wideCands
   when limitReached $ cloudLimitReached .= True
-  eMoves <- maybe (fenToLocalCandidates fen) pure mCands
+  eMoves <- maybe (L.fenToLocalCandidates fen) pure mCands
   color <- view colorL
   extractFilteredMoves $ applyScoreColor color <$> eMoves
 
@@ -62,35 +55,6 @@ mergeCands wideCands deepCands
      `union`
      (deepCands ^. engineToMap)) ^. from engineToMap
 
--- TODO: Cache these too!!
-fenToLocalCandidates
-  :: ( MonadReader RGConfig m
-    , MonadError  RGError  m
-    , MonadIO m
-    )
-  => Fen
-  -> m [EngineCandidate]
-fenToLocalCandidates (Fen fen) = do
-  depth
-    <- view
-    $ strategy
-    . satisficers
-    . engineFilter
-    . engineDepth
-  mCount
-    <- view
-    $ strategy
-    . satisficers
-    . engineFilter
-    . engineMoveCount
-  cUcis <- liftIO . FC.newCString . unpack $ fen
-  cResult <- liftIO $ PyC.fen_to_engine_candidates cUcis depth mCount
-  jsonString <- liftIO $ FC.peekCString cResult
-  throwEither
-    . first pack
-    . J.eitherDecode
-    $ fromString jsonString
-
 fenToCloudCandidates
   :: ( MonadReader RGConfig m
     , MonadError  RGError  m
@@ -102,7 +66,7 @@ fenToCloudCandidates
   -> Int
   -> m (Maybe [EngineCandidate])
 fenToCloudCandidates (Fen fen) breadth = do
-  dbPath <- view cachePath
+  dbPath <- view httpCachePath
   (statusCode, response)
     <- liftIO
     . Web.cachedGetRequest dbPath cacheUrl
@@ -143,7 +107,7 @@ fenToEngineCandidatesInit fen = do
       then fenToCloudCandidates fen lcWideBreadth
       else pure Nothing
     pure $ maybe deepCands (\x -> mergeCands x <$> deepCands) wideCands
-  eMoves <- maybe (fenToLocalCandidates fen) pure mCands
+  eMoves <- maybe (L.fenToLocalCandidates fen) pure mCands
   color <- view colorL
   extractFilteredMoves $ applyScoreColor color <$> eMoves
 
@@ -159,13 +123,6 @@ fenToScore
 fenToScore fen = do
   cands <- fenToEngineCandidatesInit fen
   pure $ cands ^? ix 0 . ngnScore
-
-instance FromJSON EngineCandidate where
-  parseJSON (Object v) =
-    EngineCandidate
-      <$> v .: "uci"
-      <*> v .: "score"
-  parseJSON _ = J.parseFail "EngineCandidate not provided as a JSON object"
 
 applyScoreColor :: Color -> EngineCandidate -> EngineCandidate
 applyScoreColor White = id

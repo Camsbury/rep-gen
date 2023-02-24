@@ -119,7 +119,7 @@ fetchMovesFor
   -> Text
   -> m RawStats
 fetchMovesFor params path = do
-  dbPath <- view cachePath
+  dbPath <- view httpCachePath
   (statusCode, response)
     <- liftIO
     . Web.cachedGetRequest dbPath (baseUrl <> path)

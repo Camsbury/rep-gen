@@ -25,6 +25,13 @@ data EngineCandidate
   } deriving (Show, Eq)
 makeLenses ''EngineCandidate
 
+instance FromJSON EngineCandidate where
+  parseJSON (Object v) =
+    EngineCandidate
+      <$> v .: "uci"
+      <*> v .: "score"
+  parseJSON _ = J.parseFail "EngineCandidate not provided as a JSON object"
+
 engineToMap :: Iso' [EngineCandidate] (Map Uci Score)
 engineToMap = iso
   (mapFromList . fmap engineToEntry)

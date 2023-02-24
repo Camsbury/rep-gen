@@ -7,19 +7,6 @@ import RepGen.Type
 import RepGen.Strategy.Type
 --------------------------------------------------------------------------------
 
-data EngineConfig
-  = EngineConfig
-  { _engineHash :: Int
-  , _engineThreads :: Int
-  } deriving (Show, Eq)
-makeLenses ''EngineConfig
-
-instance Default EngineConfig where
-  def = EngineConfig
-      { _engineHash = 2048
-      , _engineThreads = 7
-      }
-
 data HistoryConfig
   = HistoryConfig
   { _historyRatings   :: Vector LichessRating
@@ -37,9 +24,8 @@ instance Default HistoryConfig where
 
 data RGConfig
   = RGConfig
-  { _httpCachePath       :: Text
+  { _httpCachePath   :: Text
   , _colorL          :: Color
-  , _engineConfig    :: EngineConfig
   , _exportP         :: Bool
   , _exportPgnPath   :: Text
   , _exportJSONPath  :: Text
@@ -65,7 +51,6 @@ instance Default RGConfig where
   def = RGConfig
       { _httpCachePath       = "./resources/http-cache.db"
       , _colorL          = White
-      , _engineConfig    = def
       , _exportP         = True
       , _exportPgnPath   = "./resources/move-tree.pgn"
       , _exportJSONPath  = "./resources/move-tree.json"

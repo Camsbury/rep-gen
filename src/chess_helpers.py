@@ -31,7 +31,6 @@ def fen_to_engine_candidates(fen, depth, move_count):
     engine = ngn.SimpleEngine.popen_uci(STOCKFISH_PATH)
     engine.configure({"Hash": 2048, "Threads": 7})
     info = engine.analyse(
-        # chess.Board("4q3/8/8/8/8/6k1/8/6K1 b - - 0 1"), # to see how mates look
         board,
         ngn.Limit(depth=depth),
         multipv=move_count,
