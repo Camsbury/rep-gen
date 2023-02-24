@@ -24,49 +24,51 @@ instance Default HistoryConfig where
 
 data RGConfig
   = RGConfig
-  { _httpCachePath   :: Text
+  { _asymCandBreadth :: Int
+  , _asymRespProb    :: Double
   , _colorL          :: Color
+  , _engineCachePath :: Text
+  , _exportJSONPath  :: Text
   , _exportP         :: Bool
   , _exportPgnPath   :: Text
-  , _exportJSONPath  :: Text
   , _historyConfig   :: HistoryConfig
-  , _mastersP        :: Bool
+  , _httpCachePath   :: Text
   , _initCandBreadth :: Int
-  , _asymCandBreadth :: Int
+  , _initRespProb    :: Double
+  , _mOverrides      :: Map [San] San
+  , _mastersP        :: Bool
   , _minLogLevel     :: LogLevel
   , _minPlays        :: Int
   , _minProbAgg      :: Double
-  , _initRespProb    :: Double
-  , _asymRespProb    :: Double
   , _minTotalMasters :: Int
-  , _startingMoves   :: [San]
-  , _mOverrides      :: Map [San] San
   , _overridesL      :: Map Fen Uci
   , _searchDepth     :: Int
+  , _startingMoves   :: [San]
   , _strategy        :: RGStrategy
   } deriving (Show, Eq)
 makeLenses ''RGConfig
 
 instance Default RGConfig where
   def = RGConfig
-      { _httpCachePath       = "./resources/http-cache.db"
+      { _asymCandBreadth = 5
+      , _asymRespProb    = 0.25
       , _colorL          = White
+      , _engineCachePath = "./resources/engine-cache.db"
+      , _exportJSONPath  = "./resources/move-tree.json"
       , _exportP         = True
       , _exportPgnPath   = "./resources/move-tree.pgn"
-      , _exportJSONPath  = "./resources/move-tree.json"
       , _historyConfig   = def
-      , _mastersP        = True
+      , _httpCachePath   = "./resources/http-cache.db"
       , _initCandBreadth = 25
-      , _asymCandBreadth = 5
+      , _initRespProb    = 0.01
+      , _mOverrides      = mempty
+      , _mastersP        = True
       , _minLogLevel     = LevelInfo
       , _minPlays        = 100
       , _minProbAgg      = 0.0003
-      , _initRespProb    = 0.01
-      , _asymRespProb    = 0.25
       , _minTotalMasters = 500
-      , _startingMoves   = []
-      , _mOverrides      = mempty
       , _overridesL      = mempty
       , _searchDepth     = 6
+      , _startingMoves   = []
       , _strategy        = def
       }

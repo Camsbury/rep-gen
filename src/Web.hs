@@ -12,8 +12,6 @@ module Web
   , migrateAll
   ) where
 --------------------------------------------------------------------------------
-
---------------------------------------------------------------------------------
 import Network.HTTP.Types.Status (Status(..))
 import Network.HTTP.Types.Method ()
 import Network.HTTP.Types.URI ()

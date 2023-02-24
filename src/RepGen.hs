@@ -22,6 +22,7 @@ import RepGen.PyChess
 import RepGen.Type
 
 --------------------------------------------------------------------------------
+import qualified RepGen.Engine.Local as Ngn
 import qualified RepGen.Export as X
 import qualified Database.Persist.Sqlite as DP
 import qualified Web
@@ -37,6 +38,8 @@ buildRepertoire rgConfig
     (`runReaderT` compiled) . runStdoutLoggingT $ do
       mLvl <- view minLogLevel
       filterLogger (lFilter mLvl) $ do
+        ecPath <- view engineCachePath
+        liftIO . DP.runSqlite ecPath $ DP.runMigration Ngn.migrateAll
         hcPath <- view httpCachePath
         liftIO . DP.runSqlite hcPath $ DP.runMigration Web.migrateAll
         evalStateT (buildTree >> X.exportPgn) =<< initState
