@@ -77,15 +77,15 @@ instance Default RGConfig where
       , _exportJSONPath  = "./resources/move-tree.json"
       , _historyConfig   = def
       , _mastersP        = True
-      , _initCandBreadth = 10
-      , _asymCandBreadth = 1
+      , _initCandBreadth = 25
+      , _asymCandBreadth = 5
       , _minPlays        = 100
       , _minProbAgg      = 0.0003
-      , _initRespProb    = 0.015
+      , _initRespProb    = 0.01
       , _asymRespProb    = 0.25
       , _minTotalMasters = 500
       , _startingMoves   = []
       , _overridesL      = mempty
-      , _searchDepth     = 5
+      , _searchDepth     = 6
       , _strategy        = MaxWinOverLoss
       }
