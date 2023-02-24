@@ -51,21 +51,34 @@ processMoves action pAgg = do
   fen <- liftIO $ PyC.ucisToFen ucis
   maybeMastersM <- maybeMastersMoves fen
   lichessM <- filterMoves action pAgg =<< lichessMoves fen
+  mOverride <- preview $ overridesL . ix fen
   let pPrune = action ^. edProbP
-  pure $ maybe
-           (wrapLCStats ucis fen pAgg pPrune <$> lichessM)
-           (mergeMoves ucis fen pAgg pPrune lichessM)
-           maybeMastersM
+  let processed
+        = maybe
+          (wrapLCStats ucis fen pAgg pPrune <$> lichessM)
+          (mergeMoves ucis fen pAgg pPrune lichessM)
+          maybeMastersM
+  pure . fromMaybe processed $ findUci processed =<< mOverride
 
 initProcessMoves :: Vector Uci -> Double -> RGM [(Uci, TreeNode)]
 initProcessMoves ucis pAgg = do
   fen <- liftIO $ PyC.ucisToFen ucis
   maybeMastersM <- maybeMastersMoves fen
   lichessM <- lichessMoves fen
-  pure $ maybe
-           (wrapLCStats ucis fen pAgg 1 <$> lichessM)
-           (mergeMoves ucis fen pAgg 1 lichessM)
-           maybeMastersM
+  mOverride <- preview $ overridesL . ix fen
+  let processed
+        = maybe
+          (wrapLCStats ucis fen pAgg 1 <$> lichessM)
+          (mergeMoves ucis fen pAgg 1 lichessM)
+          maybeMastersM
+  pure . fromMaybe processed $ findUci processed =<< mOverride
+
+findUci :: [(Uci, TreeNode)] -> Uci -> Maybe [(Uci, TreeNode)]
+findUci cands uci
+  = fmap toList
+  . fromNullable
+  $ cands ^.. folded . filtered (\x -> x ^. _1 == uci)
+
 
 filterMoves
   :: EnumData
