@@ -58,17 +58,15 @@ initialStats
     , MonadError  RGError  m
     , MonadIO m
     )
-  => Fen
-  -> Double
-  -> m RGStats
-initialStats fen pAgg = do
-  lcStats    <- fmap rawToNode . historicMoves =<< getLichessParams fen
-  mStats     <- fmap rawToNode . historicMoves =<< getMastersParams fen
+  => m RGStats
+initialStats = do
+  lcStats    <- fmap rawToNode . historicMoves =<< getLichessParams def
+  mStats     <- fmap rawToNode . historicMoves =<< getMastersParams def
   useMasters <- view mastersP
   pure $ def
        & lichessStats ?~ lcStats
        & mastersStats .~ bool Nothing (Just mStats) useMasters
-       & probAgg .~ pAgg * (lcStats ^. prob)
+       & probAgg .~ lcStats ^. prob
 
 class HistoricFetchable a where
   historicMoves
