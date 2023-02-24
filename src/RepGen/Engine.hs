@@ -16,6 +16,7 @@ import RepGen.Monad
 import RepGen.Score ()
 import RepGen.Score.Type
 import RepGen.State.Type
+import RepGen.Strategy.Type
 import RepGen.Type
 --------------------------------------------------------------------------------
 import qualified Foreign.C.String as FC
@@ -70,8 +71,18 @@ fenToLocalCandidates
   => Fen
   -> m [EngineCandidate]
 fenToLocalCandidates (Fen fen) = do
-  depth <- view $ engineConfig . engineDepth
-  mCount <- view $ engineConfig . engineMoveCount
+  depth
+    <- view
+    $ strategy
+    . satisficers
+    . engineFilter
+    . engineDepth
+  mCount
+    <- view
+    $ strategy
+    . satisficers
+    . engineFilter
+    . engineMoveCount
   cUcis <- liftIO . FC.newCString . unpack $ fen
   cResult <- liftIO $ PyC.fen_to_engine_candidates cUcis depth mCount
   jsonString <- liftIO $ FC.peekCString cResult
@@ -171,7 +182,12 @@ extractFilteredMoves
   -> m [EngineCandidate]
 extractFilteredMoves cands = do
   let sorted = sortBy (compare `on` view (ngnScore . scoreL . to negate)) cands
-  aLoss <- view $ engineConfig . engineAllowableLoss
+  aLoss
+    <- view
+    $ strategy
+    . satisficers
+    . engineFilter
+    . engineAllowableLoss
   bestScore
     <- throwMaybe "No engine candidates to filter!?"
     $ sorted ^? ix 0 . ngnScore . scoreL

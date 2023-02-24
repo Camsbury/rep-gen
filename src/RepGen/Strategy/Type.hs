@@ -1,4 +1,6 @@
 {-# LANGUAGE TemplateHaskell #-}
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+{-# HLINT ignore "Use newtype instead of data" #-}
 --------------------------------------------------------------------------------
 module RepGen.Strategy.Type where
 --------------------------------------------------------------------------------
@@ -12,19 +14,29 @@ makePrisms ''RGOptimizer
 instance Default RGOptimizer where
   def = MaxWinOverLoss
 
-data RGSatisficer
-  = RGEngineFilter
-  deriving (Show, Eq)
-makePrisms ''RGSatisficer
+data EngineFilter = EngineFilter
+  { _engineAllowableLoss :: Double
+  , _engineMoveCount :: Int
+  , _engineDepth :: Int
+  } deriving (Show, Eq)
+makeLenses ''EngineFilter
 
-instance Default RGSatisficer where
-  def = RGEngineFilter
+instance Default EngineFilter where
+  def = EngineFilter 0.9 10 20
+
+data RGSatisficers = RGSatisficers
+  { _engineFilter :: EngineFilter
+  } deriving (Show, Eq)
+makeLenses ''RGSatisficers
+
+instance Default RGSatisficers where
+  def = RGSatisficers def
 
 -- | The strategy for the repertoire generator.
 -- There is one optimizer and any number of satisficers used.
 data RGStrategy = RGStrategy
   { _optimizer   :: RGOptimizer
-  , _satisficers :: [RGSatisficer]
+  , _satisficers :: RGSatisficers
   } deriving (Show, Eq)
 makeLenses ''RGStrategy
 

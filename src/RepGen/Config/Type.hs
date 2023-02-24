@@ -9,20 +9,14 @@ import RepGen.Strategy.Type
 
 data EngineConfig
   = EngineConfig
-  { _engineAllowableLoss :: Double
-  , _engineMoveCount :: Int
-  , _engineDepth :: Int
-  , _engineHash :: Int
+  { _engineHash :: Int
   , _engineThreads :: Int
   } deriving (Show, Eq)
 makeLenses ''EngineConfig
 
 instance Default EngineConfig where
   def = EngineConfig
-      { _engineAllowableLoss = 0.9
-      , _engineMoveCount = 10
-      , _engineDepth = 20
-      , _engineHash = 2048
+      { _engineHash = 2048
       , _engineThreads = 7
       }
 
