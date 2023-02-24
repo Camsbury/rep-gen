@@ -29,7 +29,6 @@ runAction ucis = do
   children <- use $ moveTree . traverseUcis ucis . to collectValidChildren
 
   let actions = toActions (children ^.. folded . _2)
-  -- logDebugN $ "Actions: " <> tshow actions
   actionStack %= (actions ++)
 
 toActions :: [TreeNode] -> [RGAction]
