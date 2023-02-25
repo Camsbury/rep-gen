@@ -23,19 +23,6 @@ applyStrategy options = do
        . fromNullable
        $ strategicFilter sats options
   let choice = minimumBy sComp opts
-  -- logInfoN
-  --   . ("Comparing the following children: " <>)
-  --   . tshow
-  --   $ view _1
-  --   <$> options
-  -- logInfoN
-  --   . ("With white wins: " <>)
-  --   . tshow
-  --   $ options ^.. folded . _2 . rgStats . lichessStats . _Just . whiteWins . agg
-  -- logInfoN
-  --   . ("With black wins: " <>)
-  --   . tshow
-  --   $ options ^.. folded . _2 . rgStats . lichessStats . _Just . blackWins . agg
   pure choice
 
 -- | Filter options based on 'RGSatisficers'
@@ -52,13 +39,12 @@ strategicFilter sats opts
   where
     maybeBestScore
       = maximumMay
-      $ opts ^.. folded . _2 . rgStats . rgScore . _Just . agg
+      $ opts ^.. folded . _2 . rgStats . rgScore . _Just . nom
     toFiltered bestScore = filter (allowable bestScore) opts
     aLoss = sats ^. engineFilter . engineAllowableLoss
     allowable bestScore opt
-      = maybe False (\x -> x > (bestScore * aLoss))
-      $ opt ^? _2 . rgStats . rgScore . _Just . agg
-
+      = maybe False (\x -> x >= (bestScore * aLoss))
+      $ opt ^? _2 . rgStats . rgScore . _Just . nom
 
 -- | Get the 'Ordering' needed to fulfill the chosen 'RGOptimizer'
 strategicCompare
