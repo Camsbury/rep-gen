@@ -16,6 +16,7 @@ import RepGen.Type
 --------------------------------------------------------------------------------
 import qualified RepGen.PyChess as PyC
 import qualified RepGen.MoveTree as MT
+import RepGen.Stats (updateParentNominal)
 --------------------------------------------------------------------------------
 
 -- | Action runner to enumerate responses
@@ -49,8 +50,11 @@ processMoves :: EnumData -> Double -> RGM [(Uci, TreeNode)]
 processMoves action pAgg = do
   let ucis = action ^. edUcis
   fen <- liftIO $ PyC.ucisToFen ucis
-  maybeMastersM <- maybeMastersMoves fen
-  lichessM <- filterMoves action pAgg =<< lichessMoves fen
+  (rMStats, maybeMastersM) <- maybeMastersMoves fen
+  updateParentNominal ucis mastersStats rMStats
+  (rStats, lichessM') <- lichessMoves fen
+  updateParentNominal ucis lichessStats rStats
+  lichessM <- filterMoves action pAgg lichessM'
   mOverride <- preview $ overridesL . ix fen
   let pPrune = action ^. edProbP
   let processed
@@ -63,8 +67,10 @@ processMoves action pAgg = do
 initProcessMoves :: Vector Uci -> Double -> RGM [(Uci, TreeNode)]
 initProcessMoves ucis pAgg = do
   fen <- liftIO $ PyC.ucisToFen ucis
-  maybeMastersM <- maybeMastersMoves fen
-  lichessM <- lichessMoves fen
+  (rMStats, maybeMastersM) <- maybeMastersMoves fen
+  updateParentNominal ucis mastersStats rMStats
+  (rStats, lichessM) <- lichessMoves fen
+  updateParentNominal ucis lichessStats rStats
   mOverride <- preview $ overridesL . ix fen
   let processed
         = maybe

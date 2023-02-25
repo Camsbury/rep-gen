@@ -10,6 +10,7 @@ import RepGen.Monad
 import RepGen.MoveTree.Type
 import RepGen.Score.Type
 import RepGen.State.Type
+import RepGen.Stats
 import RepGen.Stats.Type
 import RepGen.Strategy.Type
 import RepGen.Type
@@ -37,19 +38,22 @@ runAction action = do
 
 fetchCandidates :: EnumData -> RGM [(Uci, TreeNode)]
 fetchCandidates action = do
-  let ucis       = action ^. edUcis
-  let pPrune     = action ^. edProbP
-  fen            <- liftIO $ PyC.ucisToFen ucis
-  lcM            <- H.lichessMoves fen
-  maybeMM        <- H.maybeMastersMoves fen
-  engineMoves    <- Ngn.fenToEngineCandidates fen
-  pAgg           <- MT.fetchPAgg ucis
-  color          <- view colorL
-  stratSats      <- view $ strategy . satisficers
-  stratOpt       <- view $ strategy . optimizer
-  breadth        <- maxCandBreadth pAgg
-  let candidates = fromMaybe lcM maybeMM
-  let isMasters  = isJust maybeMM
+  let ucis           = action ^. edUcis
+  let pPrune         = action ^. edProbP
+  fen                <- liftIO $ PyC.ucisToFen ucis
+  (rStats, lcM)      <- H.lichessMoves fen
+  (rMStats, maybeMM) <- H.maybeMastersMoves fen
+  engineMoves        <- Ngn.fenToEngineCandidates fen
+  pAgg               <- MT.fetchPAgg ucis
+  color              <- view colorL
+  stratSats          <- view $ strategy . satisficers
+  stratOpt           <- view $ strategy . optimizer
+  breadth            <- maxCandBreadth pAgg
+  let candidates     = fromMaybe lcM maybeMM
+  let isMasters      = isJust maybeMM
+
+  updateParentNominal ucis lichessStats rStats
+  updateParentNominal ucis mastersStats rMStats
   initCands
     <- maybe (filterCandidates candidates engineMoves) pure
     <=< findUci candidates fen <=< preview $ overridesL . ix fen

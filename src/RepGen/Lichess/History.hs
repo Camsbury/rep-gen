@@ -33,8 +33,10 @@ lichessMoves
     , MonadIO m
     )
   => Fen
-  -> m [(Uci, NodeStats)]
-lichessMoves = fmap parseStats . historicMoves <=< getLichessParams
+  -> m (RawStats, [(Uci, NodeStats)])
+lichessMoves fen = do
+  rawStats <- historicMoves =<< getLichessParams fen
+  pure (rawStats, parseStats rawStats)
 
 -- | Fetches masters moves if they meet our criteria
 maybeMastersMoves
@@ -44,13 +46,17 @@ maybeMastersMoves
     , MonadIO m
     )
   => Fen
-  -> m (Maybe [(Uci, NodeStats)])
+  -> m (RawStats, Maybe [(Uci, NodeStats)])
 maybeMastersMoves fen = do
   useM <- view mastersP
   mps <- getMastersParams fen
-  if useM
-    then fmap (fmap parseStats) . filterMinTotal =<< historicMoves mps
-    else pure Nothing
+  rawStats <- historicMoves mps
+  mHistMoves <- filterMinTotal rawStats
+  let mMoves
+        = if useM
+          then parseStats <$> mHistMoves
+          else Nothing
+  pure (rawStats, mMoves)
 
 initialStats
   :: ( MonadReader RGConfig m

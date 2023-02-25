@@ -1,8 +1,13 @@
+{-# LANGUAGE RankNTypes #-}
 --------------------------------------------------------------------------------
 module RepGen.Stats where
 --------------------------------------------------------------------------------
+import RepGen.Monad
 import RepGen.Type
 import RepGen.Lichess.History.Type
+import RepGen.MoveTree
+import RepGen.MoveTree.Type
+import RepGen.State.Type
 import RepGen.Stats.Type
 --------------------------------------------------------------------------------
 
@@ -28,3 +33,19 @@ parseStatsMove totalCount rs =
     total = white + black + draws
     whiteP = white /. total
     blackP = black /. total
+
+-- | Inject positional stats into former move stats
+updateParentNominal
+  :: Vector Uci
+  -> Traversal' RGStats (Maybe NodeStats)
+  -> RawStats
+  -> RGM ()
+updateParentNominal ucis statsT rs = do
+  moveTree . traverseUcis ucis . rgStats . statsT . _Just . whiteWins .= whiteS
+  moveTree . traverseUcis ucis . rgStats . statsT . _Just . blackWins .= blackS
+  where
+    white = rs ^. whiteTotal
+    black = rs ^. blackTotal
+    total = rs ^. rawTotal
+    whiteS = mkRGStat $ white /. total
+    blackS = mkRGStat $ black /. total
