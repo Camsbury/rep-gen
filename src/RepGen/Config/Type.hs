@@ -50,9 +50,7 @@ makeLenses ''RGConfig
 
 instance Default RGConfig where
   def = RGConfig
-      { _asymCandBreadth = 5
-      , _asymRespProb    = 0.25
-      , _colorL          = White
+      { _colorL          = White
       , _engineCachePath = "./resources/engine-cache.db"
       , _exportJSONPath  = "./resources/move-tree.json"
       , _exportP         = True
@@ -60,7 +58,9 @@ instance Default RGConfig where
       , _historyConfig   = def
       , _httpCachePath   = "./resources/http-cache.db"
       , _initCandBreadth = 25
+      , _asymCandBreadth = 5
       , _initRespProb    = 0.01
+      , _asymRespProb    = 0.25
       , _mOverrides      = mempty
       , _mastersP        = True
       , _minLogLevel     = LevelInfo

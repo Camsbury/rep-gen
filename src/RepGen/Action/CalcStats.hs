@@ -132,5 +132,5 @@ calcScore ucis = do
         . _2
         . to (\n -> fromMaybe 0 (n ^? rgStats . rgScore . _Just . agg)
                  * fromMaybe 0 (n ^? rgStats . lichessStats . _Just . prob))
-  let pScore = parent ^? rgStats . rgScore . _Just . agg
+  let pScore = parent ^? rgStats . rgScore . _Just . nom
   setScore ((\pS -> cScoreAgg + probNonChild children * pS) <$> pScore) ucis

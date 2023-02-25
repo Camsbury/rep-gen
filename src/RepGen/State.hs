@@ -25,7 +25,7 @@ initState = do
   logInfoN "Initializing state"
   node <- baseNode
   actions <- initActions <$> view colorL
-  -- logDebugN $ "Actions: " <> tshow actions
+  logDebugN $ "Actions: " <> tshow actions
   logInfoN "Finished initializing state"
   pure $ def
        & moveTree .~ node

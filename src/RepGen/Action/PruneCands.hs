@@ -21,7 +21,7 @@ runAction ucis = do
   let children = node ^.. responses . folded
   -- logDebugN $ "Prune Children: " <> tshow children
   logInfoN
-    $ ("Prune Candidates: " <>)
+    $ ("Candidate Moves: " <>)
     . tshow
     $ children ^.. folded . _1
 

@@ -11,7 +11,6 @@ import RepGen.Monad
 import RepGen.Score ()
 import RepGen.Score.Type
 import RepGen.State.Type
-import RepGen.Strategy.Type
 import RepGen.Type
 --------------------------------------------------------------------------------
 import qualified RepGen.Engine.Local as L
@@ -35,16 +34,17 @@ fenToEngineCandidates
   :: Fen
   -> RGM [EngineCandidate]
 fenToEngineCandidates fen = do
-  (mCands, limitReached) <- (`runStateT` False) $ do
+  limitReached <- use cloudLimitReached
+  (mCands, limitReached') <- (`runStateT` limitReached) $ do
     deepCands <- fenToCloudCandidates fen lcDeepBreadth
     wideCands <- if isJust deepCands
       then fenToCloudCandidates fen lcWideBreadth
       else pure Nothing
     pure $ maybe deepCands (\x -> mergeCands x <$> deepCands) wideCands
-  when limitReached $ cloudLimitReached .= True
+  when limitReached' $ cloudLimitReached .= True
   eMoves <- maybe (L.fenToLocalCandidates fen) pure mCands
   color <- view colorL
-  extractFilteredMoves $ applyScoreColor color <$> eMoves
+  pure $ applyScoreColor color <$> eMoves
 
 mergeCands
   :: [EngineCandidate]
@@ -67,9 +67,10 @@ fenToCloudCandidates
   -> m (Maybe [EngineCandidate])
 fenToCloudCandidates (Fen fen) breadth = do
   dbPath <- view httpCachePath
+  limitReached <- get
   (statusCode, response)
     <- liftIO
-    . Web.cachedGetRequest dbPath cacheUrl
+    . Web.cachedGetRequest dbPath cacheUrl limitReached
     $ mapFromList [("fen", fen), ("multiPv", tshow breadth)]
   case statusCode of
     200 -> throwEither
@@ -109,7 +110,7 @@ fenToEngineCandidatesInit fen = do
     pure $ maybe deepCands (\x -> mergeCands x <$> deepCands) wideCands
   eMoves <- maybe (L.fenToLocalCandidates fen) pure mCands
   color <- view colorL
-  extractFilteredMoves $ applyScoreColor color <$> eMoves
+  pure $ applyScoreColor color <$> eMoves
 
 -- | Fetch the engine score for a given FEN
 fenToScore
@@ -127,25 +128,3 @@ fenToScore fen = do
 applyScoreColor :: Color -> EngineCandidate -> EngineCandidate
 applyScoreColor White = id
 applyScoreColor Black = ngnScore . scoreL %~ (1 -)
-
-
--- | Extract moves that are within a reasonable deviation from the best move
-extractFilteredMoves
-  :: ( MonadReader RGConfig m
-    , MonadError  RGError  m
-    , MonadIO m
-    )
-  => [EngineCandidate]
-  -> m [EngineCandidate]
-extractFilteredMoves cands = do
-  let sorted = sortBy (compare `on` view (ngnScore . scoreL . to negate)) cands
-  aLoss
-    <- view
-    $ strategy
-    . satisficers
-    . engineFilter
-    . engineAllowableLoss
-  bestScore
-    <- throwMaybe "No engine candidates to filter!?"
-    $ sorted ^? ix 0 . ngnScore . scoreL
-  pure $ filter (\x -> aLoss < x ^. ngnScore . scoreL / bestScore) sorted

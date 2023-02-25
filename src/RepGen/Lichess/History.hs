@@ -122,7 +122,7 @@ fetchMovesFor params path = do
   dbPath <- view httpCachePath
   (statusCode, response)
     <- liftIO
-    . Web.cachedGetRequest dbPath (baseUrl <> path)
+    . Web.cachedGetRequest dbPath (baseUrl <> path) False
     $ params
   case statusCode of
     200 -> throwEither
