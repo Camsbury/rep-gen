@@ -74,7 +74,7 @@ cachedGetRequest dbPath url limitReached queryParams = do
           pure (200, response)
         Nothing -> do
           (code, responseBody) <- if limitReached
-            then pure (443, "avoiding http requests (limit reached)")
+            then pure (0, "avoiding http requests (limit reached)")
             else getRequest url queryParams
           when (code == 200) $ cacheSet dbPath url queryParams responseBody
           pure (code, responseBody)

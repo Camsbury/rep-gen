@@ -83,6 +83,9 @@ fenToCloudCandidates (Fen fen) breadth = do
         $ "FEN missing from cache: "
         <> tshow fen
       pure Nothing
+    -- the case where we are only using the cache
+    0 -> do
+      pure Nothing
     code -> do
       logWarnN
         $ "HTTP error code: "
