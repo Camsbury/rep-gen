@@ -45,7 +45,7 @@ fromRaw :: RawScore -> Score
 fromRaw (MateScore (MateIn White c))
   = Score . succ $ 1 /. c
 fromRaw (MateScore (MateIn Black c))
-  = Score . negate . succ $ 1 /. c
+  = Score . negate $ 1 /. c
 fromRaw (CpScore cp)
   = Score
   . (+0.5)
