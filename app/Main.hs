@@ -3,11 +3,23 @@ module Main where
 
 import RepGen
 
-
 -- TODO: just take a JSON string for config so I can call from clojure
 main :: IO ()
 main = do
   buildRepertoire $
-    def & colorL   .~ White
+    def & colorL   .~ Black
         & mastersP .~ False
-        -- & searchDepth .~ 3
+        & historyConfig . historyRatings .~ [L1800]
+        & minProbAgg .~ 0.01
+        -- & startingMoves .~ ["e4", "c5", "d3"]
+        -- & minLogLevel .~ LevelDebug
+
+        -- & startingMoves .~ ["d4"]
+        -- & mOverrides .~ mapFromList (
+        --   [ (["d4", "d5", "c4", "e6"], "Nf3")
+        --   ] :: [([San], San)]
+        -- )
+
+        -- & minLogLevel .~ LevelDebug
+        -- & mOverrides .~ mapFromList ([([], "d4")] :: [([San], San)])
+        -- & startingMoves .~ ["f4"]
