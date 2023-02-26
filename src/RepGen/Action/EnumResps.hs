@@ -9,6 +9,7 @@ import RepGen.Action.Type
 import RepGen.Config.Type
 import RepGen.Lichess.History
 import RepGen.Monad
+import RepGen.MoveTree
 import RepGen.MoveTree.Type
 import RepGen.State.Type
 import RepGen.Stats.Type
@@ -28,8 +29,8 @@ runAction action = do
   processed <- processMoves action pAgg
   -- logDebugN $ "processed: " <> tshow processed
   moveTree . MT.traverseUcis ucis . responses .= fromList processed
-  toActOn <- filterMinRespProb (action ^. edProbP) pAgg processed
   -- logDebugN $ "To act on: " <> tshow toActOn
+  toActOn <- filterMinRespProb (action ^. edProbP) pAgg ucis
   let actions = toAction action =<< toActOn
   -- logDebugN $ "Actions: " <> tshow actions
   actionStack %= (actions ++)
@@ -41,7 +42,7 @@ initRunAction ucis = do
   pAgg <- MT.fetchPAgg ucis
   processed <- initProcessMoves ucis pAgg
   moveTree . MT.traverseUcis ucis . responses .= fromList processed
-  toActOn <- filterMinRespProb 1 pAgg processed
+  toActOn <- filterMinRespProb 1 pAgg ucis
   let actions = initToAction =<< toActOn
   -- logDebugN $ "Actions: " <> tshow actions
   actionStack %= (actions ++)
@@ -179,9 +180,9 @@ initToAction node
 filterMinRespProb
   :: Double
   -> Double
-  -> [(Uci, TreeNode)]
+  -> Vector Uci
   -> RGM [TreeNode]
-filterMinRespProb pPrune pAgg resps = do
+filterMinRespProb pPrune pAgg ucis = do
   -- logDebugN $ "pAgg: " <> tshow pAgg
   -- logDebugN $ "pPrune: " <> tshow pPrune
   irp <- view initRespProb
@@ -190,10 +191,21 @@ filterMinRespProb pPrune pAgg resps = do
   -- logDebugN $ "asymptotic response probability: " <> tshow arp
   let minProb = exp (log (irp / arp) * pAgg) * arp
   -- logDebugN $ "minimum response probability: " <> tshow minProb
-  let f (_, rNode) =
+  let isValid rNode =
         maybe
           False
           (\x -> pPrune * x > minProb)
           (rNode ^? rgStats . lichessStats . _Just . prob)
-  pure . fmap (view _2) . filter f $ resps
+  moveTree
+    . traverseUcis ucis
+    . responses
+    . traversed
+    . filtered (\x -> x ^. _2 . to (not . isValid))
+    . _2
+    . removed
+    .= True
+  children <- use $ moveTree . traverseUcis ucis . to collectValidChildren
+  pure $ children ^.. folded . _2
+
+  -- pure . fmap (view _2) . filter f $ resps
 
