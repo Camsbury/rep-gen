@@ -143,6 +143,15 @@ fetchMovesFor params path = do
         ( "404 Not found for params: "
         <> tshow params
         )
+    502 -> do
+      logWarnN
+        $ "502 for params: "
+        <> tshow params
+        <> "response: "
+        <> tshow response
+      liftIO $ C.threadDelay oneMinute
+      fetchMovesFor params path
+    -- maybe set retries here for 500s
     code -> throwError
          ( "HTTP error code: "
          <> tshow code
