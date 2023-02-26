@@ -59,8 +59,8 @@ instance Default RGConfig where
       , _httpCachePath   = "./resources/http-cache.db"
       , _initCandBreadth = 25
       , _asymCandBreadth = 5
-      , _initRespProb    = 0.01
-      , _asymRespProb    = 0.25
+      , _initRespProb    = 0.001
+      , _asymRespProb    = 0.1
       , _mOverrides      = mempty
       , _mastersP        = True
       , _minLogLevel     = LevelInfo
