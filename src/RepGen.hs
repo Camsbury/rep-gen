@@ -50,7 +50,7 @@ buildTree :: RGM ()
 buildTree = do
   action <- uses actionStack . preview $ ix 0
   actionStack %= fromMaybe empty . tailMay
-  -- aStack <- use actionStack
-  -- logDebugN $ tshow aStack
+  aStack <- use actionStack
+  logDebugN $ "Action stack: " <> tshow aStack
   maybe (pure ()) ((>> buildTree) . runAction) action
 

@@ -29,10 +29,10 @@ runAction action = do
   processed <- processMoves action pAgg
   -- logDebugN $ "processed: " <> tshow processed
   moveTree . MT.traverseUcis ucis . responses .= fromList processed
-  -- logDebugN $ "To act on: " <> tshow toActOn
   toActOn <- filterMinRespProb (action ^. edProbP) pAgg ucis
+  -- logDebugN $ "To act on: " <> tshow toActOn
   let actions = toAction action =<< toActOn
-  -- logDebugN $ "Actions: " <> tshow actions
+  -- logDebugN $ "EResp Actions: " <> tshow actions
   actionStack %= (actions ++)
 
 -- | Action runner to initiate responses for the tree traversal
