@@ -110,8 +110,29 @@ probNonChild children
 
 setScore :: Maybe Double -> Vector Uci -> RGM ()
 setScore Nothing _ = pure ()
-setScore (Just s) ucis = do
-  moveTree . MT.traverseUcis ucis . rgStats . rgScore . _Just . agg .= s
+setScore (Just s) ucis
+  = do
+  currScore
+    <- preuse
+    $ moveTree
+    . MT.traverseUcis ucis
+    . rgStats
+    . rgScore
+  if isJust currScore
+    then
+      moveTree
+      . MT.traverseUcis ucis
+      . rgStats
+      . rgScore
+      . _Just
+      . agg
+      .= s
+    else
+      moveTree
+      . MT.traverseUcis ucis
+      . rgStats
+      . rgScore
+      .= Just (mkRGStat s)
 
 -- | Calculate the weighted score for a node given the chosen moves
 -- for its children

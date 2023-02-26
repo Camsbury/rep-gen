@@ -15,9 +15,10 @@ import RepGen.State.Type
 import RepGen.Stats.Type
 import RepGen.Type
 --------------------------------------------------------------------------------
-import qualified RepGen.PyChess as PyC
+import qualified RepGen.Engine   as Ngn
+import qualified RepGen.PyChess  as PyC
 import qualified RepGen.MoveTree as MT
-import qualified RepGen.Stats as Stats
+import qualified RepGen.Stats    as Stats
 --------------------------------------------------------------------------------
 
 -- | Action runner to enumerate responses
@@ -56,13 +57,15 @@ processMoves action pAgg = do
   (rStats, lichessM') <- lichessMoves fen
   Stats.updateParentNominal ucis lichessStats rStats
   lichessM <- filterMoves action pAgg lichessM'
+  engineMoves <- Ngn.fenToEngineCandidates fen
   mOverride <- preview $ overridesL . ix fen
   let pPrune = action ^. edProbP
   let processed
-        = maybe
-          (wrapLCStats ucis fen pAgg pPrune <$> lichessM)
-          (mergeMoves ucis fen pAgg pPrune lichessM)
-          maybeMastersM
+        =   Ngn.injectEngine engineMoves
+        <$> maybe
+            (wrapLCStats ucis fen pAgg pPrune <$> lichessM)
+            (mergeMoves ucis fen pAgg pPrune lichessM)
+            maybeMastersM
   pure . fromMaybe processed $ findUci processed =<< mOverride
 
 initProcessMoves :: Vector Uci -> Double -> RGM [(Uci, TreeNode)]

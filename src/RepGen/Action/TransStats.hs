@@ -19,13 +19,29 @@ import qualified RepGen.Strategy as Strat
 setScore :: Maybe RGStat -> Vector Uci -> RGM ()
 setScore Nothing _ = pure ()
 setScore (Just s) ucis
-  = moveTree
-  . MT.traverseUcis ucis
-  . rgStats
-  . rgScore
-  . _Just
-  . agg
-  .= (s ^. agg)
+  = do
+  currScore
+    <- preuse
+    $ moveTree
+    . MT.traverseUcis ucis
+    . rgStats
+    . rgScore
+  if isJust currScore
+    then
+      moveTree
+      . MT.traverseUcis ucis
+      . rgStats
+      . rgScore
+      . _Just
+      . agg
+      .= (s ^. agg)
+    else
+      moveTree
+      . MT.traverseUcis ucis
+      . rgStats
+      . rgScore
+      .= Just s
+
 
 setNodeStats
   :: Maybe NodeStats
@@ -54,9 +70,9 @@ runAction ucis = do
 
   when (isJust $ fromNullable children) $ do
     logDebugN "Children exist for transfer!"
-    (choiceUci, child) <- Strat.applyStrategy children
+    (_, child) <- Strat.applyStrategy children
 
-    setScore (child ^. rgStats . rgScore) (ucis <> [choiceUci])
+    setScore (child ^. rgStats . rgScore) ucis
     setNodeStats
       (child ^. rgStats . lichessStats)
       ucis

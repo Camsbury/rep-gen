@@ -3,14 +3,17 @@
 module RepGen.Engine
   ( fenToEngineCandidates
   , fenToScore
+  , injectEngine
   ) where
 --------------------------------------------------------------------------------
 import RepGen.Config.Type
 import RepGen.Engine.Type
 import RepGen.Monad
+import RepGen.MoveTree.Type
 import RepGen.Score ()
 import RepGen.Score.Type
 import RepGen.State.Type
+import RepGen.Stats.Type
 import RepGen.Type
 --------------------------------------------------------------------------------
 import qualified RepGen.Engine.Local as L
@@ -131,3 +134,16 @@ fenToScore fen = do
 applyScoreColor :: Color -> EngineCandidate -> EngineCandidate
 applyScoreColor White = id
 applyScoreColor Black = ngnScore . scoreL %~ (1 -)
+
+injectEngine :: [EngineCandidate] -> (Uci, TreeNode) -> (Uci, TreeNode)
+injectEngine nCands stats@(uci, _)
+  = stats
+  & _2
+  . rgStats
+  . rgScore
+  .~ findBy uci nCands
+  where
+    findBy _ [] = Nothing
+    findBy u (ngn:rest)
+      | u == ngn ^. ngnUci = Just . mkRGStat $ ngn ^. ngnScore . scoreL
+      | otherwise = findBy u rest

@@ -8,7 +8,6 @@ import RepGen.Config.Type
 import RepGen.Engine.Type
 import RepGen.Monad
 import RepGen.MoveTree.Type
-import RepGen.Score.Type
 import RepGen.State.Type
 import RepGen.Stats.Type
 import RepGen.Strategy.Type
@@ -61,7 +60,7 @@ fetchCandidates action = do
         =   take breadth
         .   Strat.strategicFilter stratSats
         .   sortBy (Strat.strategicCompare stratOpt color)
-        $   injectEngine engineMoves
+        $   Ngn.injectEngine engineMoves
         .   applyWhen isMasters (injectLichess lcM)
         .   initNode isMasters pAgg pPrune fen ucis
         <$> initCands
@@ -98,19 +97,6 @@ firstEngine _ fen _ [] = do
   logWarnN $ "There are no candidates for FEN: " <> fen ^. fenL
   logWarnN "Nor are there any engine moves."
   pure []
-
-injectEngine :: [EngineCandidate] -> (Uci, TreeNode) -> (Uci, TreeNode)
-injectEngine nCands stats@(uci, _)
-  = stats
-  & _2
-  . rgStats
-  . rgScore
-  .~ findBy uci nCands
-  where
-    findBy _ [] = Nothing
-    findBy u (ngn:rest)
-      | u == ngn ^. ngnUci = Just . mkRGStat $ ngn ^. ngnScore . scoreL
-      | otherwise = findBy u rest
 
 injectLichess :: [(Uci, NodeStats)] -> (Uci, TreeNode) -> (Uci, TreeNode)
 injectLichess lcM stats@(uci, _)

@@ -58,9 +58,9 @@ instance Default RGConfig where
       , _historyConfig   = def
       , _httpCachePath   = "./resources/http-cache.db"
       , _initCandBreadth = 25
-      , _asymCandBreadth = 5
+      , _asymCandBreadth = 5 -- need to enforce this is less
       , _initRespProb    = 0.001
-      , _asymRespProb    = 0.1
+      , _asymRespProb    = 0.1 -- need to enforce this is greater
       , _mOverrides      = mempty
       , _mastersP        = True
       , _minLogLevel     = LevelInfo
@@ -68,6 +68,7 @@ instance Default RGConfig where
       , _minProbAgg      = 0.0003
       , _minTotalMasters = 500
       , _overridesL      = mempty
+      -- this seems useless in the grand scheme, but useful in shorter analysis
       , _searchDepth     = 6
       , _startingMoves   = []
       , _strategy        = def
