@@ -55,7 +55,7 @@ fetchCandidates action = do
   Stats.updateParentNominal ucis lichessStats rStats
   Stats.updateParentNominal ucis mastersStats rMStats
   initCands
-    <- maybe (filterCandidates candidates engineMoves) pure
+    <- maybe (filterCandidates candidates) pure
     <=< findUci candidates fen <=< preview $ overridesL . ix fen
   let candNodes
         =   take breadth
@@ -162,15 +162,12 @@ findUci cands fen (Just u)
 -- | Filter available candidates for selection
 filterCandidates
   :: [(Uci, NodeStats)]
-  -> [EngineCandidate]
   -> RGM [(Uci, NodeStats)]
-filterCandidates mvs eCands = do
-  let eUcis = eCands ^.. folded . ngnUci
+filterCandidates mvs = do
   mpl <- view minPlays
-  pure . filter (g eUcis) $ filter (f mpl) mvs
+  pure $ filter (f mpl) mvs
   where
     f mpl (_, s) = mpl < s ^. playCount
-    g eUcis (u, _) = u `elem` eUcis
 
 maxCandBreadth :: Double -> RGM Int
 maxCandBreadth pAgg = do
