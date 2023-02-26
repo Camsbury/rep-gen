@@ -10,7 +10,6 @@ import RepGen.Monad
 import RepGen.MoveTree.Type
 import RepGen.Score.Type
 import RepGen.State.Type
-import RepGen.Stats
 import RepGen.Stats.Type
 import RepGen.Strategy.Type
 import RepGen.Type
@@ -20,6 +19,7 @@ import qualified RepGen.Engine          as Ngn
 import qualified RepGen.MoveTree        as MT
 import qualified RepGen.Lichess.History as H
 import qualified RepGen.Strategy        as Strat
+import qualified RepGen.Stats           as Stats
 --------------------------------------------------------------------------------
 
 -- | Action runner to enumerate move candidates
@@ -52,8 +52,8 @@ fetchCandidates action = do
   let candidates     = fromMaybe lcM maybeMM
   let isMasters      = isJust maybeMM
 
-  updateParentNominal ucis lichessStats rStats
-  updateParentNominal ucis mastersStats rMStats
+  Stats.updateParentNominal ucis lichessStats rStats
+  Stats.updateParentNominal ucis mastersStats rMStats
   initCands
     <- maybe (filterCandidates candidates engineMoves) pure
     <=< findUci candidates fen <=< preview $ overridesL . ix fen
