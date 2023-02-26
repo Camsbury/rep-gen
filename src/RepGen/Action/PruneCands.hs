@@ -27,7 +27,7 @@ runAction ucis = do
 
   case fromNullable children of
     Nothing
-      -> logDebugN
+      -> logWarnN
       $ "No children when pruning at: "
       <> tshow ucis
     Just _ -> do

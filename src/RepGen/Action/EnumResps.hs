@@ -38,7 +38,7 @@ runAction action = do
 -- | Action runner to initiate responses for the tree traversal
 initRunAction :: Vector Uci -> RGM ()
 initRunAction ucis = do
-  logDebugN $ "Initializing Responses for: " <> tshow ucis
+  logInfoN $ "Initializing Responses for: " <> tshow ucis
   pAgg <- MT.fetchPAgg ucis
   processed <- initProcessMoves ucis pAgg
   moveTree . MT.traverseUcis ucis . responses .= fromList processed

@@ -26,7 +26,7 @@ import qualified RepGen.Stats           as Stats
 runAction :: EnumData -> RGM ()
 runAction action = do
   let ucis = action ^. edUcis
-  logDebugN $ "Enumerating Candidates for: " <> tshow ucis
+  logInfoN $ "Enumerating Candidates for: " <> tshow ucis
   candidates <- fetchCandidates action
   moveTree . MT.traverseUcis ucis . responses .= fromList candidates
   sDepth <- view searchDepth
@@ -86,7 +86,7 @@ firstEngine
 firstEngine pPrune fen ucis (ngn:_) = do
   pAgg <- MT.fetchPAgg ucis
   logWarnN $ "There are no candidates for FEN: " <> fen ^. fenL
-  logInfoN "Reverting to the top engine move"
+  logWarnN "Reverting to the top engine move"
   let uci = ngn ^. ngnUci
   pure
     [( uci
@@ -95,8 +95,8 @@ firstEngine pPrune fen ucis (ngn:_) = do
            & nodeFen .~ fen
      )]
 firstEngine _ fen _ [] = do
-  logInfoN $ "There are no candidates for FEN: " <> fen ^. fenL
-  logInfoN "Nor are there any engine moves."
+  logWarnN $ "There are no candidates for FEN: " <> fen ^. fenL
+  logWarnN "Nor are there any engine moves."
   pure []
 
 injectEngine :: [EngineCandidate] -> (Uci, TreeNode) -> (Uci, TreeNode)
@@ -153,7 +153,7 @@ findUci cands fen (Just u)
   $ cands ^? traversed . filtered (matchesUci u)
   where
     logMiss
-      = logInfoN ("No data for override: " <> u <> " at FEN: " <> (fen ^. fenL))
+      = logWarnN ("No data for override: " <> u <> " at FEN: " <> (fen ^. fenL))
       -- NOTE: could rewrite to store the Uci with no NodeStats
       -- , but skipping for now
       >> pure Nothing
