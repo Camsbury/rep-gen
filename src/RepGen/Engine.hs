@@ -128,8 +128,11 @@ fenToScore
   => Fen
   -> m (Maybe Score)
 fenToScore fen = do
+  color <- view colorL
   cands <- fenToEngineCandidatesInit fen
-  pure $ cands ^? ix 0 . ngnScore
+  case color of
+    White -> pure $ cands ^? ix 0 . ngnScore
+    Black -> pure $ cands ^? ix 0 . ngnScore . to (\x -> x & scoreL %~ (1 -))
 
 applyScoreColor :: Color -> EngineCandidate -> EngineCandidate
 applyScoreColor White = id
