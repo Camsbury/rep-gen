@@ -11,6 +11,7 @@ import RepGen.MoveTree.Type
 import RepGen.State.Type
 --------------------------------------------------------------------------------
 import qualified RepGen.Strategy as Strat
+import qualified RepGen.State    as State
 import qualified RepGen.Export as X
 --------------------------------------------------------------------------------
 runAction :: Vector Uci -> RGM ()
@@ -18,24 +19,26 @@ runAction ucis = do
   logInfoN $ "Pruning Candidates for: " <> tshow ucis
   let err = "Node to prune does not exist at: " <> tshow ucis
   node <- throwMaybe err <=< preuse $ moveTree . traverseUcis ucis
-  let children = node ^.. responses . folded
+  let children = node ^.. nodeResponses . folded
   -- logDebugN $ "Prune Children: " <> tshow children
   logInfoN
     $ ("Candidate Moves: " <>)
     . tshow
     $ children ^.. folded . _1
 
-  case fromNullable children of
+  childrenStats <- traverse State.collectInfo children
+
+  case fromNullable childrenStats of
     Nothing
       -> logWarnN
       $ "No children when pruning at: "
       <> tshow ucis
     Just _ -> do
-      (choiceUci, _) <- Strat.applyStrategy children
+      (choiceUci, _) <- Strat.applyStrategy childrenStats
       -- "remove" the others
       moveTree
         . traverseUcis ucis
-        . responses
+        . nodeResponses
         . traversed
         . filtered (\x -> x ^. _1 /= choiceUci)
         . _2

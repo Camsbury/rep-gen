@@ -8,14 +8,14 @@ module RepGen.Strategy
 
 import RepGen.Config.Type
 import RepGen.Monad
-import RepGen.MoveTree.Type
 import RepGen.Strategy.Type
+import RepGen.State.Type
 import RepGen.Stats.Type
 import RepGen.Type
 --------------------------------------------------------------------------------
 
 -- | Apply a strategy to select the best move option
-applyStrategy :: [(Uci, TreeNode)] -> RGM (Uci, TreeNode)
+applyStrategy :: [(Uci, (Fen, PosInfo))] -> RGM (Uci, (Fen, PosInfo))
 applyStrategy options = do
   sats <- view $ strategy . satisficers
   sComp <- strategicCompare <$> view (strategy . optimizer) <*> view colorL
@@ -28,8 +28,8 @@ applyStrategy options = do
 -- | Filter options based on 'RGSatisficers'
 strategicFilter
   :: RGSatisficers
-  -> [(Uci, TreeNode)]
-  -> [(Uci, TreeNode)]
+  -> [(Uci, (Fen, PosInfo))]
+  -> [(Uci, (Fen, PosInfo))]
 strategicFilter sats opts
   = if sats ^. engineFilter . engineP
     then
@@ -39,55 +39,55 @@ strategicFilter sats opts
   where
     maybeBestScore
       = maximumMay
-      $ opts ^.. folded . _2 . rgStats . rgScore . _Just . nom
+      $ opts ^.. folded . _2 . _2 . posStats . rgScore . _Just . nom
     toFiltered bestScore = filter (allowable bestScore) opts
     aLoss = sats ^. engineFilter . engineAllowableLoss
     allowable bestScore opt
       = maybe False (\x -> x >= (bestScore * aLoss))
-      $ opt ^? _2 . rgStats . rgScore . _Just . nom
+      $ opt ^? _2 . _2 . posStats . rgScore . _Just . nom
 
 -- | Get the 'Ordering' needed to fulfill the chosen 'RGOptimizer'
 strategicCompare
   :: RGOptimizer
   -> Color
-  -> (Uci, TreeNode)
-  -> (Uci, TreeNode)
+  -> (Uci, (Fen, PosInfo))
+  -> (Uci, (Fen, PosInfo))
   -> Ordering
 strategicCompare MaxWinOverLoss = maxWinOverLoss
 strategicCompare MinLoss        = minLoss
 
 -- | Comparison for MinLoss
-minLoss :: Color -> (Uci, TreeNode) -> (Uci, TreeNode) -> Ordering
-minLoss c (_, a) (_, b) = fromMaybe EQ $ compM <|> comp
+minLoss :: Color -> (Uci, (Fen, PosInfo)) -> (Uci, (Fen, PosInfo)) -> Ordering
+minLoss c (_, (_, a)) (_, (_, b)) = fromMaybe EQ $ compM <|> comp
   where
-    stat x pWins cStats = x ^? rgStats . cStats . _Just . pWins c . agg
+    stat x pWins cStats = x ^? cStats . _Just . pWins c . agg
     compM = compare
-      <$> stat a oppWins mastersStats
-      <*> stat b oppWins mastersStats
+      <$> stat (a ^. posStats) oppWins mastersStats
+      <*> stat (b ^. posStats) oppWins mastersStats
     comp = compare
-      <$> stat a oppWins lichessStats
-      <*> stat b oppWins lichessStats
+      <$> stat (a ^. posStats) oppWins lichessStats
+      <*> stat (b ^. posStats) oppWins lichessStats
 
 -- | Comparison for MaxWinOverLoss
-maxWinOverLoss :: Color -> (Uci, TreeNode) -> (Uci, TreeNode) -> Ordering
-maxWinOverLoss c (_, a) (_, b) = fromMaybe EQ $ compM <|> comp
+maxWinOverLoss :: Color -> (Uci, (Fen, PosInfo)) -> (Uci, (Fen, PosInfo)) -> Ordering
+maxWinOverLoss c (_, (_, a)) (_, (_, b)) = fromMaybe EQ $ compM <|> comp
   where
-    stat x pWins cStats = x ^? rgStats . cStats . _Just . pWins c . agg
+    stat x pWins cStats = x ^? cStats . _Just . pWins c . agg
     lossWinMA = do
-      lm <- stat a oppWins mastersStats
-      wm <- stat a myWins mastersStats
+      lm <- stat (a ^. posStats) oppWins mastersStats
+      wm <- stat (a ^. posStats) myWins mastersStats
       lm /? wm
     lossWinMB = do
-      lm <- stat b oppWins mastersStats
-      wm <- stat b myWins mastersStats
+      lm <- stat (b ^. posStats) oppWins mastersStats
+      wm <- stat (b ^. posStats) myWins mastersStats
       lm /? wm
     lossWinA = do
-      l <- stat a oppWins lichessStats
-      w <- stat a myWins lichessStats
+      l <- stat (a ^. posStats) oppWins lichessStats
+      w <- stat (a ^. posStats) myWins lichessStats
       l /? w
     lossWinB = do
-      l <- stat b oppWins lichessStats
-      w <- stat b myWins lichessStats
+      l <- stat (b ^. posStats) oppWins lichessStats
+      w <- stat (b ^. posStats) myWins lichessStats
       l /? w
     compM = compare <$> lossWinMA <*> lossWinMB
     comp = compare <$> lossWinA <*> lossWinB

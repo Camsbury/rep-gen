@@ -18,11 +18,13 @@ runAction :: Vector Uci -> RGM ()
 runAction ucis = do
   logDebugN $ "Running Prune Hooks for: " <> tshow ucis
   mpa <- view minProbAgg
+  pTI <- use posToInfo
   moveTree
     . traverseUcis ucis
-    . responses
+    . nodeResponses
     . traversed
-    . filtered (\x -> x ^. _2 . rgStats . probAgg < mpa)
+    . filtered (\x -> maybe False (< mpa)
+                 $ pTI ^? ix (x ^. _2 . nodeFen) . posStats . probAgg)
     . _2
     . removed
     .= True

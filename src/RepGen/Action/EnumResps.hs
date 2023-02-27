@@ -16,9 +16,10 @@ import RepGen.Stats.Type
 import RepGen.Type
 --------------------------------------------------------------------------------
 import qualified RepGen.Engine   as Ngn
-import qualified RepGen.PyChess  as PyC
 import qualified RepGen.MoveTree as MT
 import qualified RepGen.Stats    as Stats
+import qualified RepGen.State    as State
+import qualified RepGen.PyChess  as PyC
 --------------------------------------------------------------------------------
 
 -- | Action runner to enumerate responses
@@ -27,13 +28,10 @@ runAction action = do
   let ucis = action ^. edUcis
   logDebugN $ "Enumerating Responses for: " <> tshow ucis
   pAgg <- MT.fetchPAgg ucis
-  processed <- processMoves action pAgg
-  -- logDebugN $ "processed: " <> tshow processed
-  moveTree . MT.traverseUcis ucis . responses .= fromList processed
+
+  processMoves action
   toActOn <- filterMinRespProb (action ^. edProbP) pAgg ucis
-  -- logDebugN $ "To act on: " <> tshow toActOn
   let actions = toAction action =<< toActOn
-  -- logDebugN $ "EResp Actions: " <> tshow actions
   actionStack %= (actions ++)
 
 -- | Action runner to initiate responses for the tree traversal
@@ -41,49 +39,106 @@ initRunAction :: Vector Uci -> RGM ()
 initRunAction ucis = do
   logInfoN $ "Initializing Responses for: " <> tshow ucis
   pAgg <- MT.fetchPAgg ucis
-  processed <- initProcessMoves ucis pAgg
-  moveTree . MT.traverseUcis ucis . responses .= fromList processed
+
+  initProcessMoves ucis
   toActOn <- filterMinRespProb 1 pAgg ucis
   let actions = initToAction =<< toActOn
-  -- logDebugN $ "Actions: " <> tshow actions
   actionStack %= (actions ++)
 
-processMoves :: EnumData -> Double -> RGM [(Uci, TreeNode)]
-processMoves action pAgg = do
+processMoves :: EnumData -> RGM ()
+processMoves action = do
   let ucis = action ^. edUcis
-  fen <- liftIO $ PyC.ucisToFen ucis
-  (rMStats, maybeMastersM) <- maybeMastersMoves fen
-  Stats.updateParentNominal ucis mastersStats rMStats
-  (rStats, lichessM') <- lichessMoves fen
-  Stats.updateParentNominal ucis lichessStats rStats
+  pAgg <- MT.fetchPAgg ucis
+  parent
+    <- throwMaybe ("Parent doesn't exist at ucis: " <> tshow ucis)
+    <=< preuse
+    $ moveTree . MT.traverseUcis ucis
+  let children = parent ^.. nodeResponses . folded
+  case fromNullable children of
+     Just _ ->
+       pure ()
+     Nothing -> do
+       processed <- doProcessMoves action pAgg
+       let nodes = fromProcessed ucis <$> processed
+       moveTree . MT.traverseUcis ucis . nodeResponses .= fromList nodes
+
+doProcessMoves :: EnumData -> Double -> RGM [(Uci, Fen)]
+doProcessMoves action pAgg = do
+  let ucis = action ^. edUcis
+  parent
+    <- throwMaybe ("Parent doesn't exist at ucis: " <> tshow ucis)
+    <=< preuse
+    $ moveTree . MT.traverseUcis ucis
+  let pFen = parent ^. nodeFen
+
+  (rMStats, maybeMastersM) <- maybeMastersMoves pFen
+  Stats.updateParentNominal pFen mastersStats rMStats
+  (rStats, lichessM') <- lichessMoves pFen
+  Stats.updateParentNominal pFen lichessStats rStats
+
   lichessM <- filterMoves action pAgg lichessM'
-  engineMoves <- Ngn.fenToEngineCandidates fen
-  mOverride <- preview $ overridesL . ix fen
+  engineMoves <- Ngn.fenToEngineCandidates pFen
+  mOverride <- preview $ overridesL . ix pFen
   let pPrune = action ^. edProbP
-  let processed
-        =   Ngn.injectEngine engineMoves
-        <$> maybe
-            (wrapLCStats ucis fen pAgg pPrune <$> lichessM)
-            (mergeMoves ucis fen pAgg pPrune lichessM)
-            maybeMastersM
-  pure . fromMaybe processed $ findUci processed =<< mOverride
-
-initProcessMoves :: Vector Uci -> Double -> RGM [(Uci, TreeNode)]
-initProcessMoves ucis pAgg = do
-  fen <- liftIO $ PyC.ucisToFen ucis
-  (rMStats, maybeMastersM) <- maybeMastersMoves fen
-  Stats.updateParentNominal ucis mastersStats rMStats
-  (rStats, lichessM) <- lichessMoves fen
-  Stats.updateParentNominal ucis lichessStats rStats
-  mOverride <- preview $ overridesL . ix fen
-  let processed
-        = maybe
-          (wrapLCStats ucis fen pAgg 1 <$> lichessM)
-          (mergeMoves ucis fen pAgg 1 lichessM)
+  processed
+    <-   fmap (Ngn.injectEngine engineMoves)
+    <$> maybe
+          (traverse (wrapLCStats ucis pAgg pPrune) lichessM)
+          (mergeMoves ucis pAgg pPrune lichessM)
           maybeMastersM
-  pure . fromMaybe processed $ findUci processed =<< mOverride
+  processed' <- pure . fromMaybe processed $ findUci processed =<< mOverride
+  traverse_ State.insertChildPosInfo processed'
+  pure $ processed' ^.. folded . to (\(u, (f, _)) -> (u, f))
 
-findUci :: [(Uci, TreeNode)] -> Uci -> Maybe [(Uci, TreeNode)]
+
+initProcessMoves :: Vector Uci -> RGM ()
+initProcessMoves ucis = do
+  pAgg <- MT.fetchPAgg ucis
+  parent
+    <- throwMaybe ("Parent doesn't exist at ucis: " <> tshow ucis)
+    <=< preuse
+    $ moveTree . MT.traverseUcis ucis
+  let children = parent ^.. nodeResponses . folded
+  case fromNullable children of
+     Just _ ->
+       pure ()
+     Nothing -> do
+       processed <- doInitProcessMoves ucis pAgg
+       let nodes = fromProcessed ucis <$> processed
+       moveTree . MT.traverseUcis ucis . nodeResponses .= fromList nodes
+
+-- TODO: DRY up these two functions
+doInitProcessMoves :: Vector Uci -> Double -> RGM [(Uci, Fen)]
+doInitProcessMoves ucis pAgg = do
+  parent
+    <- throwMaybe ("Parent doesn't exist at ucis: " <> tshow ucis)
+    <=< preuse
+    $ moveTree . MT.traverseUcis ucis
+  let pFen = parent ^. nodeFen
+
+  (rMStats, maybeMastersM) <- maybeMastersMoves pFen
+  Stats.updateParentNominal pFen mastersStats rMStats
+  (rStats, lichessM) <- lichessMoves pFen
+  Stats.updateParentNominal pFen lichessStats rStats
+  engineMoves <- Ngn.fenToEngineCandidates pFen
+  mOverride <- preview $ overridesL . ix pFen
+  processed
+    <-   fmap (Ngn.injectEngine engineMoves)
+    <$> maybe
+          (traverse (wrapLCStats ucis pAgg 1) lichessM)
+          (mergeMoves ucis pAgg 1 lichessM)
+          maybeMastersM
+  processed' <- pure . fromMaybe processed $ findUci processed =<< mOverride
+  traverse_ State.insertChildPosInfo processed'
+  pure $ processed' ^.. folded . to (\(u, (f, _)) -> (u, f))
+
+fromProcessed :: Vector Uci -> (Uci, Fen) -> (Uci, TreeNode)
+fromProcessed ucis (uci, fen)
+  = ( uci
+    , TreeNode (snoc ucis uci) fen mempty False
+    )
+
+findUci :: [(Uci, (Fen, PosInfo))] -> Uci -> Maybe [(Uci, (Fen, PosInfo))]
 findUci cands uci
   = fmap toList
   . fromNullable
@@ -106,59 +161,58 @@ filterMoves action pAgg mvs = do
 
 mergeMoves
   :: Vector Uci
-  -> Fen
   -> Double
   -> Double
   -> [(Uci, NodeStats)]
   -> [(Uci, NodeStats)]
-  -> [(Uci, TreeNode)]
-mergeMoves ucis fen pAgg pPrune lichessM mastersM
-  = f <$> lichessM
+  -> RGM [(Uci, (Fen, PosInfo))]
+mergeMoves ucis pAgg pPrune lichessM mastersM
+  = traverse f lichessM
   where
-    f (uci, lcm)
-      = ( uci
-        , TreeNode
-          { _rgStats
-            = RGStats
+    f (uci, lcm) = do
+      fen <- liftIO . PyC.ucisToFen $ snoc ucis uci
+      pure
+        ( uci
+        , ( fen
+          , def & posStats .~ RGStats
             { _lichessStats = Just lcm
             , _mastersStats = lookup uci mastersM
             , _rgScore      = Nothing
             , _probPrune    = pPrune * lcm ^. prob
             , _probAgg      = pAgg * lcm ^. prob
             }
-          , _uciPath   = snoc ucis uci
-          , _nodeFen   = fen
-          , _responses = empty
-          , _removed   = False
-          }
+          )
         )
 
-wrapLCStats :: Vector Uci -> Fen -> Double -> Double -> (Uci, NodeStats) -> (Uci, TreeNode)
-wrapLCStats ucis fen pAgg pPrune (uci, lcm)
-  = ( uci
-    , TreeNode
-      { _rgStats
-        = RGStats
-        { _lichessStats = Just lcm
-        , _mastersStats = Nothing
-        , _rgScore      = Nothing
-        , _probPrune    = pPrune * lcm ^. prob
-        , _probAgg      = pAgg * lcm ^. prob
-        }
-      , _uciPath   = snoc ucis uci
-      , _nodeFen   = fen
-      , _responses = empty
-      , _removed   = False
-      }
-    )
+wrapLCStats
+  :: Vector Uci
+  -> Double
+  -> Double
+  -> (Uci, NodeStats)
+  -> RGM (Uci, (Fen, PosInfo))
+wrapLCStats ucis pAgg pPrune (uci, lcm)
+  = do
+    fen <- liftIO . PyC.ucisToFen $ snoc ucis uci
+    pure
+      ( uci
+      , ( fen
+        , def & posStats .~ RGStats
+          { _lichessStats = Just lcm
+          , _mastersStats = Nothing
+          , _rgScore      = Nothing
+          , _probPrune    = pPrune * lcm ^. prob
+          , _probAgg      = pAgg * lcm ^. prob
+          }
+        )
+      )
 
 -- | Turn viable responses into actions
-toAction :: EnumData -> TreeNode -> [RGAction]
-toAction action node
+toAction :: EnumData -> (Double, TreeNode) -> [RGAction]
+toAction action (pPrune, node)
   = [ RGAEnumCands
       $ EnumData
       { _edUcis = node ^. uciPath
-      , _edProbP = node ^. rgStats . probPrune
+      , _edProbP = pPrune
       , _edDepth = action ^. edDepth
       , _edIsPruned = action ^. edIsPruned
       }
@@ -166,12 +220,12 @@ toAction action node
     ]
 
 -- | Turn viable responses into actions
-initToAction ::  TreeNode -> [RGAction]
-initToAction node
+initToAction ::  (Double, TreeNode) -> [RGAction]
+initToAction (pPrune, node)
   = [ RGAEnumCands
       $ EnumData
       { _edUcis = node ^. uciPath
-      , _edProbP = node ^. rgStats . probPrune
+      , _edProbP = pPrune
       , _edDepth = 1
       , _edIsPruned = False
       }
@@ -179,36 +233,41 @@ initToAction node
     , RGATransStats $ node ^. uciPath
     ]
 
--- | Filter resopnses to act on by minimum response probability
+-- | Filter responses to act on by minimum response probability
 filterMinRespProb
   :: Double
   -> Double
   -> Vector Uci
-  -> RGM [TreeNode]
+  -> RGM [(Double, TreeNode)]
 filterMinRespProb pPrune pAgg ucis = do
-  -- logDebugN $ "pAgg: " <> tshow pAgg
-  -- logDebugN $ "pPrune: " <> tshow pPrune
   irp <- view initRespProb
-  -- logDebugN $ "initial response probability: " <> tshow irp
   arp <- view asymRespProb
-  -- logDebugN $ "asymptotic response probability: " <> tshow arp
+  pTI <- use posToInfo
   let minProb = exp (log (irp / arp) * pAgg) * arp
-  -- logDebugN $ "minimum response probability: " <> tshow minProb
   let isValid rNode =
         maybe
           False
           (\x -> pPrune * x > minProb)
-          (rNode ^? rgStats . lichessStats . _Just . prob)
+          (pTI ^? ix (rNode ^. nodeFen) . posStats . lichessStats . _Just . prob)
   moveTree
     . traverseUcis ucis
-    . responses
+    . nodeResponses
     . traversed
     . filtered (\x -> x ^. _2 . to (not . isValid))
     . _2
     . removed
     .= True
   children <- use $ moveTree . traverseUcis ucis . to collectValidChildren
-  pure $ children ^.. folded . _2
+  traverse addPPrune $ children ^.. folded . _2
+  where
+    addPPrune :: TreeNode -> RGM (Double, TreeNode)
+    addPPrune child = do
+      let fen = child ^. nodeFen
+      cPPrune
+        <- throwMaybe ("No pos info exists for ucis: " <> tshow (child ^. uciPath))
+        <=< preuse
+        $ posToInfo . ix fen . posStats . lichessStats . _Just . prob . to (* pPrune)
+      pure (cPPrune, child)
 
-  -- pure . fmap (view _2) . filter f $ resps
+
 

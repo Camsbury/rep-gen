@@ -1,6 +1,7 @@
 --------------------------------------------------------------------------------
 module RepGen.State where
 --------------------------------------------------------------------------------
+import RepGen.Monad
 import RepGen.Type
 import RepGen.Action.Type
 import RepGen.Config.Type
@@ -23,13 +24,14 @@ initState
   => m RGState
 initState = do
   logInfoN "Initializing state"
-  node <- baseNode
   actions <- initActions <$> view colorL
+  iPTI <- initPosToInfo
   logDebugN $ "Actions: " <> tshow actions
   logInfoN "Finished initializing state"
   pure $ def
-       & moveTree .~ node
+       & moveTree .~ TreeNode empty def empty False
        & actionStack .~ actions
+       & posToInfo .~ iPTI
 
 initActions :: Color -> [RGAction]
 initActions White
@@ -42,16 +44,27 @@ initActions Black
     , RGACalcStats []
     ]
 
-baseNode
+initPosToInfo
   :: ( MonadReader RGConfig m
     , MonadError  RGError  m
     , MonadLogger m
     , MonadIO m
     )
-  => m TreeNode
-baseNode = do
+  => m PosToInfo
+initPosToInfo = do
   stats <- H.initialStats
   score <- Ngn.fenToScore def
   let scoreStat = mkRGStat . view scoreL <$> score
       stats' = stats & rgScore .~ scoreStat
-  pure $ TreeNode stats' empty def empty False
+  pure $ mapFromList [(def, def & posStats .~ stats')]
+
+collectInfo :: (Uci, TreeNode) -> RGM (Uci, (Fen, PosInfo))
+collectInfo (uci, node) = do
+  let fen = node ^. nodeFen
+  mInfo <- preuse $ posToInfo . ix fen
+  info <- throwMaybe ("No position info for fen: " <> tshow fen) mInfo
+  pure (uci, (fen, info))
+
+insertChildPosInfo :: (Uci, (Fen, PosInfo)) -> RGM ()
+insertChildPosInfo (_, (fen, pInfo))
+  = posToInfo . at fen ?= pInfo

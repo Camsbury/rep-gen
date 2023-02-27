@@ -9,7 +9,6 @@ module RepGen.Engine
 import RepGen.Config.Type
 import RepGen.Engine.Type
 import RepGen.Monad
-import RepGen.MoveTree.Type
 import RepGen.Score ()
 import RepGen.Score.Type
 import RepGen.State.Type
@@ -138,11 +137,12 @@ applyScoreColor :: Color -> EngineCandidate -> EngineCandidate
 applyScoreColor White = id
 applyScoreColor Black = ngnScore . scoreL %~ (1 -)
 
-injectEngine :: [EngineCandidate] -> (Uci, TreeNode) -> (Uci, TreeNode)
-injectEngine nCands stats@(uci, _)
-  = stats
+injectEngine :: [EngineCandidate] -> (Uci, (Fen, PosInfo)) -> (Uci, (Fen, PosInfo))
+injectEngine nCands info@(uci, _)
+  = info
   & _2
-  . rgStats
+  . _2
+  . posStats
   . rgScore
   .~ findBy uci nCands
   where

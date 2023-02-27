@@ -5,6 +5,7 @@ module RepGen.Action.CalcStats
 --------------------------------------------------------------------------------
 
 import RepGen.Type
+import RepGen.Config.Type
 import RepGen.Monad
 import RepGen.MoveTree
 import RepGen.MoveTree.Type
@@ -12,6 +13,7 @@ import RepGen.State.Type
 import RepGen.Stats.Type
 --------------------------------------------------------------------------------
 import qualified RepGen.MoveTree as MT
+import qualified RepGen.State    as State
 --------------------------------------------------------------------------------
 
 -- | Calculate stats for a candidate node
@@ -19,9 +21,48 @@ import qualified RepGen.MoveTree as MT
 runAction :: Vector Uci -> RGM ()
 runAction ucis = do
   logDebugN $ "Calculating Stats for: " <> tshow ucis
-  calcNodeStats ucis lichessStats
-  calcNodeStats ucis mastersStats
-  calcScore ucis
+  node
+    <- throwMaybe ("No node exists for ucis: " <> tshow  ucis)
+    <=< preuse
+    $ moveTree
+    . MT.traverseUcis ucis
+
+  useMasters <- view mastersP
+
+  calcNodeStats node lichessStats
+  when useMasters $ calcNodeStats node mastersStats
+  calcScore node
+
+-- | Calculate the win probabilites per color for a given node
+-- adjusted for the known probabilities of the children nodes
+-- NOTE: could split to run per color
+calcNodeStats
+  :: TreeNode
+  -> Lens' RGStats (Maybe NodeStats)
+  -> RGM ()
+calcNodeStats parent statsLens = do
+  let parentFen = parent ^. nodeFen
+  let parentUcis = parent ^. uciPath
+  parentStats
+    <- throwMaybe ("No info exists for fen: " <> tshow parentFen)
+    <=< preuse
+    $ posToInfo . ix parentFen . posStats
+  let children = fromList $ parent ^.. validChildrenT
+  cWhite     <- childrenStat children statsLens $ whiteWins . nom
+  cWhiteAgg  <- childrenStat children statsLens $ whiteWins . agg
+  cBlack     <- childrenStat children statsLens $ blackWins . nom
+  cBlackAgg  <- childrenStat children statsLens $ blackWins . agg
+  let pWhite = parentStats ^? statsLens . _Just . whiteWins . nom
+  let pBlack = parentStats ^? statsLens . _Just . blackWins . nom
+  logDebugN
+    $ "Setting Agg Stat for: "
+    <> tshow parentUcis
+  setAggStat
+    ((\pW -> cWhiteAgg + (pW - cWhite)) <$> pWhite)
+    parentFen statsLens (whiteWins . agg)
+  setAggStat
+    ((\pB -> cBlackAgg + (pB - cBlack)) <$> pBlack)
+    parentFen statsLens (blackWins . agg)
 
 -- | Calculate a stat weighting
 weightedStat
@@ -30,73 +71,36 @@ weightedStat
   -> Double
 weightedStat winsL ns = view winsL ns * view prob ns
 
+setAggStat
+  :: Maybe Double
+  -> Fen
+  -> Lens' RGStats (Maybe NodeStats)
+  -> Lens' NodeStats Double
+  -> RGM ()
+setAggStat Nothing _ _ _ = pure ()
+setAggStat (Just s) fen nodeStats aggStats = do
+  posToInfo . ix fen . posStats . nodeStats . _Just . aggStats .= s
+
 -- | Extract a weighted statistic for child nodes
 childrenStat
   :: Vector (Uci, TreeNode)
   -> Lens' RGStats (Maybe NodeStats)
   -> Lens' NodeStats Double
-  -> Double
+  -> RGM Double
 childrenStat children parentL statL
-  = sum
-  $ children
-  ^.. folded
-  . _2
-  . rgStats
-  . parentL
-  . _Just
-  . to (weightedStat statL)
-
-setAggStat
-  :: Maybe Double
-  -> Vector Uci
-  -> Lens' RGStats (Maybe NodeStats)
-  -> Lens' NodeStats Double
-  -> RGM ()
-setAggStat Nothing _ _ _ = pure ()
-setAggStat (Just s) ucis nodeStats aggStats = do
-  logDebugN
-    $ "Setting Agg Stat for: "
-    <> tshow ucis
-  moveTree . MT.traverseUcis ucis . rgStats . nodeStats . _Just . aggStats .= s
-
--- | Calculate the win probabilites per color for a given node
--- adjusted for the known probabilities of the children nodes
--- NOTE: could split to run per color
-calcNodeStats
-  :: Vector Uci
-  -> Lens' RGStats (Maybe NodeStats)
-  -> RGM ()
-calcNodeStats ucis statsLens = do
-  parent
-    <- throwMaybe ("No node exists for ucis: " <> tshow  ucis)
-    <=< preuse
-    $ moveTree
-    . MT.traverseUcis ucis
-  let children = fromList $ parent ^.. validChildrenT
-  let cWhite = childrenStat children statsLens $ whiteWins . nom
-  let cWhiteAgg = childrenStat children statsLens $ whiteWins . agg
-  let cBlack = childrenStat children statsLens $ blackWins . nom
-  let cBlackAgg = childrenStat children statsLens $ blackWins . agg
-  let pWhite = parent ^? rgStats . statsLens . _Just . whiteWins . nom
-  let pBlack = parent ^? rgStats . statsLens . _Just . blackWins . nom
-  -- logDebugN $ "cWhiteAgg: " <> tshow cWhiteAgg
-  -- logDebugN $ "cWhite: " <> tshow cWhite
-  -- logDebugN $ "pWhite: " <> tshow pWhite
-  -- logDebugN $ "cBlackAgg: " <> tshow cBlackAgg
-  -- logDebugN $ "cBlack: " <> tshow cBlack
-  -- logDebugN $ "pBlack: " <> tshow pBlack
-  setAggStat
-    ((\pW -> cWhiteAgg + (pW - cWhite)) <$> pWhite)
-    ucis statsLens (whiteWins . agg)
-  setAggStat
-    ((\pB -> cBlackAgg + (pB - cBlack)) <$> pBlack)
-    ucis statsLens (blackWins . agg)
+  = fmap sum . traverse getStat $ children ^.. folded . _2 . nodeFen
+  where
+    getStat :: Fen -> RGM Double
+    getStat fen
+      = throwMaybe ("Info doesn't exist for fen: " <> tshow fen)
+      <=< preuse
+      $ posToInfo . ix fen . posStats . parentL . _Just . to (weightedStat statL)
 
 -- | Decrement the sum of the child probabilities
 -- empty probabilities mean we don't want to take the child into account
 -- so we use 0
 probNonChild
-  :: [(Uci, TreeNode)]
+  :: [(Uci, (Fen, PosInfo))]
   -> Double
 probNonChild children
   = (1 -)
@@ -104,55 +108,53 @@ probNonChild children
   $ children
   ^.. folded
   . _2
-  . rgStats
+  . _2
+  . posStats
   . lichessStats
   . to (maybe 0 $ view prob)
 
-setScore :: Maybe Double -> Vector Uci -> RGM ()
+setScore :: Maybe Double -> Fen -> RGM ()
 setScore Nothing _ = pure ()
-setScore (Just s) ucis
+setScore (Just s) fen
   = do
   currScore
     <- preuse
-    $ moveTree
-    . MT.traverseUcis ucis
-    . rgStats
+    $ posToInfo
+    . ix fen
+    . posStats
     . rgScore
     . _Just
   if isJust currScore
     then
-      moveTree
-      . MT.traverseUcis ucis
-      . rgStats
-      . rgScore
-      . _Just
-      . agg
-      .= s
+      posToInfo
+        . ix fen
+        . posStats
+        . rgScore
+        . _Just
+        . agg
+        .= s
     else
-      moveTree
-      . MT.traverseUcis ucis
-      . rgStats
-      . rgScore
-      .= Just (mkRGStat s)
+      posToInfo
+        . ix fen
+        . posStats
+        . rgScore
+        .= Just (mkRGStat s)
 
 -- | Calculate the weighted score for a node given the chosen moves
 -- for its children
 calcScore
-  :: Vector Uci
+  :: TreeNode
   -> RGM ()
-calcScore ucis = do
-  parent
-    <- throwMaybe ("No node exists for ucis: " <> tshow ucis)
-    <=< preuse
-    $ moveTree
-    . MT.traverseUcis ucis
+calcScore parent = do
+  pTI <- use posToInfo
   let children = parent ^.. validChildrenT
+  childrenInfo <- traverse State.collectInfo children
   let cScoreAgg
         = sum
         $ children
         ^.. folded
         . _2
-        . to (\n -> fromMaybe 0 (n ^? rgStats . rgScore . _Just . agg)
-                 * fromMaybe 0 (n ^? rgStats . lichessStats . _Just . prob))
-  let pScore = parent ^? rgStats . rgScore . _Just . nom
-  setScore ((\pS -> cScoreAgg + probNonChild children * pS) <$> pScore) ucis
+        . to (\n -> fromMaybe 0 (pTI ^? ix (n ^. nodeFen) . posStats . rgScore . _Just . agg)
+                 * fromMaybe 0 (pTI ^? ix (n ^. nodeFen) . posStats . lichessStats . _Just . prob))
+  let pScore = pTI ^? ix (parent ^. nodeFen) . posStats . rgScore . _Just . nom
+  setScore ((\pS -> cScoreAgg + probNonChild childrenInfo * pS) <$> pScore) $ parent ^. nodeFen

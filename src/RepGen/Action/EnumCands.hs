@@ -19,6 +19,7 @@ import qualified RepGen.MoveTree        as MT
 import qualified RepGen.Lichess.History as H
 import qualified RepGen.Strategy        as Strat
 import qualified RepGen.Stats           as Stats
+import qualified RepGen.State           as State
 --------------------------------------------------------------------------------
 
 -- | Action runner to enumerate move candidates
@@ -27,26 +28,52 @@ runAction action = do
   let ucis = action ^. edUcis
   logInfoN $ "Enumerating Candidates for: " <> tshow ucis
   candidates <- fetchCandidates action
-  moveTree . MT.traverseUcis ucis . responses .= fromList candidates
   sDepth <- view searchDepth
+  pTI <- use posToInfo
   let maybeBestScore
         = maximumMay
-        $ candidates ^.. folded . _2 . rgStats . rgScore . _Just . nom
+        $ candidates ^.. folded . _2 . to (\f -> pTI ^? ix f . posStats . rgScore . _Just . nom) . _Just
   let addActions
         = (not (action ^. edIsPruned) || length candidates /= 1)
         && action ^. edDepth /= sDepth
-        && maybe True (< 0.9) maybeBestScore
-  let actions = toAction action =<< (candidates ^.. folded . _2)
+        && maybe True (< scoreCap) maybeBestScore
+  let actions = toAction action =<< (candidates ^.. folded . _1 . to (snoc ucis))
   when addActions $ actionStack %= (actions ++)
 
-fetchCandidates :: EnumData -> RGM [(Uci, TreeNode)]
+-- | This is so we don't go searching beyond mate and breaking stupid python code
+scoreCap :: Double
+scoreCap = 0.9
+
+fetchCandidates :: EnumData -> RGM [(Uci, Fen)]
 fetchCandidates action = do
-  let ucis           = action ^. edUcis
-  let pPrune         = action ^. edProbP
-  fen                <- liftIO $ PyC.ucisToFen ucis
-  (rStats, lcM)      <- H.lichessMoves fen
-  (rMStats, maybeMM) <- H.maybeMastersMoves fen
-  engineMoves        <- Ngn.fenToEngineCandidates fen
+  let ucis = action ^. edUcis
+  parent
+    <- throwMaybe ("Parent doesn't exist at ucis: " <> tshow ucis)
+    <=< preuse
+    $ moveTree . MT.traverseUcis ucis
+  let children = parent ^.. nodeResponses . folded
+  case fromNullable children of
+     Just _ ->
+       pure $ children ^.. folded . to (\(u, n) -> (u, n ^. nodeFen))
+     Nothing -> do
+       candidates <- doFetchCandidates action
+       let nodes = fromProcessed ucis <$> candidates
+       moveTree . MT.traverseUcis ucis . nodeResponses .= fromList nodes
+       pure candidates
+
+
+doFetchCandidates :: EnumData -> RGM [(Uci, Fen)]
+doFetchCandidates action = do
+  let ucis   = action ^. edUcis
+  let pPrune = action ^. edProbP
+  parent
+    <- throwMaybe ("Parent doesn't exist at ucis: " <> tshow ucis)
+    <=< preuse
+    $ moveTree . MT.traverseUcis ucis
+  let pFen = parent ^. nodeFen
+  (rStats, lcM)      <- H.lichessMoves pFen
+  (rMStats, maybeMM) <- H.maybeMastersMoves pFen
+  engineMoves        <- Ngn.fenToEngineCandidates pFen
   pAgg               <- MT.fetchPAgg ucis
   color              <- view colorL
   stratSats          <- view $ strategy . satisficers
@@ -55,37 +82,51 @@ fetchCandidates action = do
   let candidates     = fromMaybe lcM maybeMM
   let isMasters      = isJust maybeMM
 
-  Stats.updateParentNominal ucis lichessStats rStats
-  Stats.updateParentNominal ucis mastersStats rMStats
+  Stats.updateParentNominal pFen lichessStats rStats
+  Stats.updateParentNominal pFen mastersStats rMStats
+
   initCands
-    <- maybe (filterCandidates candidates) pure
-    <=< findUci candidates fen <=< preview $ overridesL . ix fen
+    <- traverse (fetchFen ucis)
+    <=< maybe (filterCandidates candidates) pure
+    <=< findUci candidates pFen <=< preview $ overridesL . ix pFen
+
   let candNodes
         =   take breadth
         .   Strat.strategicFilter stratSats
         .   sortBy (Strat.strategicCompare stratOpt color)
         $   Ngn.injectEngine engineMoves
         .   applyWhen isMasters (injectLichess lcM)
-        .   initNode isMasters pAgg pPrune fen ucis
+        .   initPosInfo isMasters pAgg pPrune
         <$> initCands
-  if null candNodes
-    then firstEngine pPrune fen ucis engineMoves
+  cands' <- if null candNodes
+    then firstEngine pPrune pFen ucis engineMoves
     else pure candNodes
+  traverse_ State.insertChildPosInfo cands'
+  pure $ cands' ^.. folded . to (\(u, (f, _)) -> (u, f))
 
-toAction :: EnumData -> TreeNode -> [RGAction]
-toAction (EnumData _ probP depth _) node
+fetchFen :: Vector Uci -> (Uci, NodeStats) -> RGM (Uci, (Fen, NodeStats))
+fetchFen ucis (uci, ns) = do
+  fen <- liftIO . PyC.ucisToFen $ snoc ucis uci
+  pure (uci, (fen, ns))
+
+fromProcessed :: Vector Uci -> (Uci, Fen) -> (Uci, TreeNode)
+fromProcessed ucis (uci, fen)
+  = ( uci
+    , TreeNode (snoc ucis uci) fen mempty False
+    )
+
+toAction :: EnumData -> Vector Uci -> [RGAction]
+toAction (EnumData _ probP depth _) ucis
   = [ RGAEnumResps $ EnumData ucis probP (succ depth) False
     , RGACalcStats ucis
     ]
-  where
-    ucis = node ^. uciPath
 
 firstEngine
   :: Double
   -> Fen
   -> Vector Uci
   -> [EngineCandidate]
-  -> RGM [(Uci, TreeNode)]
+  -> RGM [(Uci, (Fen, PosInfo))]
 firstEngine pPrune fen ucis (ngn:_) = do
   pAgg <- MT.fetchPAgg ucis
   logWarnN $ "There are no candidates for FEN: " <> fen ^. fenL
@@ -93,37 +134,36 @@ firstEngine pPrune fen ucis (ngn:_) = do
   let uci = ngn ^. ngnUci
   pure
     [( uci
-     , def & rgStats .~ mkRGStats pPrune pAgg
-           & uciPath .~ snoc ucis uci
-           & nodeFen .~ fen
+     , ( fen
+       , def & posStats .~ mkRGStats pPrune pAgg
+       )
      )]
 firstEngine _ fen _ [] = do
   logWarnN $ "There are no candidates for FEN: " <> fen ^. fenL
   logWarnN "Nor are there any engine moves."
   pure []
 
-injectLichess :: [(Uci, NodeStats)] -> (Uci, TreeNode) -> (Uci, TreeNode)
+injectLichess :: [(Uci, NodeStats)] -> (Uci, (Fen, PosInfo)) -> (Uci, (Fen, PosInfo))
 injectLichess lcM stats@(uci, _)
   = stats
   & _2
-  . rgStats
+  . _2
+  . posStats
   . lichessStats
   .~ lookup uci lcM
 
-initNode
+initPosInfo
   :: Bool
   -> Double
   -> Double
-  -> Fen
-  -> Vector Uci
-  -> (Uci, NodeStats)
-  -> (Uci, TreeNode)
-initNode isMasters pAgg pPrune fen ucis (uci, ns)
-  = (uci,)
-  $ def
-  & uciPath .~ snoc ucis uci
-  & nodeFen .~ fen
-  & rgStats .~ stats
+  -> (Uci, (Fen, NodeStats))
+  -> (Uci, (Fen, PosInfo))
+initPosInfo isMasters pAgg pPrune (uci, (fen, ns))
+  = ( uci
+    , ( fen
+      , def & posStats .~ stats
+      )
+    )
   where
     nsL = if isMasters then mastersStats else lichessStats
     stats

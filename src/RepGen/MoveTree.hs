@@ -17,7 +17,7 @@ traverseUcis = foldl' f $ prism' id Just
   where
     f p uci
       = p
-      . responses
+      . nodeResponses
       . traversed
       . filtered (\(x, _) -> x == uci)
       . _2
@@ -25,13 +25,17 @@ traverseUcis = foldl' f $ prism' id Just
 -- | Nice fetcher for aggregate probability of a Node
 fetchPAgg :: Vector Uci -> RGM Double
 fetchPAgg ucis
-  = throwMaybe ("Node doesn't exist at: " <> tshow ucis)
-  <=< preuse $ moveTree . traverseUcis ucis . rgStats . probAgg
+  = do
+    fen
+      <- throwMaybe ("Node doesn't exist at: " <> tshow ucis)
+      <=< preuse $ moveTree . traverseUcis ucis . nodeFen
+    throwMaybe ("Stats don't exist for: " <> tshow ucis)
+      <=< preuse $ posToInfo . ix fen . posStats . probAgg
 
 -- | Traversal of the valid children of a node
 validChildrenT :: Traversal' TreeNode (Uci, TreeNode)
 validChildrenT
-  = responses
+  = nodeResponses
   . traversed
   . filtered (\x -> x ^. _2 . removed . to not)
 
@@ -39,6 +43,6 @@ validChildrenT
 collectValidChildren :: TreeNode -> [(Uci, TreeNode)]
 collectValidChildren node
   = node
-  ^.. responses
+  ^.. nodeResponses
   . folded
   . filtered (\x -> x ^. _2 . removed . to not)
