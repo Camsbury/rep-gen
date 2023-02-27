@@ -36,9 +36,13 @@ def fen_to_engine_candidates(fen, depth, move_count):
         multipv=move_count,
     )
     engine.quit()
-    ret = json.dumps([{"uci": x["pv"][0].uci(), "score": str(x["score"].white())}
-           for x in info])
-    return ret
+    try:
+        ret = json.dumps([{"uci": x["pv"][0].uci(), "score": str(x["score"].white())}
+               for x in info])
+        return ret
+    except KeyError:
+        print(f"Bad input for fen_to_engine_candidates: {fen}")
+        return json.dumps([])
 
 def tree_to_pgn(input_tree):
     tree = json.loads(input_tree)

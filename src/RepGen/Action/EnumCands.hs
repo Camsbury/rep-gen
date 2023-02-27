@@ -29,9 +29,13 @@ runAction action = do
   candidates <- fetchCandidates action
   moveTree . MT.traverseUcis ucis . responses .= fromList candidates
   sDepth <- view searchDepth
+  let maybeBestScore
+        = maximumMay
+        $ candidates ^.. folded . _2 . rgStats . rgScore . _Just . nom
   let addActions
         = (not (action ^. edIsPruned) || length candidates /= 1)
         && action ^. edDepth /= sDepth
+        && maybe True (< 0.9) maybeBestScore
   let actions = toAction action =<< (candidates ^.. folded . _2)
   when addActions $ actionStack %= (actions ++)
 
