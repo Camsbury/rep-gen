@@ -118,6 +118,7 @@ setScore (Just s) ucis
     . MT.traverseUcis ucis
     . rgStats
     . rgScore
+    . _Just
   if isJust currScore
     then
       moveTree

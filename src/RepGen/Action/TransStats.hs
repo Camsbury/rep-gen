@@ -16,49 +16,6 @@ import qualified RepGen.MoveTree as MT
 import qualified RepGen.Strategy as Strat
 --------------------------------------------------------------------------------
 
-setScore :: Maybe RGStat -> Vector Uci -> RGM ()
-setScore Nothing _ = pure ()
-setScore (Just s) ucis
-  = do
-  currScore
-    <- preuse
-    $ moveTree
-    . MT.traverseUcis ucis
-    . rgStats
-    . rgScore
-  if isJust currScore
-    then
-      moveTree
-      . MT.traverseUcis ucis
-      . rgStats
-      . rgScore
-      . _Just
-      . agg
-      .= (s ^. agg)
-    else
-      moveTree
-      . MT.traverseUcis ucis
-      . rgStats
-      . rgScore
-      .= Just s
-
-
-setNodeStats
-  :: Maybe NodeStats
-  -> Vector Uci
-  -> Lens' RGStats (Maybe NodeStats)
-  -> Lens' NodeStats Double
-  -> RGM ()
-setNodeStats Nothing _ _ _ = pure ()
-setNodeStats (Just s) ucis nodeStats aggStats
-  = moveTree
-  . MT.traverseUcis ucis
-  . rgStats
-  . nodeStats
-  . _Just
-  . aggStats
-  .= (s ^. aggStats)
-
 runAction :: Vector Uci -> RGM ()
 runAction ucis = do
   logDebugN $ "Transferring Stats for: " <> tshow ucis
@@ -93,3 +50,46 @@ runAction ucis = do
       ucis
       mastersStats
       (blackWins . agg)
+
+setScore :: Maybe RGStat -> Vector Uci -> RGM ()
+setScore Nothing _ = pure ()
+setScore (Just s) ucis
+  = do
+  currScore
+    <- preuse
+    $ moveTree
+    . MT.traverseUcis ucis
+    . rgStats
+    . rgScore
+    . _Just
+  if isJust currScore
+    then
+      moveTree
+      . MT.traverseUcis ucis
+      . rgStats
+      . rgScore
+      . _Just
+      . agg
+      .= (s ^. agg)
+    else
+      moveTree
+      . MT.traverseUcis ucis
+      . rgStats
+      . rgScore
+      .= Just s
+
+setNodeStats
+  :: Maybe NodeStats
+  -> Vector Uci
+  -> Lens' RGStats (Maybe NodeStats)
+  -> Lens' NodeStats Double
+  -> RGM ()
+setNodeStats Nothing _ _ _ = pure ()
+setNodeStats (Just s) ucis nodeStats aggStats
+  = moveTree
+  . MT.traverseUcis ucis
+  . rgStats
+  . nodeStats
+  . _Just
+  . aggStats
+  .= (s ^. aggStats)
