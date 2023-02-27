@@ -60,7 +60,7 @@ instance Default RGConfig where
       , _initCandBreadth = 25
       , _asymCandBreadth = 5 -- need to enforce this is less
       , _initRespProb    = 0.001
-      , _asymRespProb    = 0.1 -- need to enforce this is greater
+      , _asymRespProb    = 0.15 -- need to enforce this is greater
       , _mOverrides      = mempty
       , _mastersP        = True
       , _minLogLevel     = LevelInfo
@@ -69,7 +69,7 @@ instance Default RGConfig where
       , _minTotalMasters = 500
       , _overridesL      = mempty
       -- this seems useless in the grand scheme, but useful in shorter analysis
-      , _searchDepth     = 6
+      , _searchDepth     = 15
       , _startingMoves   = []
       , _strategy        = def
       }
