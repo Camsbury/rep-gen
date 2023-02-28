@@ -99,7 +99,7 @@ doFetchCandidates action = do
         .   initPosInfo isMasters pAgg pPrune
         <$> initCands
   cands' <- if null candNodes
-    then firstEngine pPrune pFen ucis engineMoves
+    then firstEngine pPrune ucis engineMoves
     else pure candNodes
   traverse_ State.insertChildPosInfo cands'
   pure $ cands' ^.. folded . to (\(u, (f, _)) -> (u, f))
@@ -124,23 +124,24 @@ toAction (EnumData _ probP depth _) ucis
 
 firstEngine
   :: Double
-  -> Fen
   -> Vector Uci
   -> [EngineCandidate]
   -> RGM [(Uci, (Fen, PosInfo))]
-firstEngine pPrune fen ucis (ngn:_) = do
+firstEngine pPrune ucis (ngn:_) = do
   pAgg <- MT.fetchPAgg ucis
-  logWarnN $ "There are no candidates for FEN: " <> fen ^. fenL
+  logWarnN $ "There are no candidates for ucis: " <> tshow ucis
   logWarnN "Reverting to the top engine move"
   let uci = ngn ^. ngnUci
+  pModule <- use chessHelpers
+  fen <- liftIO . PyC.ucisToFen pModule $ snoc ucis uci
   pure
     [( uci
      , ( fen
        , def & posStats .~ mkRGStats pPrune pAgg
        )
      )]
-firstEngine _ fen _ [] = do
-  logWarnN $ "There are no candidates for FEN: " <> fen ^. fenL
+firstEngine _ ucis [] = do
+  logWarnN $ "There are no candidates for ucis: " <> tshow ucis
   logWarnN "Nor are there any engine moves."
   pure []
 
