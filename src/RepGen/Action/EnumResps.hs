@@ -249,15 +249,20 @@ filterMinRespProb isPruned pPrune pAgg ucis = do
           False
           (\x -> (isPruned && mpa < (pAgg * x)) || pPrune * x > minProb)
           (pTI ^? ix (rNode ^. nodeFen) . posStats . lichessStats . _Just . prob)
-  moveTree
+  when isPruned $
+    moveTree
+      . traverseUcis ucis
+      . nodeResponses
+      . traversed
+      . filtered (\x -> x ^. _2 . to (not . isValid))
+      . _2
+      . removed
+      .= True
+  children
+    <- use
+    $ moveTree
     . traverseUcis ucis
-    . nodeResponses
-    . traversed
-    . filtered (\x -> x ^. _2 . to (not . isValid))
-    . _2
-    . removed
-    .= True
-  children <- use $ moveTree . traverseUcis ucis . to collectValidChildren
+    . to (collectFilteredChildren (\x -> x ^. _2 . to isValid))
   traverse addPPrune $ children ^.. folded . _2
   where
     addPPrune :: TreeNode -> RGM (Double, TreeNode)

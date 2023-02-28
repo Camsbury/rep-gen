@@ -46,3 +46,11 @@ collectValidChildren node
   ^.. nodeResponses
   . folded
   . filtered (\x -> x ^. _2 . removed . to not)
+
+-- | Convenience to get all filtered children as a list
+collectFilteredChildren :: ((Uci, TreeNode) -> Bool) -> TreeNode -> [(Uci, TreeNode)]
+collectFilteredChildren f node
+  = node
+  ^.. nodeResponses
+  . folded
+  . filtered f
