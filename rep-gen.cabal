@@ -32,6 +32,7 @@ library
                        , RepGen.MoveTree
                        , RepGen.MoveTree.Type
                        , RepGen.PyChess
+                       , RepGen.PyChess.Type
                        , RepGen.Score
                        , RepGen.Score.Type
                        , RepGen.State

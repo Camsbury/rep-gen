@@ -34,7 +34,8 @@ buildRepertoire rgConfig
   = void
   . either print pure
   <=< runExceptT $ do
-    compiled <- compileConfig rgConfig
+    pModule <- liftIO initChessHelpers
+    compiled <- compileConfig rgConfig pModule
     (`runReaderT` compiled) . runStdoutLoggingT $ do
       mLvl <- view minLogLevel
       filterLogger (lFilter mLvl) $ do
@@ -42,7 +43,9 @@ buildRepertoire rgConfig
         liftIO . DP.runSqlite ecPath $ DP.runMigration Ngn.migrateAll
         hcPath <- view httpCachePath
         liftIO . DP.runSqlite hcPath $ DP.runMigration Web.migrateAll
-        evalStateT (buildTree >> X.exportJSON >> X.exportPgn) =<< initState
+        evalStateT (
+          buildTree >> X.exportJSON >> X.exportPgn >> liftIO pyFinalize
+          ) =<< initState pModule
   where
     lFilter mLvl _ lvl = lvl >= mLvl
 

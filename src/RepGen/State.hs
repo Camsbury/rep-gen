@@ -1,11 +1,13 @@
 --------------------------------------------------------------------------------
 module RepGen.State where
 --------------------------------------------------------------------------------
+import Foreign.Ptr
 import RepGen.Monad
 import RepGen.Type
 import RepGen.Action.Type
 import RepGen.Config.Type
 import RepGen.MoveTree.Type
+import RepGen.PyChess.Type
 import RepGen.Score.Type
 import RepGen.State.Type
 import RepGen.Stats.Type
@@ -21,17 +23,21 @@ initState
     , MonadLogger m
     , MonadIO m
     )
-  => m RGState
-initState = do
+  => Ptr PyObject
+  -> m RGState
+initState pModule = do
   logInfoN "Initializing state"
   actions <- initActions <$> view colorL
-  iPTI <- initPosToInfo
+  iPTI <- initPosToInfo pModule
   logDebugN $ "Actions: " <> tshow actions
   logInfoN "Finished initializing state"
-  pure $ def
-       & moveTree .~ TreeNode empty def empty False
-       & actionStack .~ actions
-       & posToInfo .~ iPTI
+  pure $ RGState
+       { _cloudLimitReached = False
+       , _posToInfo         = iPTI
+       , _chessHelpers      = pModule
+       , _moveTree          = TreeNode empty def empty False
+       , _actionStack       = actions
+       }
 
 initActions :: Color -> [RGAction]
 initActions White
@@ -50,10 +56,11 @@ initPosToInfo
     , MonadLogger m
     , MonadIO m
     )
-  => m PosToInfo
-initPosToInfo = do
+  => Ptr PyObject
+  -> m PosToInfo
+initPosToInfo pModule = do
   stats <- H.initialStats
-  score <- Ngn.fenToScore def
+  score <- Ngn.fenToScore pModule def
   let scoreStat = mkRGStat . view scoreL <$> score
       stats' = stats & rgScore .~ scoreStat
   pure $ mapFromList [(def, def & posStats .~ stats')]

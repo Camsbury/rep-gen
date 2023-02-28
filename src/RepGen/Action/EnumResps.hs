@@ -170,7 +170,8 @@ mergeMoves ucis pAgg pPrune lichessM mastersM
   = traverse f lichessM
   where
     f (uci, lcm) = do
-      fen <- liftIO . PyC.ucisToFen $ snoc ucis uci
+      pModule <- use chessHelpers
+      fen <- liftIO . PyC.ucisToFen pModule $ snoc ucis uci
       pure
         ( uci
         , ( fen
@@ -192,7 +193,8 @@ wrapLCStats
   -> RGM (Uci, (Fen, PosInfo))
 wrapLCStats ucis pAgg pPrune (uci, lcm)
   = do
-    fen <- liftIO . PyC.ucisToFen $ snoc ucis uci
+    pModule <- use chessHelpers
+    fen <- liftIO . PyC.ucisToFen pModule $ snoc ucis uci
     pure
       ( uci
       , ( fen

@@ -6,9 +6,11 @@ module RepGen.Engine
   , injectEngine
   ) where
 --------------------------------------------------------------------------------
+import Foreign.Ptr
 import RepGen.Config.Type
 import RepGen.Engine.Type
 import RepGen.Monad
+import RepGen.PyChess.Type
 import RepGen.Score ()
 import RepGen.Score.Type
 import RepGen.State.Type
@@ -44,7 +46,8 @@ fenToEngineCandidates fen = do
       else pure Nothing
     pure $ maybe deepCands (\x -> mergeCands x <$> deepCands) wideCands
   when limitReached' $ cloudLimitReached .= True
-  eMoves <- maybe (L.fenToLocalCandidates fen) pure mCands
+  pModule <- use chessHelpers
+  eMoves <- maybe (L.fenToLocalCandidates pModule fen) pure mCands
   color <- view colorL
   pure $ applyScoreColor color <$> eMoves
 
@@ -104,16 +107,17 @@ fenToEngineCandidatesInit
     , MonadLogger m
     , MonadIO m
     )
-  => Fen
+  => Ptr PyObject
+  -> Fen
   -> m [EngineCandidate]
-fenToEngineCandidatesInit fen = do
+fenToEngineCandidatesInit pModule fen = do
   mCands <- (`evalStateT` False) $ do
     deepCands <- fenToCloudCandidates fen lcDeepBreadth
     wideCands <- if isJust deepCands
       then fenToCloudCandidates fen lcWideBreadth
       else pure Nothing
     pure $ maybe deepCands (\x -> mergeCands x <$> deepCands) wideCands
-  eMoves <- maybe (L.fenToLocalCandidates fen) pure mCands
+  eMoves <- maybe (L.fenToLocalCandidates pModule fen) pure mCands
   color <- view colorL
   pure $ applyScoreColor color <$> eMoves
 
@@ -124,11 +128,12 @@ fenToScore
     , MonadError  RGError  m
     , MonadIO m
     )
-  => Fen
+  => Ptr PyObject
+  -> Fen
   -> m (Maybe Score)
-fenToScore fen = do
+fenToScore pModule fen = do
   color <- view colorL
-  cands <- fenToEngineCandidatesInit fen
+  cands <- fenToEngineCandidatesInit pModule fen
   case color of
     White -> pure $ cands ^? ix 0 . ngnScore
     Black -> pure $ cands ^? ix 0 . ngnScore . to (\x -> x & scoreL %~ (1 -))

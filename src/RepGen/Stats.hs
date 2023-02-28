@@ -3,7 +3,6 @@
 module RepGen.Stats where
 --------------------------------------------------------------------------------
 import RepGen.Monad
-import RepGen.MoveTree.Type
 import RepGen.Type
 import RepGen.Lichess.History.Type
 import RepGen.State.Type

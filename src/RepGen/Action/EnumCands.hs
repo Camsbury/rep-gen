@@ -106,7 +106,8 @@ doFetchCandidates action = do
 
 fetchFen :: Vector Uci -> (Uci, NodeStats) -> RGM (Uci, (Fen, NodeStats))
 fetchFen ucis (uci, ns) = do
-  fen <- liftIO . PyC.ucisToFen $ snoc ucis uci
+  pModule <- use chessHelpers
+  fen <- liftIO . PyC.ucisToFen pModule $ snoc ucis uci
   pure (uci, (fen, ns))
 
 fromProcessed :: Vector Uci -> (Uci, Fen) -> (Uci, TreeNode)
