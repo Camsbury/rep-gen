@@ -60,7 +60,7 @@ instance Default RGConfig where
       , _initCandBreadth = 25
       , _asymCandBreadth = 1 -- need to enforce this is less
       , _initRespProb    = 0.01
-      , _asymRespProb    = 0.2
+      , _asymRespProb    = 0.3
       , _mOverrides      = mempty
       , _mastersP        = True
       , _minLogLevel     = LevelInfo
