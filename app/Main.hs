@@ -21,7 +21,7 @@ main = do
         & startingMoves .~
           [ "e4"
           , "c5"
-          , "c3"
+          , "d4"
           ]
 
         -- & minLogLevel .~ LevelDebug

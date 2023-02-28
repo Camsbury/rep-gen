@@ -58,9 +58,9 @@ instance Default RGConfig where
       , _historyConfig   = def
       , _httpCachePath   = "./resources/http-cache.db"
       , _initCandBreadth = 25
-      , _asymCandBreadth = 5 -- need to enforce this is less
-      , _initRespProb    = 0.001
-      , _asymRespProb    = 0.02
+      , _asymCandBreadth = 1 -- need to enforce this is less
+      , _initRespProb    = 0.01
+      , _asymRespProb    = 0.2
       , _mOverrides      = mempty
       , _mastersP        = True
       , _minLogLevel     = LevelInfo

@@ -30,7 +30,8 @@ runAction action = do
   pAgg <- MT.fetchPAgg ucis
 
   processMoves action
-  toActOn <- filterMinRespProb (action ^. edProbP) pAgg ucis
+  toActOn <- filterMinRespProb
+    (action ^. edIsPruned) (action ^. edProbP) pAgg ucis
   let actions = toAction action =<< toActOn
   actionStack %= (actions ++)
 
@@ -41,7 +42,7 @@ initRunAction ucis = do
   pAgg <- MT.fetchPAgg ucis
 
   initProcessMoves ucis
-  toActOn <- filterMinRespProb 1 pAgg ucis
+  toActOn <- filterMinRespProb False 1 pAgg ucis
   let actions = initToAction =<< toActOn
   actionStack %= (actions ++)
 
@@ -76,7 +77,7 @@ doProcessMoves action pAgg = do
   (rStats, lichessM') <- lichessMoves pFen
   Stats.updateParentNominal pFen lichessStats rStats
 
-  lichessM <- filterMoves action pAgg lichessM'
+  lichessM <- filterMoves lichessM'
   engineMoves <- Ngn.fenToEngineCandidates pFen
   mOverride <- preview $ overridesL . ix pFen
   let pPrune = action ^. edProbP
@@ -146,18 +147,13 @@ findUci cands uci
 
 
 filterMoves
-  :: EnumData
-  -> Double
-  -> [(Uci, NodeStats)]
+  :: [(Uci, NodeStats)]
   -> RGM [(Uci, NodeStats)]
-filterMoves action pAgg mvs = do
-  mpa <- view minProbAgg
+filterMoves mvs = do
   mpl <- view minPlays
-  pure . filter (g mpl) $ filter (f mpa) mvs
+  pure $ filter (f mpl) mvs
   where
-    isPruned = action ^. edIsPruned
-    f mpa (_, s) = not isPruned || mpa < (pAgg * (s ^. prob))
-    g mpl (_, s) = mpl < s ^. playCount
+    f mpl (_, s) = mpl < s ^. playCount
 
 mergeMoves
   :: Vector Uci
@@ -237,19 +233,21 @@ initToAction (pPrune, node)
 
 -- | Filter responses to act on by minimum response probability
 filterMinRespProb
-  :: Double
+  :: Bool
+  -> Double
   -> Double
   -> Vector Uci
   -> RGM [(Double, TreeNode)]
-filterMinRespProb pPrune pAgg ucis = do
+filterMinRespProb isPruned pPrune pAgg ucis = do
   irp <- view initRespProb
   arp <- view asymRespProb
+  mpa <- view minProbAgg
   pTI <- use posToInfo
   let minProb = exp (log (irp / arp) * pAgg) * arp
   let isValid rNode =
         maybe
           False
-          (\x -> pPrune * x > minProb)
+          (\x -> (isPruned && mpa < (pAgg * x)) || pPrune * x > minProb)
           (pTI ^? ix (rNode ^. nodeFen) . posStats . lichessStats . _Just . prob)
   moveTree
     . traverseUcis ucis
