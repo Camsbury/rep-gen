@@ -43,13 +43,15 @@ void py_setup() {
     PyMem_RawFree(path);
 }
 
+PyObject* chess_helpers() {
+  return PyImport_ImportModule("chess_helpers");
+}
+
 // take a comma separated list of UCI moves and return a FEN string
-char* ucis_to_fen(const char* ucis) {
-    PyObject *pModule, *pFunc, *pArgs, *pValue;
+char* ucis_to_fen(PyObject* pModule, const char* ucis) {
+    PyObject *pFunc, *pArgs, *pValue;
     char *result;
 
-    py_setup();
-    pModule = PyImport_ImportModule("chess_helpers");
     pFunc = PyObject_GetAttrString(pModule, "ucis_to_fen");
     pArgs = PyTuple_Pack(1, PyUnicode_FromString(ucis));
     pValue = PyObject_CallObject(pFunc, pArgs);
@@ -61,18 +63,15 @@ char* ucis_to_fen(const char* ucis) {
         result = NULL;
     }
 
-    Py_Finalize();
     return result;
 }
 
+
 // take a comma separated list of SAN moves and return a comma separated list of UCI moves
-char* sans_to_ucis(const char* sans) {
-    PyObject *pModule, *pFunc, *pArgs, *pValue;
+char* sans_to_ucis(PyObject* pModule, const char* sans) {
+    PyObject *pFunc, *pArgs, *pValue;
     char *result;
 
-    py_setup();
-
-    pModule = PyImport_ImportModule("chess_helpers");
     pFunc = PyObject_GetAttrString(pModule, "sans_to_ucis");
     pArgs = PyTuple_Pack(1, PyUnicode_FromString(sans));
     pValue = PyObject_CallObject(pFunc, pArgs);
@@ -84,21 +83,17 @@ char* sans_to_ucis(const char* sans) {
         result = NULL;
     }
 
-    Py_Finalize();
     return result;
 }
 
 char* fen_to_engine_candidates(
+  PyObject* pModule,
   const char* fen,
   const int depth,
   const int move_count
 ) {
-    PyObject *pModule, *pFunc, *pArgs, *pValue;
+    PyObject *pFunc, *pArgs, *pValue;
     char *result;
-
-    py_setup();
-
-    pModule = PyImport_ImportModule("chess_helpers");
     pFunc = PyObject_GetAttrString(pModule, "fen_to_engine_candidates");
     pArgs = PyTuple_Pack(
       3,
@@ -115,19 +110,16 @@ char* fen_to_engine_candidates(
         result = NULL;
     }
 
-    Py_Finalize();
     return result;
 }
 
 char* tree_to_pgn(
+  PyObject* pModule,
   const char* tree
 ) {
-    PyObject *pModule, *pFunc, *pArgs, *pValue;
+    PyObject *pFunc, *pArgs, *pValue;
     char *result;
 
-    py_setup();
-
-    pModule = PyImport_ImportModule("chess_helpers");
     pFunc = PyObject_GetAttrString(pModule, "tree_to_pgn");
     pArgs = PyTuple_Pack(1, PyUnicode_FromString(tree));
     pValue = PyObject_CallObject(pFunc, pArgs);
@@ -139,6 +131,5 @@ char* tree_to_pgn(
         result = NULL;
     }
 
-    Py_Finalize();
     return result;
 }

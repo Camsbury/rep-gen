@@ -26,7 +26,8 @@ exportPgn :: RGM ()
 exportPgn = do
   tree <- use moveTree
   cTree <- liftIO . FC.newCString . unpack . decodeUtf8 . toStrict $ J.encode tree
-  cResult <- liftIO $ PyC.tree_to_pgn cTree
+  pModule <- use chessHelpers
+  cResult <- liftIO $ PyC.tree_to_pgn pModule cTree
   pgn <- liftIO $ FC.peekCString cResult
   path <- view exportPgnPath
   writeFile (unpack path) (encodeUtf8 $ pack pgn)

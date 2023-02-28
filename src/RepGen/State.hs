@@ -1,10 +1,12 @@
 --------------------------------------------------------------------------------
 module RepGen.State where
 --------------------------------------------------------------------------------
+import Foreign.Ptr
 import RepGen.Type
 import RepGen.Action.Type
 import RepGen.Config.Type
 import RepGen.MoveTree.Type
+import RepGen.PyChess.Type
 import RepGen.Score.Type
 import RepGen.State.Type
 import RepGen.Stats.Type
@@ -20,16 +22,15 @@ initState
     , MonadLogger m
     , MonadIO m
     )
-  => m RGState
-initState = do
+  => Ptr PyObject
+  -> m RGState
+initState pModule = do
   logInfoN "Initializing state"
-  node <- baseNode
+  node <- baseNode pModule
   actions <- initActions <$> view colorL
   logDebugN $ "Actions: " <> tshow actions
   logInfoN "Finished initializing state"
-  pure $ def
-       & moveTree .~ node
-       & actionStack .~ actions
+  pure $ RGState False pModule node actions
 
 initActions :: Color -> [RGAction]
 initActions White
@@ -48,10 +49,11 @@ baseNode
     , MonadLogger m
     , MonadIO m
     )
-  => m TreeNode
-baseNode = do
+  => Ptr PyObject
+  -> m TreeNode
+baseNode pModule = do
   stats <- H.initialStats
-  score <- Ngn.fenToScore def
+  score <- Ngn.fenToScore pModule def
   let scoreStat = mkRGStat . view scoreL <$> score
       stats' = stats & rgScore .~ scoreStat
   pure $ TreeNode stats' empty def empty False

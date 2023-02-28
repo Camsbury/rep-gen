@@ -13,12 +13,14 @@ module RepGen.Engine.Local
 --------------------------------------------------------------------------------
 import RepGen.Config.Type
 import RepGen.Engine.Type
+import RepGen.PyChess.Type
 import RepGen.Strategy.Type
 import RepGen.Type
 --------------------------------------------------------------------------------
 import Database.Persist (Entity(..), (==.))
 import Database.Persist.TH (mkPersist, mkMigrate, persistLowerCase, share, sqlSettings)
 import Database.Persist.Sqlite (runSqlite)
+import Foreign.Ptr
 --------------------------------------------------------------------------------
 import qualified Foreign.C.String as FC
 import qualified RepGen.PyChess as PyC
@@ -31,13 +33,14 @@ doFenToLocalCandidates
     , MonadError  RGError  m
     , MonadIO m
     )
-  => Text
+  => Ptr PyObject
+  -> Text
   -> Int
   -> Int
   -> m ByteString
-doFenToLocalCandidates fen depth mCount = do
+doFenToLocalCandidates pModule fen depth mCount = do
   cFen <- liftIO . FC.newCString . unpack $ fen
-  cResult <- liftIO $ PyC.fen_to_engine_candidates cFen depth mCount
+  cResult <- liftIO $ PyC.fen_to_engine_candidates pModule cFen depth mCount
   fmap fromString . liftIO $ FC.peekCString cResult
 
 share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
@@ -69,9 +72,10 @@ fenToLocalCandidates
     , MonadError  RGError  m
     , MonadIO m
     )
-  => Fen
+  => Ptr PyObject
+  -> Fen
   -> m [EngineCandidate]
-fenToLocalCandidates (Fen fen) = do
+fenToLocalCandidates pModule (Fen fen) = do
   depth
     <- view
     $ strategy
@@ -89,7 +93,7 @@ fenToLocalCandidates (Fen fen) = do
   jsonString <- case cachedResult of
     Just res -> pure res
     Nothing -> do
-      res <- doFenToLocalCandidates fen depth mCount
+      res <- doFenToLocalCandidates pModule fen depth mCount
       liftIO $ cacheSet dbPath fen depth mCount res
       pure res
   throwEither

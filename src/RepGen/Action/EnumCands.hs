@@ -43,7 +43,8 @@ fetchCandidates :: EnumData -> RGM [(Uci, TreeNode)]
 fetchCandidates action = do
   let ucis           = action ^. edUcis
   let pPrune         = action ^. edProbP
-  fen                <- liftIO $ PyC.ucisToFen ucis
+  pModule            <- use chessHelpers
+  fen                <- liftIO $ PyC.ucisToFen pModule ucis
   (rStats, lcM)      <- H.lichessMoves fen
   (rMStats, maybeMM) <- H.maybeMastersMoves fen
   engineMoves        <- Ngn.fenToEngineCandidates fen

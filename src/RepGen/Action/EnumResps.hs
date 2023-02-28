@@ -51,7 +51,8 @@ initRunAction ucis = do
 processMoves :: EnumData -> Double -> RGM [(Uci, TreeNode)]
 processMoves action pAgg = do
   let ucis = action ^. edUcis
-  fen <- liftIO $ PyC.ucisToFen ucis
+  pModule <- use chessHelpers
+  fen <- liftIO $ PyC.ucisToFen pModule ucis
   (rMStats, maybeMastersM) <- maybeMastersMoves fen
   Stats.updateParentNominal ucis mastersStats rMStats
   (rStats, lichessM') <- lichessMoves fen
@@ -70,7 +71,8 @@ processMoves action pAgg = do
 
 initProcessMoves :: Vector Uci -> Double -> RGM [(Uci, TreeNode)]
 initProcessMoves ucis pAgg = do
-  fen <- liftIO $ PyC.ucisToFen ucis
+  pModule <- use chessHelpers
+  fen <- liftIO $ PyC.ucisToFen pModule ucis
   (rMStats, maybeMastersM) <- maybeMastersMoves fen
   Stats.updateParentNominal ucis mastersStats rMStats
   (rStats, lichessM) <- lichessMoves fen
