@@ -7,10 +7,10 @@ import RepGen
 main :: IO ()
 main = do
   buildRepertoire $
-    def & colorL   .~ Black
+    def & colorL   .~ White
         & mastersP .~ False
-        & historyConfig . historyRatings .~ [L1800]
-        -- & minProbAgg .~ 0.1
+        & historyConfig . historyRatings .~ [L2000]
+        & minProbAgg .~ 0.1
         -- & initRespProb .~ 0.1
         -- & asymRespProb .~ 0.25
 
@@ -18,11 +18,11 @@ main = do
         -- & minLogLevel .~ LevelDebug
 
 
-        & startingMoves .~
-          [ "e4"
-          , "c5"
-          , "d4"
-          ]
+        -- & startingMoves .~
+        --   [ "e4"
+        --   , "c5"
+        --   , "d4"
+        --   ]
 
         -- & minLogLevel .~ LevelDebug
         -- & mOverrides .~ mapFromList ([([], "d4")] :: [([San], San)])

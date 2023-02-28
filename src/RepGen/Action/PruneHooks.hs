@@ -19,16 +19,15 @@ runAction ucis = do
   logDebugN $ "Running Prune Hooks for: " <> tshow ucis
   mpa <- view minProbAgg
   pTI <- use posToInfo
-  moveTree
+  children <- use
+    $ moveTree
     . traverseUcis ucis
-    . nodeResponses
-    . traversed
-    . filtered (\x -> maybe False (< mpa)
-                 $ pTI ^? ix (x ^. _2 . nodeFen) . posStats . probAgg)
-    . _2
-    . removed
-    .= True
-  children <- use $ moveTree . traverseUcis ucis . to collectValidChildren
+    . to (collectFilteredChildren
+           ( \x ->
+               maybe False (mpa <) $
+                 pTI ^? ix (x ^. _2 . nodeFen) . posStats . probAgg
+           )
+         )
 
   let actions = toActions (children ^.. folded . _2)
   actionStack %= (actions ++)
