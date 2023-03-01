@@ -15,6 +15,7 @@ import RepGen.Score ()
 import RepGen.Score.Type
 import RepGen.State.Type
 import RepGen.Stats.Type
+import RepGen.Strategy.Type
 import RepGen.Type
 --------------------------------------------------------------------------------
 import qualified RepGen.Engine.Local as L
@@ -38,18 +39,22 @@ fenToEngineCandidates
   :: Fen
   -> RGM [EngineCandidate]
 fenToEngineCandidates fen = do
-  limitReached <- use cloudLimitReached
-  (mCands, limitReached') <- (`runStateT` limitReached) $ do
-    deepCands <- fenToCloudCandidates fen lcDeepBreadth
-    wideCands <- if isJust deepCands
-      then fenToCloudCandidates fen lcWideBreadth
-      else pure Nothing
-    pure $ maybe deepCands (\x -> mergeCands x <$> deepCands) wideCands
-  when limitReached' $ cloudLimitReached .= True
-  pModule <- use chessHelpers
-  eMoves <- maybe (L.fenToLocalCandidates pModule fen) pure mCands
-  color <- view colorL
-  pure $ applyScoreColor color <$> eMoves
+  useEngine <- view $ strategy . satisficers . engineFilter . engineP
+  if useEngine
+    then do
+      limitReached <- use cloudLimitReached
+      (mCands, limitReached') <- (`runStateT` limitReached) $ do
+        deepCands <- fenToCloudCandidates fen lcDeepBreadth
+        wideCands <- if isJust deepCands
+          then fenToCloudCandidates fen lcWideBreadth
+          else pure Nothing
+        pure $ maybe deepCands (\x -> mergeCands x <$> deepCands) wideCands
+      when limitReached' $ cloudLimitReached .= True
+      pModule <- use chessHelpers
+      eMoves <- maybe (L.fenToLocalCandidates pModule fen) pure mCands
+      color <- view colorL
+      pure $ applyScoreColor color <$> eMoves
+    else pure []
 
 mergeCands
   :: [EngineCandidate]
@@ -111,15 +116,19 @@ fenToEngineCandidatesInit
   -> Fen
   -> m [EngineCandidate]
 fenToEngineCandidatesInit pModule fen = do
-  mCands <- (`evalStateT` False) $ do
-    deepCands <- fenToCloudCandidates fen lcDeepBreadth
-    wideCands <- if isJust deepCands
-      then fenToCloudCandidates fen lcWideBreadth
-      else pure Nothing
-    pure $ maybe deepCands (\x -> mergeCands x <$> deepCands) wideCands
-  eMoves <- maybe (L.fenToLocalCandidates pModule fen) pure mCands
-  color <- view colorL
-  pure $ applyScoreColor color <$> eMoves
+  useEngine <- view $ strategy . satisficers . engineFilter . engineP
+  if useEngine
+    then do
+      mCands <- (`evalStateT` False) $ do
+        deepCands <- fenToCloudCandidates fen lcDeepBreadth
+        wideCands <- if isJust deepCands
+          then fenToCloudCandidates fen lcWideBreadth
+          else pure Nothing
+        pure $ maybe deepCands (\x -> mergeCands x <$> deepCands) wideCands
+      eMoves <- maybe (L.fenToLocalCandidates pModule fen) pure mCands
+      color <- view colorL
+      pure $ applyScoreColor color <$> eMoves
+    else pure []
 
 -- | Fetch the engine score for a given FEN
 fenToScore
@@ -132,11 +141,15 @@ fenToScore
   -> Fen
   -> m (Maybe Score)
 fenToScore pModule fen = do
-  color <- view colorL
-  cands <- fenToEngineCandidatesInit pModule fen
-  case color of
-    White -> pure $ cands ^? ix 0 . ngnScore
-    Black -> pure $ cands ^? ix 0 . ngnScore . to (\x -> x & scoreL %~ (1 -))
+  useEngine <- view $ strategy . satisficers . engineFilter . engineP
+  if useEngine
+    then do
+      color <- view colorL
+      cands <- fenToEngineCandidatesInit pModule fen
+      case color of
+        White -> pure $ cands ^? ix 0 . ngnScore
+        Black -> pure $ cands ^? ix 0 . ngnScore . to (\x -> x & scoreL %~ (1 -))
+    else pure Nothing
 
 applyScoreColor :: Color -> EngineCandidate -> EngineCandidate
 applyScoreColor White = id
