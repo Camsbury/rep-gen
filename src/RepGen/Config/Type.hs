@@ -59,8 +59,8 @@ instance Default RGConfig where
       , _exportPgnPath   = "./resources/move-tree.pgn"
       , _historyConfig   = def
       , _httpCachePath   = "./resources/http-cache.db"
-      , _initCandBreadth = 25
-      , _asymCandBreadth = 1 -- need to enforce this is less
+      , _initCandBreadth = 10
+      , _asymCandBreadth = 5 -- need to enforce this is less
       , _initRespProb    = 0.001
       , _asymRespProb    = 0.3
       , _mOverrides      = mempty
