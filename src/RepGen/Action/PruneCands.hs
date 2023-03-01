@@ -19,23 +19,17 @@ runAction ucis = do
   logInfoN $ "Pruning Candidates for: " <> tshow ucis
   let err = "Node to prune does not exist at: " <> tshow ucis
   node <- throwMaybe err <=< preuse $ moveTree . traverseUcis ucis
-  let children = node ^.. nodeResponses . folded
-  -- logDebugN $ "Prune Children: " <> tshow children
-  logInfoN
-    $ ("Candidate Moves: " <>)
-    . tshow
-    $ children ^.. folded . _1
+  let fen = node ^. nodeFen
 
-  childrenStats <- traverse State.collectInfo children
+  maybeChosenUci
+    <- use
+    $ posToInfo
+    . ix fen
+    . chosenUci
 
-  case fromNullable childrenStats of
-    Nothing
-      -> logWarnN
-      $ "No children when pruning at: "
-      <> tshow ucis
-    Just _ -> do
-      (choiceUci, _) <- Strat.applyStrategy childrenStats
-      -- "remove" the others
+  case maybeChosenUci of
+    -- Transposes to another chosen child, no need to repeat work.
+    Just choiceUci -> do
       moveTree
         . traverseUcis ucis
         . nodeResponses
@@ -44,19 +38,66 @@ runAction ucis = do
         . _2
         . removed
         .= True
-
-      let newUcis = snoc ucis choiceUci
-
-      let actions = toActions newUcis
-      -- logDebugN $ "Actions: " <> tshow actions
-
-      actionStack %= (actions ++)
-
+      moveTree
+        . traverseUcis ucis
+        . nodeResponses
+        . traversed
+        . filtered (\x -> x ^. _1 == choiceUci)
+        . _2
+        . transposes
+        .= True
       X.exportJSON
 
+      -- no need to create actions for transposition
+
+      let newUcis = snoc ucis choiceUci
       logInfoN
         $ "The tree has been pruned to: "
         <> tshow newUcis
+
+    Nothing -> do
+      let children = node ^.. nodeResponses . folded
+      -- logDebugN $ "Prune Children: " <> tshow children
+      logInfoN
+        $ ("Candidate Moves: " <>)
+        . tshow
+        $ children ^.. folded . _1
+
+      childrenStats <- traverse State.collectInfo children
+
+      case fromNullable childrenStats of
+        Nothing
+          -> logWarnN
+          $ "No children when pruning at: "
+          <> tshow ucis
+        Just _ -> do
+          (choiceUci, _) <- Strat.applyStrategy childrenStats
+
+          -- "remove" the others
+          moveTree
+            . traverseUcis ucis
+            . nodeResponses
+            . traversed
+            . filtered (\x -> x ^. _1 /= choiceUci)
+            . _2
+            . removed
+            .= True
+
+          -- add chosen uci as possible transposition
+          posToInfo . ix fen . chosenUci ?= choiceUci
+
+          let newUcis = snoc ucis choiceUci
+
+          let actions = toActions newUcis
+          -- logDebugN $ "Actions: " <> tshow actions
+
+          actionStack %= (actions ++)
+
+          X.exportJSON
+
+          logInfoN
+            $ "The tree has been pruned to: "
+            <> tshow newUcis
 
 toActions :: Vector Uci -> [RGAction]
 toActions ucis

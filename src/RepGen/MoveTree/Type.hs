@@ -22,11 +22,12 @@ data TreeNode
   , _nodeFen       :: Fen
   , _nodeResponses :: Vector (Uci, TreeNode)
   , _removed       :: Bool
+  , _transposes    :: Bool
   } deriving (Show, Eq)
 makeLenses ''TreeNode
 
 instance Default TreeNode where
-  def = TreeNode empty def empty False
+  def = TreeNode empty def empty False False
 
 instance ToJSON TreeNode where
   toJSON node =
@@ -45,3 +46,4 @@ instance FromJSON TreeNode where
       <*> (o .: "nodeFen")
       <*> (o .: "nodeResponses")
       <*> (o .: "removed")
+      <*> (o .: "transposes")

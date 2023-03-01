@@ -13,12 +13,12 @@ type  PosToInfo = Map Fen PosInfo
 data PosInfo
   = PosInfo
   { _posStats     :: RGStats
-  , _chosen       :: Bool
+  , _chosenUci    :: Maybe Uci
   } deriving (Show, Eq)
 makeLenses ''PosInfo
 
 instance Default PosInfo where
-  def = PosInfo def False
+  def = PosInfo def Nothing
 
 data RGState
   = RGState

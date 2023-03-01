@@ -113,7 +113,7 @@ fetchFen ucis (uci, ns) = do
 fromProcessed :: Vector Uci -> (Uci, Fen) -> (Uci, TreeNode)
 fromProcessed ucis (uci, fen)
   = ( uci
-    , TreeNode (snoc ucis uci) fen mempty False
+    , TreeNode (snoc ucis uci) fen mempty False False
     )
 
 toAction :: EnumData -> Vector Uci -> [RGAction]

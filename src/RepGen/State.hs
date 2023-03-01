@@ -35,7 +35,7 @@ initState pModule = do
        { _cloudLimitReached = False
        , _posToInfo         = iPTI
        , _chessHelpers      = pModule
-       , _moveTree          = TreeNode empty def empty False
+       , _moveTree          = TreeNode empty def empty False False
        , _actionStack       = actions
        }
 
