@@ -28,6 +28,7 @@ runAction action = do
   let ucis = action ^. edUcis
   logInfoN $ "Enumerating Candidates for: " <> tshow ucis
   candidates <- fetchCandidates action
+  logInfoN $ "Candidates are: " <> tshow (candidates ^.. folded . _1)
   sDepth <- view searchDepth
   pTI <- use posToInfo
   let maybeBestScore

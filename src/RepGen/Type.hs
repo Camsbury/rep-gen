@@ -5,7 +5,11 @@ module RepGen.Type where
 import Data.Aeson
   ( FromJSON(..)
   , ToJSON(..)
+  , ToJSONKey(..)
   , withText
+  )
+import Data.Aeson.Types
+  ( toJSONKeyText
   )
 --------------------------------------------------------------------------------
 import qualified Data.Aeson as J
@@ -32,6 +36,9 @@ instance Default Fen where
 
 instance ToJSON Fen where
   toJSON (Fen fen) = J.String fen
+
+instance ToJSONKey Fen where
+  toJSONKey = toJSONKeyText $ tshow . view fenL
 
 instance FromJSON Fen where
   parseJSON = withText "Fen" $ \t -> pure $ Fen t

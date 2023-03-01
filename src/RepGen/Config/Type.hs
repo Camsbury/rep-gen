@@ -28,7 +28,8 @@ data RGConfig
   , _asymRespProb    :: Double
   , _colorL          :: Color
   , _engineCachePath :: Text
-  , _exportJSONPath  :: Text
+  , _exportTreePath  :: Text
+  , _exportInfoPath  :: Text
   , _exportP         :: Bool
   , _exportPgnPath   :: Text
   , _historyConfig   :: HistoryConfig
@@ -52,7 +53,8 @@ instance Default RGConfig where
   def = RGConfig
       { _colorL          = White
       , _engineCachePath = "./resources/engine-cache.db"
-      , _exportJSONPath  = "./resources/move-tree.json"
+      , _exportTreePath  = "./resources/move-tree.json"
+      , _exportInfoPath  = "./resources/pos-info.json"
       , _exportP         = True
       , _exportPgnPath   = "./resources/move-tree.pgn"
       , _historyConfig   = def
