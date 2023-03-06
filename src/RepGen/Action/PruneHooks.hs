@@ -29,6 +29,16 @@ runAction ucis = do
            )
          )
 
+  -- setting removed true on children who aren't probable enough
+  moveTree
+    . traverseUcis ucis
+    . nodeResponses
+    . traversed
+    . filtered (\x -> (x ^. _1) `notElem` (children ^.. folded . _1))
+    . _2
+    . removed
+    .= True
+
   let actions = toActions (children ^.. folded . _2)
   actionStack %= (actions ++)
 
