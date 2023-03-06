@@ -24,10 +24,10 @@ makeLenses ''EngineFilter
 
 instance Default EngineFilter where
   def = EngineFilter
-      { _engineAllowableLoss = 0.8,
-        _engineMoveCount = 10,
-        _engineDepth = 13,
-        _engineP = True
+      { _engineAllowableLoss = 0.8
+      , _engineMoveCount = 10
+      , _engineDepth = 13
+      , _engineP = True
       }
 
 data RGSatisficers = RGSatisficers
