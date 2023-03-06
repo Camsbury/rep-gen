@@ -32,10 +32,11 @@ instance Default TreeNode where
 instance ToJSON TreeNode where
   toJSON node =
     object
-      [ "uciPath"       J..= view uciPath node,
-        "nodeFen"       J..= view nodeFen node,
-        "nodeResponses" J..= view nodeResponses node,
-        "removed"       J..= view removed node
+      [ "uciPath"       J..= view uciPath       node
+      , "nodeFen"       J..= view nodeFen       node
+      , "nodeResponses" J..= view nodeResponses node
+      , "removed"       J..= view removed       node
+      , "transposes"    J..= view transposes    node
       ]
 
 instance FromJSON TreeNode where
