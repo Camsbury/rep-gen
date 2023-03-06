@@ -47,13 +47,13 @@ def fen_to_engine_candidates(fen, depth, move_count):
 def tree_to_pgn(input_tree):
     tree = json.loads(input_tree)
     game = pgn.Game()
-    stack = [(game, x) for x in reversed(list(filter(lambda x: not x[1]['removed'], tree['nodeResponses'])))]
+    stack = [(game, x) for x in reversed(list(filter(lambda y: not y[1]['removed'], tree['nodeResponses'])))]
 
     while stack:
-        (node, x) = stack.pop()
-        uci = x[0]
+        (node, entry) = stack.pop()
+        uci = entry[0]
         node = node.add_variation(chess.Move.from_uci(uci))
-        responses = [(node, z) for z in reversed(list(filter(lambda y: not y[1]['removed'], x[1]['nodeResponses'])))]
+        responses = [(node, z) for z in reversed(list(filter(lambda y: not y[1]['removed'], entry[1]['nodeResponses'])))]
         stack += responses
 
     return str(game)
