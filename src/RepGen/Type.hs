@@ -38,7 +38,7 @@ instance ToJSON Fen where
   toJSON (Fen fen) = J.String fen
 
 instance ToJSONKey Fen where
-  toJSONKey = toJSONKeyText $ tshow . view fenL
+  toJSONKey = toJSONKeyText $ view fenL
 
 instance FromJSON Fen where
   parseJSON = withText "Fen" $ \t -> pure $ Fen t
