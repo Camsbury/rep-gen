@@ -26,7 +26,7 @@ import qualified RepGen.State           as State
 runAction :: EnumData -> RGM ()
 runAction action = do
   let ucis = action ^. edUcis
-  logInfoN $ "Enumerating Candidates for: " <> tshow ucis
+  logInfoN $ "Cands for: " <> tshow ucis
   candidates <- fetchCandidates action
   logInfoN $ "Candidates are: " <> tshow (candidates ^.. folded . _1)
   sDepth <- view searchDepth
