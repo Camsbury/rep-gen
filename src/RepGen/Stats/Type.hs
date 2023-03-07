@@ -54,6 +54,8 @@ data RGStats
   { _lichessStats :: Maybe NodeStats
   , _mastersStats :: Maybe NodeStats
   , _rgScore      :: Maybe RGStat
+  -- | This is the best score seen so far (used for filtering)
+  , _bestScore    :: Maybe Double
   , _probPrune    :: ProbPrune
   , _probAgg      :: ProbAgg
   } deriving (Show, Eq)
@@ -61,10 +63,10 @@ makeLenses ''RGStats
 
 -- | Make an RGStats given a 'ProbPrune' and a 'ProbAgg'
 mkRGStats :: ProbPrune -> ProbAgg -> RGStats
-mkRGStats = RGStats Nothing Nothing Nothing
+mkRGStats = RGStats Nothing Nothing Nothing Nothing
 
 instance Default RGStats where
-  def = RGStats Nothing Nothing Nothing 1 1
+  def = RGStats Nothing Nothing Nothing Nothing 1 1
 
 instance ToJSON RGStats where
   toJSON stats =
@@ -72,6 +74,7 @@ instance ToJSON RGStats where
       [ "lichessStats" J..= view lichessStats stats
       , "mastersStats" J..= view mastersStats stats
       , "rgScore"      J..= view rgScore      stats
+      , "bestScore"    J..= view bestScore    stats
       , "probPrune"    J..= view probPrune    stats
       , "probAgg"      J..= view probAgg      stats
       ]
@@ -99,6 +102,7 @@ instance FromJSON RGStats where
       <$> (o .: "lichessStats")
       <*> (o .: "mastersStats")
       <*> (o .: "rgScore")
+      <*> (o .: "bestScore")
       <*> (o .: "probPrune")
       <*> (o .: "probAgg")
 
