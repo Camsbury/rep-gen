@@ -62,7 +62,8 @@ initPosToInfo pModule = do
   stats <- H.initialStats
   score <- Ngn.fenToScore pModule def
   let scoreStat = mkRGStat . view scoreL <$> score
-      stats' = stats & rgScore .~ scoreStat
+      stats' = stats & rgScore   .~ scoreStat
+                     & bestScore .~ score ^? _Just . scoreL
   pure $ mapFromList [(def, def & posStats .~ stats')]
 
 collectInfo :: (Uci, TreeNode) -> RGM (Uci, (Fen, PosInfo))
