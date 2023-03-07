@@ -8,7 +8,7 @@ module RepGen.Action.TransStats
 import RepGen.Monad
 import RepGen.Type
 import RepGen.State.Type
-import RepGen.MoveTree
+import RepGen.MoveTree.Type
 import RepGen.Stats.Type
 --------------------------------------------------------------------------------
 import qualified RepGen.MoveTree as MT
@@ -19,36 +19,41 @@ import qualified RepGen.Strategy as Strat
 runAction :: Vector Uci -> RGM ()
 runAction ucis = do
   logDebugN $ "Transferring Stats for: " <> tshow ucis
+  parent
+    <- throwMaybe ("Parent doesn't exist at ucis: " <> tshow ucis)
+    <=< preuse
+    $ moveTree . MT.traverseUcis ucis
+  let pFen = parent ^. nodeFen
   childrenInfo
     <- traverse State.collectInfo
     <=< use
     $ moveTree
     . MT.traverseUcis ucis
-    . to collectValidChildren
+    . to MT.collectValidChildren
 
   when (isJust $ fromNullable childrenInfo) $ do
     logDebugN "Children exist for transfer!"
-    (_, (fen, child)) <- Strat.applyStrategy childrenInfo
+    (_, (_, child)) <- Strat.applyStrategy childrenInfo
 
-    setScore (child ^. posStats . rgScore) fen
+    setScore (child ^. posStats . rgScore) pFen
     setNodeStats
       (child ^. posStats . lichessStats)
-      fen
+      pFen
       lichessStats
       (whiteWins . agg)
     setNodeStats
       (child ^. posStats . lichessStats)
-      fen
+      pFen
       lichessStats
       (blackWins . agg)
     setNodeStats
       (child ^. posStats . mastersStats)
-      fen
+      pFen
       mastersStats
       (whiteWins . agg)
     setNodeStats
       (child ^. posStats . mastersStats)
-      fen
+      pFen
       mastersStats
       (blackWins . agg)
 
