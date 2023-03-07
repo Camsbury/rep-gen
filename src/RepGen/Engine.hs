@@ -36,22 +36,26 @@ lcWideBreadth = 10
 -- NOTE: currently just stops at 5 if there are no "wide" candidates,
 -- so not as many options
 fenToEngineCandidates
-  :: Fen
+  -- | The count of candidates to check
+  :: Maybe Int
+  -> Fen
   -> RGM [EngineCandidate]
-fenToEngineCandidates fen = do
+fenToEngineCandidates mCountMay fen = do
   useEngine <- view $ strategy . satisficers . engineFilter . engineP
   if useEngine
     then do
       limitReached <- use cloudLimitReached
       (mCands, limitReached') <- (`runStateT` limitReached) $ do
-        deepCands <- fenToCloudCandidates fen lcDeepBreadth
+        deepCands <- fenToCloudCandidates lcDeepBreadth fen
         wideCands <- if isJust deepCands
-          then fenToCloudCandidates fen lcWideBreadth
+          then fenToCloudCandidates
+            (max (fromMaybe lcWideBreadth mCountMay) lcDeepBreadth)
+            fen
           else pure Nothing
         pure $ maybe deepCands (\x -> mergeCands x <$> deepCands) wideCands
       when limitReached' $ cloudLimitReached .= True
       pModule <- use chessHelpers
-      eMoves <- maybe (L.fenToLocalCandidates pModule fen) pure mCands
+      eMoves <- maybe (L.fenToLocalCandidates pModule mCountMay fen) pure mCands
       color <- view colorL
       pure $ applyScoreColor color <$> eMoves
     else pure []
@@ -72,10 +76,10 @@ fenToCloudCandidates
     , MonadIO m
     , MonadState Bool m
     )
-  => Fen
-  -> Int
+  => Int
+  -> Fen
   -> m (Maybe [EngineCandidate])
-fenToCloudCandidates (Fen fen) breadth = do
+fenToCloudCandidates breadth (Fen fen) = do
   dbPath <- view httpCachePath
   limitReached <- get
   (statusCode, response)
@@ -113,19 +117,20 @@ fenToEngineCandidatesInit
     , MonadIO m
     )
   => Ptr PyObject
+  -> Maybe Int
   -> Fen
   -> m [EngineCandidate]
-fenToEngineCandidatesInit pModule fen = do
+fenToEngineCandidatesInit pModule mCountMay fen = do
   useEngine <- view $ strategy . satisficers . engineFilter . engineP
   if useEngine
     then do
       mCands <- (`evalStateT` False) $ do
-        deepCands <- fenToCloudCandidates fen lcDeepBreadth
+        deepCands <- fenToCloudCandidates lcDeepBreadth fen
         wideCands <- if isJust deepCands
-          then fenToCloudCandidates fen lcWideBreadth
+          then fenToCloudCandidates lcWideBreadth fen
           else pure Nothing
         pure $ maybe deepCands (\x -> mergeCands x <$> deepCands) wideCands
-      eMoves <- maybe (L.fenToLocalCandidates pModule fen) pure mCands
+      eMoves <- maybe (L.fenToLocalCandidates pModule mCountMay fen) pure mCands
       color <- view colorL
       pure $ applyScoreColor color <$> eMoves
     else pure []
@@ -145,7 +150,7 @@ fenToScore pModule fen = do
   if useEngine
     then do
       color <- view colorL
-      cands <- fenToEngineCandidatesInit pModule fen
+      cands <- fenToEngineCandidatesInit pModule Nothing fen
       case color of
         White -> pure $ cands ^? ix 0 . ngnScore
         Black -> pure $ cands ^? ix 0 . ngnScore . to (\x -> x & scoreL %~ (1 -))

@@ -73,9 +73,10 @@ fenToLocalCandidates
     , MonadIO m
     )
   => Ptr PyObject
+  -> Maybe Int
   -> Fen
   -> m [EngineCandidate]
-fenToLocalCandidates pModule (Fen fen) = do
+fenToLocalCandidates pModule mCountMay (Fen fen) = do
   depth
     <- view
     $ strategy
@@ -89,7 +90,7 @@ fenToLocalCandidates pModule (Fen fen) = do
     . engineFilter
     . engineMoveCount
   dbPath <- view engineCachePath
-  cachedResult <- liftIO $ cacheGet dbPath fen depth mCount
+  cachedResult <- liftIO $ cacheGet dbPath fen depth (fromMaybe mCount mCountMay)
   jsonString <- case cachedResult of
     Just res -> pure res
     Nothing -> do

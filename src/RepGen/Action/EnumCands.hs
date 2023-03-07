@@ -76,12 +76,12 @@ doFetchCandidates action = do
   let pFen           = parent ^. nodeFen
   (rStats, lcM)      <- H.lichessMoves pFen
   (rMStats, maybeMM) <- H.maybeMastersMoves pFen
-  engineMoves        <- Ngn.fenToEngineCandidates pFen
   pAgg               <- MT.fetchPAgg ucis
   color              <- view colorL
   stratSats          <- view $ strategy . satisficers
   stratOpt           <- view $ strategy . optimizer
   breadth            <- maxCandBreadth pAgg
+  engineMoves        <- Ngn.fenToEngineCandidates (Just breadth) pFen
   let candidates     = fromMaybe lcM maybeMM
   let isMasters      = isJust maybeMM
   let bestMay        = pTI ^? ix pFen . posStats . bestScoreL . _Just

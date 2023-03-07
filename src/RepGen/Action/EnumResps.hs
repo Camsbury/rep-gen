@@ -78,7 +78,7 @@ doProcessMoves action pAgg = do
   Stats.updateParentNominal pFen lichessStats rStats
 
   lichessM <- filterMoves lichessM'
-  engineMoves <- Ngn.fenToEngineCandidates pFen
+  engineMoves <- Ngn.fenToEngineCandidates (Just $ length lichessM) pFen
   mOverride <- preview $ overridesL . ix pFen
   let pPrune = action ^. edProbP
   processed
@@ -121,7 +121,7 @@ doInitProcessMoves ucis pAgg = do
   Stats.updateParentNominal pFen mastersStats rMStats
   (rStats, lichessM) <- lichessMoves pFen
   Stats.updateParentNominal pFen lichessStats rStats
-  engineMoves <- Ngn.fenToEngineCandidates pFen
+  engineMoves <- Ngn.fenToEngineCandidates (Just $ length lichessM) pFen
   mOverride <- preview $ overridesL . ix pFen
   processed
     <-   fmap (Ngn.injectEngine engineMoves Nothing)
