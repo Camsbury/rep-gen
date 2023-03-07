@@ -71,33 +71,38 @@ runAction ucis = do
           $ "No children when pruning at: "
           <> tshow ucis
         Just _ -> do
-          (choiceUci, _) <- Strat.applyStrategy childrenStats
+          appliedStrat <- Strat.applyStrategy childrenStats
+          case appliedStrat of
+            Just (choiceUci, _) -> do
+              -- "remove" the others
+              moveTree
+                . traverseUcis ucis
+                . nodeResponses
+                . traversed
+                . filtered (\x -> x ^. _1 /= choiceUci)
+                . _2
+                . removed
+                .= True
 
-          -- "remove" the others
-          moveTree
-            . traverseUcis ucis
-            . nodeResponses
-            . traversed
-            . filtered (\x -> x ^. _1 /= choiceUci)
-            . _2
-            . removed
-            .= True
+              -- add chosen uci as possible transposition
+              posToInfo . ix fen . chosenUci ?= choiceUci
 
-          -- add chosen uci as possible transposition
-          posToInfo . ix fen . chosenUci ?= choiceUci
+              let newUcis = snoc ucis choiceUci
 
-          let newUcis = snoc ucis choiceUci
+              let actions = toActions newUcis
+              -- logDebugN $ "Actions: " <> tshow actions
 
-          let actions = toActions newUcis
-          -- logDebugN $ "Actions: " <> tshow actions
+              actionStack %= (actions ++)
 
-          actionStack %= (actions ++)
+              X.exportJSON
 
-          X.exportJSON
-
-          logInfoN
-            $ "The tree has been pruned to: "
-            <> tshow newUcis
+              logInfoN
+                $ "The tree has been pruned to: "
+                <> tshow newUcis
+            Nothing
+              -> logDebugN
+              $ "No sound candidates when pruning at: "
+              <> tshow ucis
 
 toActions :: Vector Uci -> [RGAction]
 toActions ucis

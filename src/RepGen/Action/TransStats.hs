@@ -31,31 +31,36 @@ runAction ucis = do
     . MT.traverseUcis ucis
     . to MT.collectValidChildren
 
-  when (isJust $ fromNullable childrenInfo) $ do
-    logDebugN "Children exist for transfer!"
-    (_, (_, child)) <- Strat.applyStrategy childrenInfo
+  appliedStrat <- Strat.applyStrategy childrenInfo
+  case appliedStrat of
+    Just (_, (_, child)) -> do
+      logDebugN "Children exist for transfer!"
 
-    setScore (child ^. posStats . rgScore) pFen
-    setNodeStats
-      (child ^. posStats . lichessStats)
-      pFen
-      lichessStats
-      (whiteWins . agg)
-    setNodeStats
-      (child ^. posStats . lichessStats)
-      pFen
-      lichessStats
-      (blackWins . agg)
-    setNodeStats
-      (child ^. posStats . mastersStats)
-      pFen
-      mastersStats
-      (whiteWins . agg)
-    setNodeStats
-      (child ^. posStats . mastersStats)
-      pFen
-      mastersStats
-      (blackWins . agg)
+      setScore (child ^. posStats . rgScore) pFen
+      setNodeStats
+        (child ^. posStats . lichessStats)
+        pFen
+        lichessStats
+        (whiteWins . agg)
+      setNodeStats
+        (child ^. posStats . lichessStats)
+        pFen
+        lichessStats
+        (blackWins . agg)
+      setNodeStats
+        (child ^. posStats . mastersStats)
+        pFen
+        mastersStats
+        (whiteWins . agg)
+      setNodeStats
+        (child ^. posStats . mastersStats)
+        pFen
+        mastersStats
+        (blackWins . agg)
+    Nothing
+      -> logDebugN
+      $ "No sound candidates when transferring stats at: "
+      <> tshow ucis
 
 setScore
   :: Maybe RGStat

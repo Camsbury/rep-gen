@@ -15,14 +15,12 @@ import RepGen.Type
 --------------------------------------------------------------------------------
 
 -- | Apply a strategy to select the best move option
-applyStrategy :: [(Uci, (Fen, PosInfo))] -> RGM (Uci, (Fen, PosInfo))
+applyStrategy :: [(Uci, (Fen, PosInfo))] -> RGM (Maybe (Uci, (Fen, PosInfo)))
 applyStrategy options = do
   sats <- view $ strategy . satisficers
   sComp <- strategicCompare <$> view (strategy . optimizer) <*> view colorL
-  opts <- throwMaybe "No moves to apply the strategy to!"
-       . fromNullable
-       $ strategicFilter sats options
-  let choice = minimumBy sComp opts
+  let opts = strategicFilter sats options
+  let choice = minimumBy sComp <$> fromNullable opts
   pure choice
 
 -- | Filter options based on 'RGSatisficers'
