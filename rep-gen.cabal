@@ -81,6 +81,35 @@ library
     ghc-options:         -Wall
     mixins:              base hiding (Prelude)
 
+
+test-suite rep-gen-tests
+    main-is:             Main.hs
+    other-modules:       RepGenTest
+    type:                exitcode-stdio-1.0
+    hs-source-dirs:      test
+    default-language:    Haskell2010
+    default-extensions:  DerivingStrategies
+                         FlexibleContexts
+                         FlexibleInstances
+                         FunctionalDependencies
+                         GeneralizedNewtypeDeriving
+                         OverloadedStrings
+                         OverloadedLists
+                         RecordWildCards
+                         ScopedTypeVariables
+                         StandaloneDeriving
+                         TypeApplications
+                         TupleSections
+    build-depends:       base
+                       , classy-prelude
+                       , rep-gen
+                       , hedgehog
+                       , lens
+                       , mtl
+                       , tasty
+                       , tasty-discover
+                       , tasty-hedgehog
+
 executable rep-gen
     main-is:            Main.hs
     hs-source-dirs:     app
@@ -95,9 +124,3 @@ executable rep-gen
     pkgconfig-depends:  python3
     c-sources:          src/chess.c
     mixins:             base hiding (Prelude)
-
-    -- gotta run the below to replace explicit ld-options it seems:
--- cabal new-build exe:rep-gen  --ghc-options="-l${PY_PRE} -I${PY_BASE}/include/${PY_PRE}" --extra-lib-dirs=${PY_BASE}/lib
-    -- ld-options:         -I${PY_BASE}/include/python3.10
-    --                     -L${PY_BASE}/lib
-    --                     -l${PY_PRE}
