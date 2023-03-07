@@ -39,12 +39,12 @@ strategicFilter sats opts
   where
     maybeBestScore
       = maximumMay
-      $ opts ^.. folded . _2 . _2 . posStats . rgScore . _Just . nom
+      $ opts ^.. folded . _2 . _2 . posStats . rgScore . _Just . agg
     toFiltered bestScore = filter (allowable bestScore) opts
     aLoss = sats ^. engineFilter . engineAllowableLoss
     allowable bestScore opt
       = maybe False (\x -> x >= (bestScore * aLoss))
-      $ opt ^? _2 . _2 . posStats . rgScore . _Just . nom
+      $ opt ^? _2 . _2 . posStats . rgScore . _Just . agg
 
 -- | Get the 'Ordering' needed to fulfill the chosen 'RGOptimizer'
 strategicCompare
