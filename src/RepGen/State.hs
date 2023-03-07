@@ -1,5 +1,9 @@
 --------------------------------------------------------------------------------
-module RepGen.State where
+module RepGen.State
+  ( initState
+  , collectInfo
+  , insertChildPosInfo
+  ) where
 --------------------------------------------------------------------------------
 import Foreign.Ptr
 import RepGen.Monad
@@ -35,13 +39,26 @@ initState pModule = do
        { _cloudLimitReached = False
        , _posToInfo         = iPTI
        , _chessHelpers      = pModule
-       , _moveTree          = TreeNode empty def empty False False
+       , _moveTree
+         = TreeNode
+         { _uciPath       = empty
+         , _nodeFen       = def
+         , _nodeResponses = empty
+         , _removed       = False
+         , _transposes    = False
+         }
        , _actionStack       = actions
        }
 
 initActions :: Color -> [RGAction]
 initActions White
-  = [ RGAEnumCands $ EnumData [] 1 1 False
+  = [ RGAEnumCands
+      $ EnumData
+      { _edUcis     = []
+      , _edProbP    = 1
+      , _edDepth    = 1
+      , _edIsPruned = False
+      }
     , RGAPruneCands []
     , RGATransStats []
     ]

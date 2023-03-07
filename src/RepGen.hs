@@ -43,9 +43,12 @@ buildRepertoire rgConfig
         liftIO . DP.runSqlite ecPath $ DP.runMigration Ngn.migrateAll
         hcPath <- view httpCachePath
         liftIO . DP.runSqlite hcPath $ DP.runMigration Web.migrateAll
-        evalStateT (
-          buildTree >> X.exportJSON >> X.exportPgn >> liftIO pyFinalize
-          ) =<< initState pModule
+        iState <- initState pModule
+        (`evalStateT` iState) $ do
+          buildTree
+          X.exportJSON
+          X.exportPgn
+          liftIO pyFinalize
   where
     lFilter mLvl _ lvl = lvl >= mLvl
 
