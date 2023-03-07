@@ -39,7 +39,7 @@ strategicFilter sats opts
   where
     maybeBestScore
       = maximumMay
-      $ opts ^.. folded . _2 . _2 . posStats . rgScore . _Just . agg
+      $ opts ^.. folded . _2 . _2 . posStats . bestScoreL . _Just
     toFiltered bestScore = filter (allowable bestScore) opts
     aLoss = sats ^. engineFilter . engineAllowableLoss
     allowable bestScore opt
