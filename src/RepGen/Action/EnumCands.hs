@@ -31,6 +31,7 @@ runAction action = do
   logInfoN $ "Candidates are: " <> tshow (candidates ^.. folded . _1)
   sDepth <- view searchDepth
   pTI <- use posToInfo
+  -- used to stop eval if scores are super high
   let maybeBestScore
         = maximumMay
         $ candidates ^.. folded . _2 . to (\f -> pTI ^? ix f . posStats . rgScore . _Just . nom) . _Just
@@ -67,11 +68,12 @@ doFetchCandidates :: EnumData -> RGM [(Uci, Fen)]
 doFetchCandidates action = do
   let ucis   = action ^. edUcis
   let pPrune = action ^. edProbP
+  pTI <- use posToInfo
   parent
     <- throwMaybe ("Parent doesn't exist at ucis: " <> tshow ucis)
     <=< preuse
     $ moveTree . MT.traverseUcis ucis
-  let pFen = parent ^. nodeFen
+  let pFen           = parent ^. nodeFen
   (rStats, lcM)      <- H.lichessMoves pFen
   (rMStats, maybeMM) <- H.maybeMastersMoves pFen
   engineMoves        <- Ngn.fenToEngineCandidates pFen
@@ -82,6 +84,7 @@ doFetchCandidates action = do
   breadth            <- maxCandBreadth pAgg
   let candidates     = fromMaybe lcM maybeMM
   let isMasters      = isJust maybeMM
+  let bestMay        = pTI ^? ix pFen . posStats . bestScore . _Just
 
   Stats.updateParentNominal pFen lichessStats rStats
   Stats.updateParentNominal pFen mastersStats rMStats
@@ -95,7 +98,7 @@ doFetchCandidates action = do
         =   take breadth
         .   Strat.strategicFilter stratSats
         .   sortBy (Strat.strategicCompare stratOpt color)
-        $   Ngn.injectEngine engineMoves
+        $   Ngn.injectEngine engineMoves bestMay
         .   applyWhen isMasters (injectLichess lcM)
         .   initPosInfo isMasters pAgg pPrune
         <$> initCands

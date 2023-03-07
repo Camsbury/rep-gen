@@ -155,16 +155,19 @@ applyScoreColor :: Color -> EngineCandidate -> EngineCandidate
 applyScoreColor White = id
 applyScoreColor Black = ngnScore . scoreL %~ (1 -)
 
-injectEngine :: [EngineCandidate] -> (Uci, (Fen, PosInfo)) -> (Uci, (Fen, PosInfo))
-injectEngine nCands info@(uci, _)
-  = info
-  & _2
-  . _2
-  . posStats
-  . rgScore
-  .~ findBy uci nCands
+injectEngine :: [EngineCandidate] -> Maybe Double -> (Uci, (Fen, PosInfo)) -> (Uci, (Fen, PosInfo))
+injectEngine nCands bestMay info@(uci, _)
+  = if isJust bestMay
+  then scored
+  else scoredCopied
   where
     findBy _ [] = Nothing
     findBy u (ngn:rest)
-      | u == ngn ^. ngnUci = Just . mkRGStat $ ngn ^. ngnScore . scoreL
+      | u == ngn ^. ngnUci = Just $ ngn ^. ngnScore . scoreL
       | otherwise = findBy u rest
+    scored
+      = info
+      & _2 . _2 . posStats . rgScore   .~ (mkRGStat <$> findBy uci nCands)
+      & _2 . _2 . posStats . bestScore .~ bestMay
+    scoredCopied
+      = scored & _2 . _2 . posStats . bestScore .~ findBy uci nCands

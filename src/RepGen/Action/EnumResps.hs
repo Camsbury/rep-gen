@@ -82,7 +82,7 @@ doProcessMoves action pAgg = do
   mOverride <- preview $ overridesL . ix pFen
   let pPrune = action ^. edProbP
   processed
-    <-   fmap (Ngn.injectEngine engineMoves)
+    <-   fmap (Ngn.injectEngine engineMoves Nothing)
     <$> maybe
           (traverse (wrapLCStats ucis pAgg pPrune) lichessM)
           (mergeMoves ucis pAgg pPrune lichessM)
@@ -124,7 +124,7 @@ doInitProcessMoves ucis pAgg = do
   engineMoves <- Ngn.fenToEngineCandidates pFen
   mOverride <- preview $ overridesL . ix pFen
   processed
-    <-   fmap (Ngn.injectEngine engineMoves)
+    <-   fmap (Ngn.injectEngine engineMoves Nothing)
     <$> maybe
           (traverse (wrapLCStats ucis pAgg 1) lichessM)
           (mergeMoves ucis pAgg 1 lichessM)
