@@ -55,7 +55,7 @@ data RGStats
   , _mastersStats :: Maybe NodeStats
   , _rgScore      :: Maybe RGStat
   -- | This is the best score seen so far (used for filtering)
-  , _bestScore    :: Maybe Double
+  , _bestScoreL   :: Maybe Double
   , _probPrune    :: ProbPrune
   , _probAgg      :: ProbAgg
   } deriving (Show, Eq)
@@ -74,7 +74,7 @@ instance ToJSON RGStats where
       [ "lichessStats" J..= view lichessStats stats
       , "mastersStats" J..= view mastersStats stats
       , "rgScore"      J..= view rgScore      stats
-      , "bestScore"    J..= view bestScore    stats
+      , "bestScoreL"   J..= view bestScoreL   stats
       , "probPrune"    J..= view probPrune    stats
       , "probAgg"      J..= view probAgg      stats
       ]
@@ -102,7 +102,7 @@ instance FromJSON RGStats where
       <$> (o .: "lichessStats")
       <*> (o .: "mastersStats")
       <*> (o .: "rgScore")
-      <*> (o .: "bestScore")
+      <*> (o .: "bestScoreL")
       <*> (o .: "probPrune")
       <*> (o .: "probAgg")
 

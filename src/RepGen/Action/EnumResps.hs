@@ -175,7 +175,7 @@ mergeMoves ucis pAgg pPrune lichessM mastersM
             { _lichessStats = Just lcm
             , _mastersStats = lookup uci mastersM
             , _rgScore      = Nothing
-            , _bestScore    = Nothing
+            , _bestScoreL   = Nothing
             , _probPrune    = pPrune * lcm ^. prob
             , _probAgg      = pAgg * lcm ^. prob
             }
@@ -199,7 +199,7 @@ wrapLCStats ucis pAgg pPrune (uci, lcm)
           { _lichessStats = Just lcm
           , _mastersStats = Nothing
           , _rgScore      = Nothing
-          , _bestScore    = Nothing
+          , _bestScoreL   = Nothing
           , _probPrune    = pPrune * lcm ^. prob
           , _probAgg      = pAgg * lcm ^. prob
           }

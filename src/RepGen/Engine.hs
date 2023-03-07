@@ -167,7 +167,7 @@ injectEngine nCands bestMay info@(uci, _)
       | otherwise = findBy u rest
     scored
       = info
-      & _2 . _2 . posStats . rgScore   .~ (mkRGStat <$> findBy uci nCands)
-      & _2 . _2 . posStats . bestScore .~ bestMay
+      & _2 . _2 . posStats . rgScore    .~ (mkRGStat <$> findBy uci nCands)
+      & _2 . _2 . posStats . bestScoreL .~ bestMay
     scoredCopied
-      = scored & _2 . _2 . posStats . bestScore .~ findBy uci nCands
+      = scored & _2 . _2 . posStats . bestScoreL .~ findBy uci nCands

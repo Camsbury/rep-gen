@@ -84,7 +84,7 @@ doFetchCandidates action = do
   breadth            <- maxCandBreadth pAgg
   let candidates     = fromMaybe lcM maybeMM
   let isMasters      = isJust maybeMM
-  let bestMay        = pTI ^? ix pFen . posStats . bestScore . _Just
+  let bestMay        = pTI ^? ix pFen . posStats . bestScoreL . _Just
 
   Stats.updateParentNominal pFen lichessStats rStats
   Stats.updateParentNominal pFen mastersStats rMStats
