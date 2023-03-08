@@ -7,14 +7,17 @@ let
           chess
         ]));
 in
+with pkgs;
 (import ./default.nix).shellFor {
   buildInputs = [
     python-custom
-    pkgs.ghcid
-    pkgs.nodePackages.prettier
-    pkgs.pcre
-    pkgs.stockfish
-    pkgs.zlib
+    clojure
+    clj-kondo
+    ghcid
+    nodePackages.prettier
+    pcre
+    stockfish
+    zlib
   ];
   tools = {
     cabal = "latest";
