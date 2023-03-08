@@ -1,14 +1,18 @@
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE LambdaCase #-}
 --------------------------------------------------------------------------------
 module RepGen.Lichess.History.Type where
 --------------------------------------------------------------------------------
 import RepGen.Type
 import Data.Time.Calendar (Year, MonthOfYear)
+--------------------------------------------------------------------------------
 import Data.Aeson
   ( FromJSON(..)
   , (.:)
   )
+--------------------------------------------------------------------------------
 import qualified Data.Aeson as J
+import qualified Data.Aeson.Types as J
 --------------------------------------------------------------------------------
 
 data UniversalParams
@@ -24,6 +28,16 @@ data GameSpeed
   | Rapid
   | Classical
   deriving (Eq, Show)
+
+instance FromJSON GameSpeed where
+  parseJSON
+    = J.withText "GameSpeed"
+    $ \t -> case toLower t of
+      "bullet"    -> pure Bullet
+      "blitz"     -> pure Blitz
+      "rapid"     -> pure Rapid
+      "classical" -> pure Classical
+      _           -> J.parseFail "Invalid game speed"
 
 speedText :: GameSpeed -> Text
 speedText Bullet    = "bullet"
@@ -42,6 +56,21 @@ data LichessRating
   | L2200
   | L2500
   deriving (Eq, Show)
+
+instance FromJSON LichessRating where
+  parseJSON
+    = J.withScientific "LichessRating"
+    $ \case
+    600  -> pure L600
+    1000 -> pure L1000
+    1200 -> pure L1200
+    1400 -> pure L1400
+    1600 -> pure L1600
+    1800 -> pure L1800
+    2000 -> pure L2000
+    2200 -> pure L2200
+    2500 -> pure L2500
+    _    -> J.parseFail "Invalid rating"
 
 ratingText :: LichessRating -> Text
 ratingText L600  = "600"

@@ -4,12 +4,15 @@ module RepGen.Type where
 --------------------------------------------------------------------------------
 import Data.Aeson
   ( FromJSON(..)
+  , FromJSONKey(..)
+  , FromJSONKeyFunction(..)
   , ToJSON(..)
   , ToJSONKey(..)
   , withText
   )
 import Data.Aeson.Types
   ( toJSONKeyText
+  , parseFail
   )
 --------------------------------------------------------------------------------
 import qualified Data.Aeson as J
@@ -19,6 +22,12 @@ data Color
   = White
   | Black
   deriving (Show, Eq)
+
+instance FromJSON Color where
+  parseJSON = withText "Color" $ \t -> case toLower t of
+    "white" -> pure      White
+    "black" -> pure      Black
+    _       -> parseFail "Invalid color"
 
 type RGError = Text
 
@@ -42,3 +51,6 @@ instance ToJSONKey Fen where
 
 instance FromJSON Fen where
   parseJSON = withText "Fen" $ \t -> pure $ Fen t
+
+instance FromJSONKey Fen where
+  fromJSONKey = FromJSONKeyText Fen

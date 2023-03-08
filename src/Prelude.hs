@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -Wno-orphans #-}
 --------------------------------------------------------------------------------
 module Prelude
   ( module ClassyPrelude
@@ -43,6 +44,13 @@ import Data.Default
 import System.Command (command, command_)
 import Text.Pretty.Simple hiding (Color(..))
 --------------------------------------------------------------------------------
+import Data.Aeson
+  ( FromJSON(..)
+  )
+--------------------------------------------------------------------------------
+import qualified Data.Aeson as J
+import qualified Data.Aeson.Types as J
+--------------------------------------------------------------------------------
 
 -- | throws error if Nothing
 throwMaybe :: MonadError e m => e -> Maybe a -> m a
@@ -73,3 +81,12 @@ f2map f = fmap (fmap f)
 -- | Straight outta GHC, just apply a function if true
 applyWhen :: Bool -> (a -> a) -> a -> a
 applyWhen p f a = if p then f a else a
+
+instance FromJSON LogLevel where
+  parseJSON = J.withText "LogLevel" $ \t -> case toLower t of
+    "debug" -> pure      LevelDebug
+    "info"  -> pure      LevelInfo
+    "warn"  -> pure      LevelWarn
+    "error" -> pure      LevelError
+    _       -> J.parseFail "Invalid log level"
+

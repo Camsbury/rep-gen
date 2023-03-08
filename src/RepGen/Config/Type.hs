@@ -6,6 +6,13 @@ import RepGen.Lichess.History.Type
 import RepGen.Type
 import RepGen.Strategy.Type
 --------------------------------------------------------------------------------
+import Data.Aeson
+  ( FromJSON(..)
+  , (.:?)
+  )
+--------------------------------------------------------------------------------
+import qualified Data.Aeson as J
+--------------------------------------------------------------------------------
 
 data HistoryConfig
   = HistoryConfig
@@ -21,6 +28,14 @@ instance Default HistoryConfig where
       , _historySpeeds  = [Blitz, Rapid]
       , _historyMoveCount = 30
       }
+
+instance FromJSON HistoryConfig where
+  parseJSON
+    = J.withObject "HistoryConfig" $ \o -> do
+      let updateIfPresent fName f c = maybe c (\a -> c & f .~ a) <$> o .:? fName
+      updateIfPresent "historyRatings" historyRatings def
+        >>= updateIfPresent "historySpeeds" historySpeeds
+        >>= updateIfPresent "historyMoveCount"  historyMoveCount
 
 data RGConfig
   = RGConfig
@@ -61,8 +76,8 @@ instance Default RGConfig where
       , _httpCachePath   = "./resources/http-cache.db"
       , _initCandBreadth = 10
       , _asymCandBreadth = 5 -- need to enforce this is less
-      , _initRespProb    = 0.001
-      , _asymRespProb    = 0.3
+      , _initRespProb    = 0.002 -- want to capture all the main first moves
+      , _asymRespProb    = 0.25 -- want to provide enough breadth for decision making later on
       , _mOverrides      = mempty
       , _mastersP        = True
       , _minLogLevel     = LevelInfo
@@ -75,3 +90,30 @@ instance Default RGConfig where
       , _startingMoves   = []
       , _strategy        = def
       }
+
+instance FromJSON RGConfig where
+  parseJSON
+    = J.withObject "RGConfig" $ \o -> do
+      let updateIfPresent fName f c = maybe c (\a -> c & f .~ a) <$> o .:? fName
+      updateIfPresent "colorL" colorL def
+        >>= updateIfPresent "engineCachePath" engineCachePath
+        >>= updateIfPresent "exportTreePath"  exportTreePath
+        >>= updateIfPresent "exportInfoPath"  exportInfoPath
+        >>= updateIfPresent "exportP"         exportP
+        >>= updateIfPresent "exportPgnPath"   exportPgnPath
+        >>= updateIfPresent "historyConfig"   historyConfig
+        >>= updateIfPresent "httpCachePath"   httpCachePath
+        >>= updateIfPresent "initCandBreadth" initCandBreadth
+        >>= updateIfPresent "asymCandBreadth" asymCandBreadth
+        >>= updateIfPresent "initRespProb"    initRespProb
+        >>= updateIfPresent "asymRespProb"    asymRespProb
+        >>= updateIfPresent "mOverrides"      mOverrides
+        >>= updateIfPresent "mastersP"        mastersP
+        >>= updateIfPresent "minLogLevel"     minLogLevel
+        >>= updateIfPresent "minPlays"        minPlays
+        >>= updateIfPresent "minProbAgg"      minProbAgg
+        >>= updateIfPresent "minTotalMasters" minTotalMasters
+        >>= updateIfPresent "overridesL"      overridesL
+        >>= updateIfPresent "searchDepth"     searchDepth
+        >>= updateIfPresent "startingMoves"   startingMoves
+        >>= updateIfPresent "strategy"        strategy
