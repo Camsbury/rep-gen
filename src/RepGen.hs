@@ -29,12 +29,13 @@ import qualified Web
 --------------------------------------------------------------------------------
 
 -- | Build a chess repertoire from a config
-buildRepertoire :: RGConfig -> IO ()
-buildRepertoire rgConfig
+buildRepertoire :: Either Text RGConfig -> IO ()
+buildRepertoire rgConfigE
   = void
   . either print pure
   <=< runExceptT $ do
     pModule <- liftIO initChessHelpers
+    rgConfig <- throwEither rgConfigE
     compiled <- compileConfig rgConfig pModule
     (`runReaderT` compiled) . runStdoutLoggingT $ do
       mLvl <- view minLogLevel
