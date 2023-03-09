@@ -9,6 +9,10 @@
 (defn from-json [raw]
   (json/read-str raw :key-fn (comp csk/->kebab-case keyword)))
 
+(defn to-config-json
+  [config]
+  (json/write-str config :key-fn csk/->camelCaseString))
+
 (defn get-in-tree
   [tree moves]
   (reduce (fn [mt move] (->> mt :node-responses (filter #(= move (first %))) first second)) tree moves))
@@ -53,6 +57,11 @@
     (project-pid)
     "/fd/2")))
 
+(defn run-rep-gen
+  [config]
+  (run-in-tmux
+   (str "cabal run rep-gen -- -c '" (to-config-json config) "'")))
+
 
 ;; figure out how to turn edn into json and send to the following command
 ;; cabal run rep-gen -- -c <CONFIG>
@@ -60,6 +69,10 @@
 
 (comment
   (run-in-tmux "echo hi")
+
+  (run-rep-gen
+   {:color-l  "black"
+    :masters-p false})
 
   )
 
