@@ -3,7 +3,8 @@
    [camel-snake-kebab.core :as csk]
    [clojure.data.json :as json]
    [clojure.java.io :as io]
-   [clojure.java.shell :refer [sh]]
+   ;; [clojure.java.shell :refer [sh]]
+   [babashka.process :refer [sh process destroy-tree]]
    [clojure.string :as str]))
 
 (defn from-json [raw]
@@ -44,35 +45,40 @@
    (:out
     (sh "tmux" "list-panes" "-t" (project-name) "-F" "#{pane_pid}"))))
 
-(defn run-in-tmux
+(defn stdout-fd
+  []
+  (str "/proc/" (project-pid) "/fd/1"))
+
+(defn stderr-fd
+  []
+  (str "/proc/" (project-pid) "/fd/2"))
+
+(defn run-in-project
   [cmd]
-  (sh
-   "bash"
-   "-c"
-   (str
-    cmd
-    " 1> /proc/"
-    (project-pid)
-    "/fd/1 2> /proc/"
-    (project-pid)
-    "/fd/2")))
+  (process
+   {:out (stdout-fd) :err (stderr-fd)}
+   cmd))
 
 (defn run-rep-gen
   [config]
-  (run-in-tmux
+  (run-in-project
    (str "cabal run rep-gen -- -c '" (to-config-json config) "'")))
 
-
-;; figure out how to turn edn into json and send to the following command
-;; cabal run rep-gen -- -c <CONFIG>
-;; then redirect the stdout and stderr (ostensibly just through tee) to the file descriptors pulled by the session name
-
 (comment
-  (run-in-tmux "echo hi")
 
-  (run-rep-gen
-   {:color-l  "black"
-    :masters-p false})
+  (def p
+    (run-rep-gen
+     {:color-l          "black"
+      :masters-p        false
+      :init-resp-prob   0.003
+      :asym-resp-prob   0.4
+      :min-prob-agg     0.003
+      :export-tree-path "./resources/black-tree.json"
+      :export-info-path "./resources/black-info.json"
+      :export-pgn-path  "./resources/black.pgn"}))
+
+  (destroy-tree p)
+
 
   )
 
