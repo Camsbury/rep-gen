@@ -42,7 +42,7 @@ initRunAction ucis = do
   pAgg <- MT.fetchPAgg ucis
 
   initProcessMoves ucis
-  toActOn <- filterMinRespProb False 1 pAgg ucis
+  toActOn <- filterMinRespProb True 1 pAgg ucis
   let actions = initToAction =<< toActOn
   actionStack %= (actions ++)
 
