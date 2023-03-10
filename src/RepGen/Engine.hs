@@ -55,7 +55,8 @@ fenToEngineCandidates mCountMay fen = do
         pure $ maybe deepCands (\x -> mergeCands x <$> deepCands) wideCands
       when limitReached' $ cloudLimitReached .= True
       pModule <- use chessHelpers
-      eMoves <- maybe (L.fenToLocalCandidates pModule mCountMay fen) pure mCands
+      localCands <- L.fenToLocalCandidates pModule mCountMay fen
+      let eMoves = maybe localCands (mergeCands localCands) mCands
       color <- view colorL
       pure $ applyScoreColor color <$> eMoves
     else pure []
