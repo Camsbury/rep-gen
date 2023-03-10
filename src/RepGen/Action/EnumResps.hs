@@ -57,6 +57,7 @@ processMoves action = do
   let children = parent ^.. nodeResponses . folded
   when (null children) $ do
     processed <- doProcessMoves action pAgg
+    when (null processed) $ moveTree . MT.traverseUcis ucis . removed .= True
     let nodes = fromProcessed ucis <$> processed
     moveTree . MT.traverseUcis ucis . nodeResponses .= fromList nodes
 
@@ -75,6 +76,7 @@ doProcessMoves action pAgg = do
   Stats.updateParentNominal pFen lichessStats rStats
 
   lichessM <- filterMoves lichessM'
+  -- NOTE: expensive and unnecessary
   -- engineMoves <- Ngn.fenToEngineCandidates (Just $ length lichessM) pFen
   let engineMoves = []
   mOverride <- preview $ overridesL . ix pFen
@@ -103,6 +105,7 @@ initProcessMoves ucis = do
        pure ()
      Nothing -> do
        processed <- doInitProcessMoves ucis pAgg
+       when (null processed) $ moveTree . MT.traverseUcis ucis . removed .= True
        let nodes = fromProcessed ucis <$> processed
        moveTree . MT.traverseUcis ucis . nodeResponses .= fromList nodes
 
