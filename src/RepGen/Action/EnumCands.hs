@@ -55,7 +55,8 @@ fetchCandidates action = do
     $ moveTree . MT.traverseUcis ucis
   let children = parent ^.. nodeResponses . folded
   case fromNullable children of
-     Just _ ->
+     Just _ -> do
+       logDebugN $ "Candidates already exist for ucis: " <> tshow ucis
        pure $ children ^.. folded . to (\(u, n) -> (u, n ^. nodeFen))
      Nothing -> do
        candidates <- doFetchCandidates action
@@ -63,6 +64,10 @@ fetchCandidates action = do
        moveTree . MT.traverseUcis ucis . nodeResponses .= fromList nodes
        pure candidates
 
+-- | Added to the candidate breadth to ensure enough data exists for our choices
+-- NOTE: could write an engine function that takes a position and a list of moves and returns the eval for each (shouldn't take much time since the breadth would just be 1 for each)
+ngnBuffer :: Int
+ngnBuffer = 5
 
 doFetchCandidates :: EnumData -> RGM [(Uci, Fen)]
 doFetchCandidates action = do
@@ -81,7 +86,8 @@ doFetchCandidates action = do
   stratSats          <- view $ strategy . satisficers
   stratOpt           <- view $ strategy . optimizer
   breadth            <- maxCandBreadth pAgg
-  engineMoves        <- Ngn.fenToEngineCandidates (Just breadth) pFen
+  engineMoves
+    <- Ngn.fenToEngineCandidates (Just $ breadth + ngnBuffer) pFen
   let candidates     = fromMaybe lcM maybeMM
   let isMasters      = isJust maybeMM
   let bestMay        = pTI ^? ix pFen . posStats . bestScoreL . _Just
