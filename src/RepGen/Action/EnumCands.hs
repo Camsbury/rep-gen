@@ -35,6 +35,10 @@ runAction action = do
   let maybeBestScore
         = maximumMay
         $ candidates ^.. folded . _2 . to (\f -> pTI ^? ix f . posStats . rgScore . _Just . nom) . _Just
+  -- if this is the final enumeration and there is nothing, remove the parent
+  when (action ^. edIsPruned && null candidates)
+    $ moveTree . MT.traverseUcis ucis . removed .= True
+
   let addActions
         = (not (action ^. edIsPruned) || length candidates /= 1)
         && action ^. edDepth /= sDepth
