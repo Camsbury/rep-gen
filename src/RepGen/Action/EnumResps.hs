@@ -57,7 +57,6 @@ processMoves action = do
   let children = parent ^.. nodeResponses . folded
   when (null children) $ do
     processed <- doProcessMoves action pAgg
-    when (null processed) $ moveTree . MT.traverseUcis ucis . removed .= True
     let nodes = fromProcessed ucis <$> processed
     moveTree . MT.traverseUcis ucis . nodeResponses .= fromList nodes
 
@@ -105,7 +104,6 @@ initProcessMoves ucis = do
        pure ()
      Nothing -> do
        processed <- doInitProcessMoves ucis pAgg
-       when (null processed) $ moveTree . MT.traverseUcis ucis . removed .= True
        let nodes = fromProcessed ucis <$> processed
        moveTree . MT.traverseUcis ucis . nodeResponses .= fromList nodes
 
