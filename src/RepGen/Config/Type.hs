@@ -76,14 +76,14 @@ instance Default RGConfig where
       , _httpCachePath   = "./resources/http-cache.db"
       , _initCandBreadth = 10
       , _asymCandBreadth = 5 -- need to enforce this is less
-      , _initRespProb    = 0.002 -- want to capture all the main first moves
-      , _asymRespProb    = 0.25 -- want to provide enough breadth for decision making later on
+      , _initRespProb    = 0.003 -- want to capture all the main first moves
+      , _asymRespProb    = 0.3 -- want to provide enough breadth for decision making later on
       , _mOverrides      = mempty
       , _mastersP        = True
       , _minLogLevel     = LevelInfo
-      , _minPlays        = 100
+      , _minPlays        = 500
       , _minProbAgg      = 0.0003
-      , _minTotalMasters = 500
+      , _minTotalMasters = 1000
       , _overridesL      = mempty
       -- this seems useless in the grand scheme, but useful in shorter analysis
       , _searchDepth     = 15
