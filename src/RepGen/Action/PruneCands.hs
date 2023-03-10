@@ -100,7 +100,7 @@ runAction ucis = do
                 $ "The tree has been pruned to: "
                 <> tshow newUcis
             Nothing
-              -> logDebugN
+              -> logInfoN
               $ "No sound candidates when pruning at: "
               <> tshow ucis
 

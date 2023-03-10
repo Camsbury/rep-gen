@@ -41,7 +41,7 @@ instance Default EngineFilter where
       { _engineAllowableLoss = 0.85
       -- | Not used much beyond as a default
       , _engineMoveCount     = 10
-      , _engineDepth         = 14
+      , _engineDepth         = 10
       , _engineP             = True
       }
 

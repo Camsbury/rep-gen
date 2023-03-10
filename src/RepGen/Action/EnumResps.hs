@@ -55,13 +55,10 @@ processMoves action = do
     <=< preuse
     $ moveTree . MT.traverseUcis ucis
   let children = parent ^.. nodeResponses . folded
-  case fromNullable children of
-     Just _ ->
-       pure ()
-     Nothing -> do
-       processed <- doProcessMoves action pAgg
-       let nodes = fromProcessed ucis <$> processed
-       moveTree . MT.traverseUcis ucis . nodeResponses .= fromList nodes
+  when (null children) $ do
+    processed <- doProcessMoves action pAgg
+    let nodes = fromProcessed ucis <$> processed
+    moveTree . MT.traverseUcis ucis . nodeResponses .= fromList nodes
 
 doProcessMoves :: EnumData -> Double -> RGM [(Uci, Fen)]
 doProcessMoves action pAgg = do
