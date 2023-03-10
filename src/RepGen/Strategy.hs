@@ -42,7 +42,7 @@ strategicFilter sats opts
     aLoss = sats ^. engineFilter . engineAllowableLoss
     allowable bestScore opt
       = maybe False (\x -> x >= (bestScore * aLoss))
-      $ opt ^? _2 . _2 . posStats . rgScore . _Just . agg
+      $ opt ^? _2 . _2 . posStats . rgScore . _Just . nom
 
 -- | Get the 'Ordering' needed to fulfill the chosen 'RGOptimizer'
 strategicCompare
