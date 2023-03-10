@@ -3,12 +3,33 @@
    [camel-snake-kebab.core :as csk]
    [clojure.data.json :as json]
    [clojure.java.io :as io]
-   ;; [clojure.java.shell :refer [sh]]
    [babashka.process :refer [sh process destroy-tree]]
    [clojure.string :as str]))
 
 (defn from-json [raw]
   (json/read-str raw :key-fn (comp csk/->kebab-case keyword)))
+
+  (defn clojurize-map
+    [x]
+    (cond
+      (seq? x) (mapv clojurize-map x)
+      (map? x) (into {} (map (fn [[k v]] [(csk/->kebab-case-keyword k) (clojurize-map v)])) x)
+      :else x))
+
+(defn fetch-tree
+  [f-name]
+  (->> f-name
+       io/resource
+       slurp
+       from-json))
+
+(defn fetch-info
+  [f-name]
+  (->> f-name
+       io/resource
+       slurp
+       json/read-str
+       (into {} (map (fn [[fen info]] [fen (clojurize-map info)])))))
 
 (defn to-config-json
   [config]
@@ -17,42 +38,6 @@
 (defn get-in-tree
   [tree moves]
   (reduce (fn [mt move] (->> mt :node-responses (filter #(= move (first %))) first second)) tree moves))
-
-(def move-tree
-  (->> "move-tree.json"
-       io/resource
-       slurp
-       from-json))
-
-(def pos-info
-  (->> "pos-info.json"
-       io/resource
-       slurp
-       json/read-str))
-
-(def black-tree
-  (->> "black-tree.json"
-       io/resource
-       slurp
-       from-json))
-
-(def black-info
-  (->> "black-info.json"
-       io/resource
-       slurp
-       json/read-str))
-
-(def white-tree
-  (->> "white-tree.json"
-       io/resource
-       slurp
-       from-json))
-
-(def white-info
-  (->> "white-info.json"
-       io/resource
-       slurp
-       json/read-str))
 
 (defn project-name
   []
@@ -88,29 +73,11 @@
 
 (comment
 
-  (let [fens
-        (->> ["c2c4" "c7c6" "b1c3" "d7d5" "c4d5" "c6d5" "d2d4"]
-             (get-in-tree black-tree)
-             ;; :node-fen
-             :node-responses
-             (map (fn [[a b]] [a (:node-fen b)]))
-             #_#_
-             :node-responses
-             (map second)
-             #_
-             (map #(dissoc % :node-responses)))]
-    (map (fn [[a b]] [a
-                      #_
-                      (get-in black-info [b "posStats" "rgScore"])
-                      (/ (get-in black-info [b "posStats" "lichessStats" "blackWins" "agg"])
-                       (get-in black-info [b "posStats" "lichessStats" "whiteWins" "agg"]))]) fens)
-    )
-
-
-
-  (let [fens
+  (let [move-tree (fetch-tree "white-tree.json")
+        pos-info (fetch-info "white-info.json")
+        fens
         (->> ["g1f3" "d7d5"]
-             (get-in-tree black-tree)
+             (get-in-tree move-tree)
              ;; :node-fen
              :node-responses
              (map (fn [[a b]] [a (:node-fen b)]))
@@ -121,38 +88,30 @@
              (map #(dissoc % :node-responses)))]
     (map (fn [[a b]] [a
                       #_
-                      (get-in black-info [b "posStats" "rgScore"])
-                      (/ (get-in black-info [b "posStats" "lichessStats" "whiteWins" "agg"])
-                       (get-in black-info [b "posStats" "lichessStats" "blackWins" "agg"]))]) fens)
+                      (get-in pos-info [b "posStats" "rgScore"])
+                      (/ (get-in pos-info [b "posStats" "lichessStats" "whiteWins" "agg"])
+                       (get-in pos-info [b "posStats" "lichessStats" "blackWins" "agg"]))]) fens)
     )
 
-  ;; thinking will take an hour
+  (def p
+    (run-timed-rep-gen
+     {:color-l          "black"
+      :masters-p        false
+      :min-prob-agg     0.01
+      :export-tree-path "./resources/black-tree.json"
+      :export-info-path "./resources/black-info.json"
+      :export-pgn-path  "./resources/black.pgn"}))
+
   (def p
     (run-timed-rep-gen
      {:color-l          "white"
       :masters-p        false
-      :init-resp-prob   0.003
-      :asym-resp-prob   0.4
-      :min-prob-agg     0.003
+      :min-prob-agg     0.01
       :export-tree-path "./resources/white-tree.json"
       :export-info-path "./resources/white-info.json"
       :export-pgn-path  "./resources/white.pgn"}))
 
   (destroy-tree p)
-
-
-  ;; calculating time taken for whole tree
-  (->>
-   (map (fn [x y] [x y])
-        [99 42 13 12 25 27 15 7]
-        [0.535 0.622 0.610 0.923 0.486 0.231 0.698 0.637])
-   reverse
-   (reduce (fn [agg [s p]] (/ (+ agg s) p)) 0)
-   (#(/ % 60)))
-
-;; 7 * 0.637 to get the time taken for all leaves
-;; (^ + 15) * 0.698
-
 
   )
 
