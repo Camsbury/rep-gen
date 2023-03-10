@@ -75,7 +75,8 @@ doProcessMoves action pAgg = do
   Stats.updateParentNominal pFen lichessStats rStats
 
   lichessM <- filterMoves lichessM'
-  engineMoves <- Ngn.fenToEngineCandidates (Just $ length lichessM) pFen
+  -- engineMoves <- Ngn.fenToEngineCandidates (Just $ length lichessM) pFen
+  let engineMoves = []
   mOverride <- preview $ overridesL . ix pFen
   let pPrune = action ^. edProbP
   processed
