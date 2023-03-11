@@ -19,12 +19,10 @@ exportJSON = do
   tree <- use moveTree
   treePath <- view exportTreePath
   writeFile (unpack treePath) (toStrict $ J.encode tree)
-  liftIO . command_ [] "prettier" $ ["-w"] <> [unpack treePath]
 
   info <- use posToInfo
   infoPath <- view exportInfoPath
   writeFile (unpack infoPath) (toStrict $ J.encode info)
-  liftIO . command_ [] "prettier" $ ["-w"] <> [unpack infoPath]
 
 -- | Write the current MoveTree as a PGN file
 exportPgn :: RGM ()
