@@ -1,3 +1,4 @@
+{-# LANGUAGE RankNTypes #-}
 --------------------------------------------------------------------------------
 module RepGen.Strategy
   ( applyStrategy
@@ -54,11 +55,19 @@ strategicCompare
 strategicCompare MaxWinOverLoss = maxWinOverLoss
 strategicCompare MinLoss        = minLoss
 
+
 -- | Comparison for MinLoss
 minLoss :: Color -> (Uci, (Fen, PosInfo)) -> (Uci, (Fen, PosInfo)) -> Ordering
 minLoss c (_, (_, a)) (_, (_, b)) = fromMaybe EQ $ compM <|> comp
   where
-    stat x pWins cStats = x ^? cStats . _Just . pWins c . agg
+    stat
+      :: RGStats
+      -> (Color -> Getter NodeStats RGStat)
+      -> Getter RGStats (Maybe NodeStats)
+      -> Maybe Double
+    stat x pWins cStats
+      = upperConf x cStats
+      $ x ^? cStats . _Just . pWins c . agg
     compM = compare
       <$> stat (a ^. posStats) oppWins mastersStats
       <*> stat (b ^. posStats) oppWins mastersStats
@@ -70,22 +79,66 @@ minLoss c (_, (_, a)) (_, (_, b)) = fromMaybe EQ $ compM <|> comp
 maxWinOverLoss :: Color -> (Uci, (Fen, PosInfo)) -> (Uci, (Fen, PosInfo)) -> Ordering
 maxWinOverLoss c (_, (_, a)) (_, (_, b)) = fromMaybe EQ $ compM <|> comp
   where
-    stat x pWins cStats = x ^? cStats . _Just . pWins c . agg
+    stat
+      :: RGStats
+      -> (Color -> Getter NodeStats RGStat)
+      -> Getter RGStats (Maybe NodeStats)
+      -> Maybe Double
+    stat x pWins cStats
+      = x ^? cStats . _Just . pWins c . agg
     lossWinMA = do
-      lm <- stat (a ^. posStats) oppWins mastersStats
-      wm <- stat (a ^. posStats) myWins mastersStats
+      lm <- upperConf (a ^. posStats) mastersStats
+         $ stat (a ^. posStats) oppWins mastersStats
+      wm <- lowerConf (a ^. posStats) mastersStats
+         $ stat (a ^. posStats) myWins mastersStats
       lm /? wm
     lossWinMB = do
-      lm <- stat (b ^. posStats) oppWins mastersStats
-      wm <- stat (b ^. posStats) myWins mastersStats
+      lm <- upperConf (b ^. posStats) mastersStats
+         $ stat (b ^. posStats) oppWins mastersStats
+      wm <- lowerConf (b ^. posStats) mastersStats
+         $ stat (b ^. posStats) myWins mastersStats
       lm /? wm
     lossWinA = do
-      l <- stat (a ^. posStats) oppWins lichessStats
-      w <- stat (a ^. posStats) myWins lichessStats
+      l <- upperConf (a ^. posStats) lichessStats
+        $ stat (a ^. posStats) oppWins lichessStats
+      w <- lowerConf (a ^. posStats) lichessStats
+        $ stat (a ^. posStats) myWins lichessStats
       l /? w
     lossWinB = do
-      l <- stat (b ^. posStats) oppWins lichessStats
-      w <- stat (b ^. posStats) myWins lichessStats
+      l <- upperConf (b ^. posStats) lichessStats
+        $ stat (b ^. posStats) oppWins lichessStats
+      w <- lowerConf (b ^. posStats) lichessStats
+        $ stat (b ^. posStats) myWins lichessStats
       l /? w
     compM = compare <$> lossWinMA <*> lossWinMB
     comp = compare <$> lossWinA <*> lossWinB
+
+-- | Calculate the upper end of the confidence interval using the method from:
+-- https://www.statology.org/standard-error-of-proportion/
+lowerConf
+  :: RGStats
+  -> Getter RGStats (Maybe NodeStats)
+  -> Maybe Double
+  -> Maybe Double
+lowerConf x cStats mStat
+  = do
+    n    <- x ^? cStats . _Just . playCount . to fromIntegral
+    stat <- mStat
+    let z95    = 1.96
+        stdErr = sqrt $ stat * (1 - stat) / n
+    pure $ stat - z95 * stdErr
+
+-- | Calculate the upper end of the confidence interval using the method from:
+-- https://www.statology.org/standard-error-of-proportion/
+upperConf
+  :: RGStats
+  -> Getter RGStats (Maybe NodeStats)
+  -> Maybe Double
+  -> Maybe Double
+upperConf x cStats mStat
+  = do
+    n    <- x ^? cStats . _Just . playCount . to fromIntegral
+    stat <- mStat
+    let z95    = 1.96
+        stdErr = sqrt $ stat * (1 - stat) / n
+    pure $ stat + z95 * stdErr
