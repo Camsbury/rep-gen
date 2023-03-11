@@ -71,10 +71,11 @@ doProcessMoves action pAgg = do
 
   (rMStats, maybeMastersM) <- maybeMastersMoves pFen
   Stats.updateParentNominal pFen mastersStats rMStats
-  (rStats, lichessM') <- lichessMoves pFen
+  (rStats, lichessM) <- lichessMoves pFen
   Stats.updateParentNominal pFen lichessStats rStats
 
-  lichessM <- filterMoves lichessM'
+  -- removed filter on move count
+  -- lichessM <- bool filterMoves pure (action ^. edIsPruned) lichessM'
   -- NOTE: expensive and unnecessary
   -- engineMoves <- Ngn.fenToEngineCandidates (Just $ length lichessM) pFen
   let engineMoves = []
