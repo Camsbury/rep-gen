@@ -75,8 +75,9 @@ ngnBuffer = 5
 
 doFetchCandidates :: EnumData -> RGM [(Uci, Fen)]
 doFetchCandidates action = do
-  let ucis   = action ^. edUcis
-  let pPrune = action ^. edProbP
+  let ucis     = action ^. edUcis
+  let pPrune   = action ^. edProbP
+  let isPruned = action ^. edIsPruned
   parent
     <- throwMaybe ("Parent doesn't exist at ucis: " <> tshow ucis)
     <=< preuse
@@ -88,7 +89,7 @@ doFetchCandidates action = do
   color              <- view colorL
   stratSats          <- view $ strategy . satisficers
   stratOpt           <- view $ strategy . optimizer
-  breadth            <- maxCandBreadth pAgg
+  breadth            <- maxCandBreadth isPruned pAgg
   engineMoves
     <- Ngn.fenToEngineCandidates (Just $ breadth + ngnBuffer) pFen
   let candidates     = fromMaybe lcM maybeMM
@@ -217,8 +218,16 @@ filterCandidates mvs = do
   where
     f mpl (_, s) = mpl < s ^. playCount
 
-maxCandBreadth :: Double -> RGM Int
-maxCandBreadth pAgg = do
+maxCandBreadth :: Bool -> Double -> RGM Int
+maxCandBreadth isPruned pAgg = do
   initBreadth <- view initCandBreadth
   asymBreadth <- view asymCandBreadth
-  pure . round $ exp (log (initBreadth /. asymBreadth) * pAgg) * fromIntegral asymBreadth
+  -- only go wider for candidates to be pruned
+  if isPruned
+    then
+      pure
+        . round
+        $ exp (log (initBreadth /. asymBreadth) * pAgg)
+        * fromIntegral asymBreadth
+    else
+      pure asymBreadth
