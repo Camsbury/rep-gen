@@ -136,27 +136,30 @@ toAction (EnumData _ probP depth _) ucis
     , RGACalcStats ucis
     ]
 
+-- NOTE: can re-enable if the engine depth becomes more significant
 firstEngine
   :: Double
   -> Vector Uci
   -> [EngineCandidate]
   -> RGM [(Uci, (Fen, PosInfo))]
-firstEngine pPrune ucis (ngn:_) = do
-  pAgg <- MT.fetchPAgg ucis
+firstEngine _ ucis (_:_) = do
+-- firstEngine pPrune ucis (ngn:_) = do
+  -- pAgg <- MT.fetchPAgg ucis
   logWarnN $ "There are no candidates for ucis: " <> tshow ucis
-  logWarnN "Reverting to the top engine move"
-  let uci = ngn ^. ngnUci
-  pModule <- use chessHelpers
-  fen <- liftIO . PyC.ucisToFen pModule $ snoc ucis uci
-  pure
-    [( uci
-     , ( fen
-       , def & posStats .~ mkRGStats pPrune pAgg
-       )
-     )]
+  pure []
+  -- logWarnN "Reverting to the top engine move"
+  -- let uci = ngn ^. ngnUci
+  -- pModule <- use chessHelpers
+  -- fen <- liftIO . PyC.ucisToFen pModule $ snoc ucis uci
+  -- pure
+  --   [( uci
+  --    , ( fen
+  --      , def & posStats .~ mkRGStats pPrune pAgg
+  --      )
+  --    )]
 firstEngine _ ucis [] = do
   logWarnN $ "There are no candidates for ucis: " <> tshow ucis
-  logWarnN "Nor are there any engine moves."
+  -- logWarnN "Nor are there any engine moves."
   pure []
 
 injectLichess :: [(Uci, NodeStats)] -> (Uci, (Fen, PosInfo)) -> (Uci, (Fen, PosInfo))
@@ -210,6 +213,10 @@ filterCandidates
   :: [(Uci, NodeStats)]
   -> RGM [(Uci, NodeStats)]
 filterCandidates mvs = do
+  -- TODO: make this much smarter about what to filter
+  -- don't want to be too restrictive, but also don't want to cut out all useful data
+  -- there should be some notion of confidence ranges by sample size, and working with the lower end of that range
+  -- can trim here based on how destructive to data a candidate is
   mpl <- view minPlays
   pure $ filter (f mpl) mvs
   where
