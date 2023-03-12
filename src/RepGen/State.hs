@@ -66,7 +66,7 @@ initActions White
       { _edUcis     = []
       , _edProbP    = 1
       , _edDepth    = 1
-      , _edIsPruned = False
+      , _edIsPruned = True
       }
     , RGAPruneCands []
     , RGATransStats []
