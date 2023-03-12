@@ -46,7 +46,7 @@ calcNodeStats parent statsLens = do
   parentStats
     <- throwMaybe ("No info exists for fen: " <> tshow parentFen)
     <=< preuse
-    $ posToInfo . ix parentFen . posStats
+    $ posToInfo . ixPTI parentFen . posStats
   let children = fromList $ parent ^.. validChildrenT
   cWhite     <- childrenStat children statsLens $ whiteWins . nom
   cWhiteAgg  <- childrenStat children statsLens $ whiteWins . agg
@@ -79,7 +79,7 @@ setAggStat
   -> RGM ()
 setAggStat Nothing _ _ _ = pure ()
 setAggStat (Just s) fen nodeStats aggStats = do
-  posToInfo . ix fen . posStats . nodeStats . _Just . aggStats .= s
+  posToInfo . ixPTI fen . posStats . nodeStats . _Just . aggStats .= s
 
 -- | Extract a weighted statistic for child nodes
 childrenStat
@@ -94,7 +94,8 @@ childrenStat children parentL statL
     getStat fen
       = throwMaybe ("Info doesn't exist for fen: " <> tshow fen)
       <=< preuse
-      $ posToInfo . ix fen . posStats . parentL . _Just . to (weightedStat statL)
+      $ posToInfo . ixPTI fen . posStats . parentL . _Just
+      . to (weightedStat statL)
 
 -- | Decrement the sum of the child probabilities
 -- empty probabilities mean we don't want to take the child into account
@@ -120,14 +121,14 @@ setScore (Just s) fen
   currScore
     <- preuse
     $ posToInfo
-    . ix fen
+    . ixPTI fen
     . posStats
     . rgScore
     . _Just
   if isJust currScore
     then
       posToInfo
-        . ix fen
+        . ixPTI fen
         . posStats
         . rgScore
         . _Just
@@ -135,7 +136,7 @@ setScore (Just s) fen
         .= s
     else
       posToInfo
-        . ix fen
+        . ixPTI fen
         . posStats
         . rgScore
         .= Just (mkRGStat s)
@@ -154,7 +155,7 @@ calcScore parent = do
         $ children
         ^.. folded
         . _2
-        . to (\n -> fromMaybe 0 (pTI ^? ix (n ^. nodeFen) . posStats . rgScore . _Just . agg)
-                 * fromMaybe 0 (pTI ^? ix (n ^. nodeFen) . posStats . lichessStats . _Just . prob))
-  let pScore = pTI ^? ix (parent ^. nodeFen) . posStats . rgScore . _Just . nom
+        . to (\n -> fromMaybe 0 (pTI ^? ixPTI (n ^. nodeFen) . posStats . rgScore . _Just . agg)
+                 * fromMaybe 0 (pTI ^? ixPTI (n ^. nodeFen) . posStats . lichessStats . _Just . prob))
+  let pScore = pTI ^? ixPTI (parent ^. nodeFen) . posStats . rgScore . _Just . nom
   setScore ((\pS -> cScoreAgg + probNonChild childrenInfo * pS) <$> pScore) $ parent ^. nodeFen

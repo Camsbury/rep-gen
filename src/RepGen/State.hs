@@ -81,15 +81,15 @@ initPosToInfo pModule = do
   let scoreStat = mkRGStat . view scoreL <$> score
       stats' = stats & rgScore    .~ scoreStat
                      & bestScoreL .~ score ^? _Just . scoreL
-  pure $ mapFromList [(def, def & posStats .~ stats')]
+  pure . PosToInfo $ mapFromList [(homogenizeFen def, def & posStats .~ stats')]
 
 collectInfo :: (Uci, TreeNode) -> RGM (Uci, (Fen, PosInfo))
 collectInfo (uci, node) = do
   let fen = node ^. nodeFen
-  mInfo <- preuse $ posToInfo . ix fen
+  mInfo <- preuse $ posToInfo . ixPTI fen
   info <- throwMaybe ("No position info for fen: " <> tshow fen) mInfo
   pure (uci, (fen, info))
 
 insertChildPosInfo :: (Uci, (Fen, PosInfo)) -> RGM ()
 insertChildPosInfo (_, (fen, pInfo))
-  = posToInfo . at fen ?= pInfo
+  = posToInfo . getPosToInfo . at (homogenizeFen fen) ?= pInfo

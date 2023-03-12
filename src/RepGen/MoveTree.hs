@@ -30,7 +30,7 @@ fetchPAgg ucis
       <- throwMaybe ("Node doesn't exist at: " <> tshow ucis)
       <=< preuse $ moveTree . traverseUcis ucis . nodeFen
     throwMaybe ("Stats don't exist for: " <> tshow ucis)
-      <=< preuse $ posToInfo . ix fen . posStats . probAgg
+      <=< preuse $ posToInfo . ixPTI fen . posStats . probAgg
 
 -- | Traversal of the valid children of a node
 validChildrenT :: Traversal' TreeNode (Uci, TreeNode)

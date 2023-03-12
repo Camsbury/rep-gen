@@ -72,14 +72,14 @@ setScore (Just s) fen
   currScore
     <- preuse
     $ posToInfo
-    . ix fen
+    . ixPTI fen
     . posStats
     . rgScore
     . _Just
   if isJust currScore
     then
       posToInfo
-        . ix fen
+        . ixPTI fen
         . posStats
         . rgScore
         . _Just
@@ -87,7 +87,7 @@ setScore (Just s) fen
         .= (s ^. agg)
     else
       posToInfo
-        . ix fen
+        . ixPTI fen
         . posStats
         . rgScore
         .= Just s
@@ -101,7 +101,7 @@ setNodeStats
 setNodeStats Nothing _ _ _ = pure ()
 setNodeStats (Just s) fen nodeStats aggStats
   = posToInfo
-  . ix fen
+  . ixPTI fen
   . posStats
   . nodeStats
   . _Just

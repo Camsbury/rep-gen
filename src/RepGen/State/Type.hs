@@ -1,3 +1,4 @@
+{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TemplateHaskell #-}
 --------------------------------------------------------------------------------
 module RepGen.State.Type where
@@ -15,9 +16,8 @@ import Data.Aeson
   )
 --------------------------------------------------------------------------------
 import qualified Data.Aeson as J
+import qualified Text.Regex as RX
 --------------------------------------------------------------------------------
-
-type  PosToInfo = Map Fen PosInfo
 
 data PosInfo
   = PosInfo
@@ -35,6 +35,28 @@ instance ToJSON PosInfo where
       [ "posStats"  J..= view posStats posInfo
       , "chosenUci" J..= view chosenUci posInfo
       ]
+
+-- | FIXME: create HomogenizedFen type to ensure FENs remain valid
+
+-- | Mapping to quickly find stats and chosen moves for a position
+newtype PosToInfo
+  = PosToInfo
+  { _getPosToInfo :: Map Fen PosInfo
+  } deriving (Show, Eq)
+makeLenses ''PosToInfo
+
+instance ToJSON PosToInfo where
+  toJSON = toJSON . view getPosToInfo
+
+-- | Remove portions of fen that have nothing to do with what is actually
+-- playable from a position
+homogenizeFen :: Fen -> Fen
+homogenizeFen (Fen fen)
+  = Fen . pack $ RX.subRegex (RX.mkRegex " [0-9]+ [0-9]+$") (unpack fen) ""
+
+-- | Index into a PosToInfo with a homogenized Fen
+ixPTI :: Fen -> Traversal' PosToInfo PosInfo
+ixPTI fen = getPosToInfo . ix (homogenizeFen fen)
 
 data RGState
   = RGState

@@ -34,7 +34,7 @@ runAction action = do
   -- used to stop eval if scores are super high
   let maybeBestScore
         = maximumMay
-        $ candidates ^.. folded . _2 . to (\f -> pTI ^? ix f . posStats . rgScore . _Just . nom) . _Just
+        $ candidates ^.. folded . _2 . to (\f -> pTI ^? ixPTI f . posStats . rgScore . _Just . nom) . _Just
   -- if this is the final enumeration and there is nothing, remove the parent
   when (action ^. edIsPruned && null candidates)
     $ moveTree . MT.traverseUcis ucis . removed .= True
@@ -94,7 +94,7 @@ doFetchCandidates action = do
     <- Ngn.fenToEngineCandidates (Just $ breadth + ngnBuffer) pFen
   let candidates     = fromMaybe lcM maybeMM
   let isMasters      = isJust maybeMM
-  let bestMay        = pTI ^? ix pFen . posStats . bestScoreL . _Just
+  let bestMay        = pTI ^? ixPTI pFen . posStats . bestScoreL . _Just
 
   Stats.updateParentNominal pFen lichessStats rStats
   Stats.updateParentNominal pFen mastersStats rMStats

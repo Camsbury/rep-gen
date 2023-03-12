@@ -24,7 +24,7 @@ runAction ucis = do
   maybeChosenUci
     <- use
     $ posToInfo
-    . ix fen
+    . ixPTI fen
     . chosenUci
 
   case maybeChosenUci of
@@ -95,7 +95,7 @@ runAction ucis = do
                 .= True
 
               -- add chosen uci as possible transposition
-              posToInfo . ix fen . chosenUci ?= choiceUci
+              posToInfo . ixPTI fen . chosenUci ?= choiceUci
 
               let newUcis = snoc ucis choiceUci
 

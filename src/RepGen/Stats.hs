@@ -39,8 +39,10 @@ updateParentNominal
   -> RawStats
   -> RGM ()
 updateParentNominal fen statsT rs = do
-  posToInfo . ix fen . posStats . statsT . _Just . whiteWins . nom .= whiteS ^. nom
-  posToInfo . ix fen . posStats . statsT . _Just . blackWins . nom .= blackS ^. nom
+  posToInfo . ixPTI fen . posStats . statsT . _Just . whiteWins . nom
+    .= whiteS ^. nom
+  posToInfo . ixPTI fen . posStats . statsT . _Just . blackWins . nom
+    .= blackS ^. nom
   where
     white = rs ^. whiteTotal
     black = rs ^. blackTotal

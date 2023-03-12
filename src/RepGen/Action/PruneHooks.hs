@@ -25,7 +25,7 @@ runAction ucis = do
     . to (collectFilteredChildren
            ( \x ->
                maybe False (mpa <) $
-                 pTI ^? ix (x ^. _2 . nodeFen) . posStats . probAgg
+                 pTI ^? ixPTI (x ^. _2 . nodeFen) . posStats . probAgg
            )
          )
 

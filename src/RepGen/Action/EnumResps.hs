@@ -250,7 +250,7 @@ filterMinRespProb isPruned pPrune pAgg ucis = do
         maybe
           False
           (\x -> (isPruned && mpa < (pAgg * x)) || pPrune * x > minProb)
-          (pTI ^? ix (rNode ^. nodeFen) . posStats . lichessStats . _Just . prob)
+          (pTI ^? ixPTI (rNode ^. nodeFen) . posStats . lichessStats . _Just . prob)
   when isPruned $
     moveTree
       . traverseUcis ucis
@@ -273,7 +273,8 @@ filterMinRespProb isPruned pPrune pAgg ucis = do
       cPPrune
         <- throwMaybe ("No pos info exists for ucis: " <> tshow (child ^. uciPath))
         <=< preuse
-        $ posToInfo . ix fen . posStats . lichessStats . _Just . prob . to (* pPrune)
+        $ posToInfo . ixPTI fen . posStats . lichessStats . _Just . prob
+        . to (* pPrune)
       pure (cPPrune, child)
 
 
