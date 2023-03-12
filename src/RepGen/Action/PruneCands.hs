@@ -30,6 +30,7 @@ runAction ucis = do
   case maybeChosenUci of
     -- Transposes to another chosen child, no need to repeat work.
     Just choiceUci -> do
+      -- remove others
       moveTree
         . traverseUcis ucis
         . nodeResponses
@@ -38,6 +39,7 @@ runAction ucis = do
         . _2
         . removed
         .= True
+      -- mark transposition
       moveTree
         . traverseUcis ucis
         . nodeResponses
@@ -45,6 +47,14 @@ runAction ucis = do
         . filtered (\x -> x ^. _1 == choiceUci)
         . _2
         . transposes
+        .= True
+      -- remove transposition children
+      moveTree
+        . traverseUcis (snoc ucis choiceUci)
+        . nodeResponses
+        . traversed
+        . _2
+        . removed
         .= True
       X.exportJSON
 
