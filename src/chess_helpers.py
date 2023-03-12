@@ -52,7 +52,10 @@ def tree_to_pgn(input_tree):
     while stack:
         (node, entry) = stack.pop()
         uci = entry[0]
-        node = node.add_variation(chess.Move.from_uci(uci))
+        if entry[1]['transposes']:
+            node = node.add_variation(chess.Move.from_uci(uci), comment='transposes')
+        else:
+            node = node.add_variation(chess.Move.from_uci(uci))
         responses = [(node, z) for z in reversed(list(filter(lambda y: not y[1]['removed'], entry[1]['nodeResponses'])))]
         stack += responses
 
