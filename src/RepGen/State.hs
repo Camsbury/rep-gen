@@ -35,6 +35,9 @@ initState pModule = do
   iPTI <- initPosToInfo pModule
   logDebugN $ "Actions: " <> tshow actions
   logInfoN "Finished initializing state"
+  iPA
+    <- throwMaybe "No initial lichess stats"
+    $ iPTI ^? ixPTI def . posStats . lichessStats . _Just . prob
   pure $ RGState
        { _cloudLimitReached = False
        , _posToInfo         = iPTI
@@ -46,9 +49,15 @@ initState pModule = do
          , _nodeResponses = empty
          , _removed       = False
          , _transposes    = False
+         , _bestScoreL    = iPTI ^? ixPTI def . posStats . rgScore . _Just . nom
+         , _probPrune     = 1
+         , _probAgg       = iPA
          }
        , _actionStack       = actions
        }
+
+
+                     -- & bestScoreL .~ score ^? _Just . scoreL
 
 initActions :: Color -> [RGAction]
 initActions White
@@ -80,7 +89,6 @@ initPosToInfo pModule = do
   score <- Ngn.fenToScore pModule def
   let scoreStat = mkRGStat . view scoreL <$> score
       stats' = stats & rgScore    .~ scoreStat
-                     & bestScoreL .~ score ^? _Just . scoreL
   pure . PosToInfo $ mapFromList [(homogenizeFen def, def & posStats .~ stats')]
 
 collectInfo :: (Uci, TreeNode) -> RGM (Uci, (Fen, PosInfo))

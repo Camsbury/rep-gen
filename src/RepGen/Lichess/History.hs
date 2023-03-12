@@ -72,7 +72,6 @@ initialStats = do
   pure $ def
        & lichessStats ?~ lcStats
        & mastersStats .~ bool Nothing (Just mStats) useMasters
-       & probAgg .~ lcStats ^. prob
 
 class HistoricFetchable a where
   historicMoves

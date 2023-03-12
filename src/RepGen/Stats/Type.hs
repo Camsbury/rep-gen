@@ -46,27 +46,17 @@ oppWins :: Color -> Lens' NodeStats RGStat
 oppWins White = blackWins
 oppWins Black = whiteWins
 
-type ProbPrune = Double
-type ProbAgg   = Double
-
 data RGStats
   = RGStats
   { _lichessStats :: Maybe NodeStats
   , _mastersStats :: Maybe NodeStats
   , _rgScore      :: Maybe RGStat
   -- | This is the best score seen so far (used for filtering)
-  , _bestScoreL   :: Maybe Double
-  , _probPrune    :: ProbPrune
-  , _probAgg      :: ProbAgg
   } deriving (Show, Eq)
 makeLenses ''RGStats
 
--- | Make an RGStats given a 'ProbPrune' and a 'ProbAgg'
-mkRGStats :: ProbPrune -> ProbAgg -> RGStats
-mkRGStats = RGStats Nothing Nothing Nothing Nothing
-
 instance Default RGStats where
-  def = RGStats Nothing Nothing Nothing Nothing 1 1
+  def = RGStats Nothing Nothing Nothing
 
 instance ToJSON RGStats where
   toJSON stats =
@@ -74,9 +64,6 @@ instance ToJSON RGStats where
       [ "lichessStats" J..= view lichessStats stats
       , "mastersStats" J..= view mastersStats stats
       , "rgScore"      J..= view rgScore      stats
-      , "bestScoreL"   J..= view bestScoreL   stats
-      , "probPrune"    J..= view probPrune    stats
-      , "probAgg"      J..= view probAgg      stats
       ]
 
 instance ToJSON NodeStats where
@@ -102,9 +89,6 @@ instance FromJSON RGStats where
       <$> (o .: "lichessStats")
       <*> (o .: "mastersStats")
       <*> (o .: "rgScore")
-      <*> (o .: "bestScoreL")
-      <*> (o .: "probPrune")
-      <*> (o .: "probAgg")
 
 instance FromJSON NodeStats where
   parseJSON

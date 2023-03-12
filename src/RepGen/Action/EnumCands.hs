@@ -77,7 +77,6 @@ doFetchCandidates :: EnumData -> RGM [(Uci, Fen)]
 doFetchCandidates action = do
   let ucis   = action ^. edUcis
   let pPrune = action ^. edProbP
-  pTI <- use posToInfo
   parent
     <- throwMaybe ("Parent doesn't exist at ucis: " <> tshow ucis)
     <=< preuse
@@ -94,7 +93,7 @@ doFetchCandidates action = do
     <- Ngn.fenToEngineCandidates (Just $ breadth + ngnBuffer) pFen
   let candidates     = fromMaybe lcM maybeMM
   let isMasters      = isJust maybeMM
-  let bestMay        = pTI ^? ixPTI pFen . posStats . bestScoreL . _Just
+  let bestMay        = parent ^? bestScoreL . _Just
 
   Stats.updateParentNominal pFen lichessStats rStats
   Stats.updateParentNominal pFen mastersStats rMStats
@@ -108,9 +107,9 @@ doFetchCandidates action = do
         =   take breadth
         .   Strat.strategicFilter stratSats
         .   sortBy (Strat.strategicCompare stratOpt color)
-        $   Ngn.injectEngine engineMoves bestMay
+        $   Ngn.injectEngine engineMoves
         .   applyWhen isMasters (injectLichess lcM)
-        .   initPosInfo isMasters pAgg pPrune
+        .   initPosInfo isMasters
         <$> initCands
   cands' <- if null candNodes
     then firstEngine pPrune ucis engineMoves
@@ -127,7 +126,9 @@ fetchFen ucis (uci, ns) = do
 fromProcessed :: Vector Uci -> (Uci, Fen) -> (Uci, TreeNode)
 fromProcessed ucis (uci, fen)
   = ( uci
-    , TreeNode (snoc ucis uci) fen mempty False False
+    , def & uciPath .~ snoc ucis uci
+          & nodeFen .~ fen
+    -- FIXME: add bestScoreL, probPrune and probAgg
     )
 
 toAction :: EnumData -> Vector Uci -> [RGAction]
@@ -173,11 +174,9 @@ injectLichess lcM stats@(uci, _)
 
 initPosInfo
   :: Bool
-  -> Double
-  -> Double
   -> (Uci, (Fen, NodeStats))
   -> (Uci, (Fen, PosInfo))
-initPosInfo isMasters pAgg pPrune (uci, (fen, ns))
+initPosInfo isMasters (uci, (fen, ns))
   = ( uci
     , ( fen
       , def & posStats .~ stats
@@ -185,11 +184,7 @@ initPosInfo isMasters pAgg pPrune (uci, (fen, ns))
     )
   where
     nsL = if isMasters then mastersStats else lichessStats
-    stats
-      = def
-      & nsL       ?~ ns
-      & probPrune .~  pPrune
-      & probAgg   .~  pAgg
+    stats = def & nsL ?~ ns
 
 findUci
   :: [(Uci, NodeStats)]

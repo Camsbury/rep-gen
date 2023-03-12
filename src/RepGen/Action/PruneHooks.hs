@@ -11,21 +11,18 @@ import RepGen.Type
 import RepGen.MoveTree
 import RepGen.MoveTree.Type
 import RepGen.State.Type
-import RepGen.Stats.Type
 --------------------------------------------------------------------------------
 
 runAction :: Vector Uci -> RGM ()
 runAction ucis = do
   logDebugN $ "Running Prune Hooks for: " <> tshow ucis
   mpa <- view minProbAgg
-  pTI <- use posToInfo
   children <- use
     $ moveTree
     . traverseUcis ucis
     . to (collectFilteredChildren
            ( \x ->
-               maybe False (mpa <) $
-                 pTI ^? ixPTI (x ^. _2 . nodeFen) . posStats . probAgg
+               maybe False (mpa <) $ x ^? _2 . probAgg
            )
          )
 

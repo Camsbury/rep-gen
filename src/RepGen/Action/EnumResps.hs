@@ -82,7 +82,7 @@ doProcessMoves action pAgg = do
   mOverride <- preview $ overridesL . ix pFen
   let pPrune = action ^. edProbP
   processed
-    <-   fmap (Ngn.injectEngine engineMoves Nothing)
+    <-   fmap (Ngn.injectEngine engineMoves)
     <$> maybe
           (traverse (wrapLCStats ucis pAgg pPrune) lichessM)
           (mergeMoves ucis pAgg pPrune lichessM)
@@ -124,7 +124,7 @@ doInitProcessMoves ucis pAgg = do
   engineMoves <- Ngn.fenToEngineCandidates (Just $ length lichessM) pFen
   mOverride <- preview $ overridesL . ix pFen
   processed
-    <-   fmap (Ngn.injectEngine engineMoves Nothing)
+    <-   fmap (Ngn.injectEngine engineMoves)
     <$> maybe
           (traverse (wrapLCStats ucis pAgg 1) lichessM)
           (mergeMoves ucis pAgg 1 lichessM)
@@ -136,8 +136,13 @@ doInitProcessMoves ucis pAgg = do
 fromProcessed :: Vector Uci -> (Uci, Fen) -> (Uci, TreeNode)
 fromProcessed ucis (uci, fen)
   = ( uci
-    , TreeNode (snoc ucis uci) fen mempty False False
+    , def & uciPath .~ snoc ucis uci
+          & nodeFen .~ fen
+    -- FIXME: add bestScoreL, probPrune and probAgg
     )
+            -- , _bestScoreL   = Nothing
+            -- , _probPrune    = pPrune * lcm ^. prob
+            -- , _probAgg      = pAgg * lcm ^. prob
 
 findUci :: [(Uci, (Fen, PosInfo))] -> Uci -> Maybe [(Uci, (Fen, PosInfo))]
 findUci cands uci
@@ -175,12 +180,10 @@ mergeMoves ucis pAgg pPrune lichessM mastersM
             { _lichessStats = Just lcm
             , _mastersStats = lookup uci mastersM
             , _rgScore      = Nothing
-            , _bestScoreL   = Nothing
-            , _probPrune    = pPrune * lcm ^. prob
-            , _probAgg      = pAgg * lcm ^. prob
             }
           )
         )
+
 
 wrapLCStats
   :: Vector Uci
@@ -199,9 +202,6 @@ wrapLCStats ucis pAgg pPrune (uci, lcm)
           { _lichessStats = Just lcm
           , _mastersStats = Nothing
           , _rgScore      = Nothing
-          , _bestScoreL   = Nothing
-          , _probPrune    = pPrune * lcm ^. prob
-          , _probAgg      = pAgg * lcm ^. prob
           }
         )
       )
