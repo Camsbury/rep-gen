@@ -82,7 +82,7 @@ runAction ucis = do
           $ "No children when pruning at: "
           <> tshow ucis
         Just _ -> do
-          appliedStrat <- Strat.applyStrategy childrenStats
+          appliedStrat <- Strat.applyStrategy ucis childrenStats
           case appliedStrat of
             Just (choiceUci, _) -> do
               -- "remove" the others

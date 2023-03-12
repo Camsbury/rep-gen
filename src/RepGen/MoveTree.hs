@@ -63,16 +63,17 @@ insertNodeInfo
   -> Vector Uci
   -> (Uci, (Fen, PosInfo))
   -> RGM ()
-insertNodeInfo isResps bestScore nCands pAgg pPrune ucis (uci, (_, pInfo)) = do
+insertNodeInfo isResps mBestScore nCands pAgg pPrune ucis (uci, (_, pInfo)) = do
   moveProb
     <- throwMaybe ("lichess stats missing for ucis: " <> tshow (snoc ucis uci))
     $ pInfo ^? posStats . lichessStats . _Just . prob
-  moveTree . traverseUcis (snoc ucis uci) . bestScoreL .= (bestScore <|> findBy uci nCands)
   if isResps
     then do
+      moveTree . traverseUcis (snoc ucis uci) . bestScoreL .= (mBestScore <|> findBy uci nCands)
       moveTree . traverseUcis (snoc ucis uci) . probAgg .= pAgg * moveProb
       moveTree . traverseUcis (snoc ucis uci) . probPrune .= pPrune * moveProb
     else do
+      moveTree . traverseUcis (snoc ucis uci) . bestScoreL .= (max <$> mBestScore <*> maxCandScore)
       moveTree . traverseUcis (snoc ucis uci) . probAgg .= pAgg
       moveTree . traverseUcis (snoc ucis uci) . probPrune .= pPrune
   where
@@ -80,3 +81,4 @@ insertNodeInfo isResps bestScore nCands pAgg pPrune ucis (uci, (_, pInfo)) = do
     findBy u (ngn:rest)
       | u == ngn ^. ngnUci = Just $ ngn ^. ngnScore . scoreL
       | otherwise = findBy u rest
+    maxCandScore = maximumMay $ nCands ^.. folded . ngnScore . scoreL

@@ -105,7 +105,7 @@ doFetchCandidates action = do
 
   let candNodes
         =   take breadth
-        .   Strat.strategicFilter stratSats
+        .   Strat.strategicFilter stratSats bestMay
         .   sortBy (Strat.strategicCompare stratOpt color)
         $   Ngn.injectEngine engineMoves
         .   applyWhen isMasters (injectLichess lcM)

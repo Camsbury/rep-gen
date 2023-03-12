@@ -67,7 +67,8 @@ doProcessMoves action pAgg = do
     <- throwMaybe ("Parent doesn't exist at ucis: " <> tshow ucis)
     <=< preuse
     $ moveTree . MT.traverseUcis ucis
-  let pFen = parent ^. nodeFen
+  let pFen    = parent ^. nodeFen
+  let bestMay = parent ^? bestScoreL . _Just
 
   (rMStats, maybeMastersM) <- maybeMastersMoves pFen
   Stats.updateParentNominal pFen mastersStats rMStats
@@ -89,7 +90,7 @@ doProcessMoves action pAgg = do
           maybeMastersM
   processed' <- pure . fromMaybe processed $ findUci processed =<< mOverride
   traverse_ State.insertChildPosInfo processed'
-  traverse_ (MT.insertNodeInfo True Nothing engineMoves pAgg pPrune ucis) processed'
+  traverse_ (MT.insertNodeInfo True bestMay engineMoves pAgg pPrune ucis) processed'
 
   pure $ processed' ^.. folded . to (\(u, (f, _)) -> (u, f))
 
@@ -117,7 +118,8 @@ doInitProcessMoves ucis pAgg = do
     <- throwMaybe ("Parent doesn't exist at ucis: " <> tshow ucis)
     <=< preuse
     $ moveTree . MT.traverseUcis ucis
-  let pFen = parent ^. nodeFen
+  let pFen    = parent ^. nodeFen
+  let bestMay = parent ^? bestScoreL . _Just
 
   (rMStats, maybeMastersM) <- maybeMastersMoves pFen
   Stats.updateParentNominal pFen mastersStats rMStats
@@ -134,7 +136,7 @@ doInitProcessMoves ucis pAgg = do
   processed' <- pure . fromMaybe processed $ findUci processed =<< mOverride
   traverse_ State.insertChildPosInfo processed'
 
-  traverse_ (MT.insertNodeInfo True Nothing engineMoves pAgg 1 ucis) processed'
+  traverse_ (MT.insertNodeInfo True bestMay engineMoves pAgg 1 ucis) processed'
   pure $ processed' ^.. folded . to (\(u, (f, _)) -> (u, f))
 
 fromProcessed :: Vector Uci -> (Uci, Fen) -> (Uci, TreeNode)

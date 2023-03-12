@@ -9,36 +9,41 @@ module RepGen.Strategy
 
 import RepGen.Config.Type
 import RepGen.Monad
+import RepGen.MoveTree.Type
 import RepGen.Strategy.Type
 import RepGen.State.Type
 import RepGen.Stats.Type
 import RepGen.Type
 --------------------------------------------------------------------------------
+import qualified RepGen.MoveTree as MT
+--------------------------------------------------------------------------------
 
 -- | Apply a strategy to select the best move option
-applyStrategy :: [(Uci, (Fen, PosInfo))] -> RGM (Maybe (Uci, (Fen, PosInfo)))
-applyStrategy options = do
+applyStrategy :: Vector Uci -> [(Uci, (Fen, PosInfo))] -> RGM (Maybe (Uci, (Fen, PosInfo)))
+applyStrategy ucis options = do
   sats <- view $ strategy . satisficers
   sComp <- strategicCompare <$> view (strategy . optimizer) <*> view colorL
-  let opts = strategicFilter sats options
+  mBestScore <- preuse $ moveTree . MT.traverseUcis ucis . bestScoreL . _Just
+  let opts = strategicFilter sats mBestScore options
   let choice = minimumBy sComp <$> fromNullable opts
   pure choice
 
 -- | Filter options based on 'RGSatisficers'
 strategicFilter
   :: RGSatisficers
+  -> Maybe Double
   -> [(Uci, (Fen, PosInfo))]
   -> [(Uci, (Fen, PosInfo))]
-strategicFilter sats opts
+strategicFilter sats mBestScore opts
   = if sats ^. engineFilter . engineP
     then
-      maybe opts toFiltered maybeBestScore
+      maybe opts toFiltered $ mBestScore <|> mBestCandScore
     else
       opts
   where
-    maybeBestScore = undefined
-      -- = maximumMay
-      -- $ opts ^.. folded . _2 . _2 . posStats . bestScoreL . _Just
+    mBestCandScore
+      = maximumMay
+      $ opts ^.. folded . _2 . _2 . posStats . rgScore . _Just . nom
     toFiltered bestScore = filter (allowable bestScore) opts
     aLoss = sats ^. engineFilter . engineAllowableLoss
     allowable bestScore opt

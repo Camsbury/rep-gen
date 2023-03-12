@@ -31,7 +31,7 @@ runAction ucis = do
     . MT.traverseUcis ucis
     . to MT.collectValidChildren
 
-  appliedStrat <- Strat.applyStrategy childrenInfo
+  appliedStrat <- Strat.applyStrategy ucis childrenInfo
   case appliedStrat of
     Just (_, (_, child)) -> do
       logDebugN "Children exist for transfer!"
