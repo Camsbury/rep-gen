@@ -84,11 +84,13 @@ doProcessMoves action pAgg = do
   processed
     <-   fmap (Ngn.injectEngine engineMoves)
     <$> maybe
-          (traverse (wrapLCStats ucis pAgg pPrune) lichessM)
-          (mergeMoves ucis pAgg pPrune lichessM)
+          (traverse (wrapLCStats ucis) lichessM)
+          (mergeMoves ucis lichessM)
           maybeMastersM
   processed' <- pure . fromMaybe processed $ findUci processed =<< mOverride
   traverse_ State.insertChildPosInfo processed'
+  traverse_ (MT.insertNodeInfo True Nothing engineMoves pAgg pPrune ucis) processed'
+
   pure $ processed' ^.. folded . to (\(u, (f, _)) -> (u, f))
 
 
@@ -126,11 +128,13 @@ doInitProcessMoves ucis pAgg = do
   processed
     <-   fmap (Ngn.injectEngine engineMoves)
     <$> maybe
-          (traverse (wrapLCStats ucis pAgg 1) lichessM)
-          (mergeMoves ucis pAgg 1 lichessM)
+          (traverse (wrapLCStats ucis) lichessM)
+          (mergeMoves ucis lichessM)
           maybeMastersM
   processed' <- pure . fromMaybe processed $ findUci processed =<< mOverride
   traverse_ State.insertChildPosInfo processed'
+
+  traverse_ (MT.insertNodeInfo True Nothing engineMoves pAgg 1 ucis) processed'
   pure $ processed' ^.. folded . to (\(u, (f, _)) -> (u, f))
 
 fromProcessed :: Vector Uci -> (Uci, Fen) -> (Uci, TreeNode)
@@ -138,11 +142,7 @@ fromProcessed ucis (uci, fen)
   = ( uci
     , def & uciPath .~ snoc ucis uci
           & nodeFen .~ fen
-    -- FIXME: add bestScoreL, probPrune and probAgg
     )
-            -- , _bestScoreL   = Nothing
-            -- , _probPrune    = pPrune * lcm ^. prob
-            -- , _probAgg      = pAgg * lcm ^. prob
 
 findUci :: [(Uci, (Fen, PosInfo))] -> Uci -> Maybe [(Uci, (Fen, PosInfo))]
 findUci cands uci
@@ -150,24 +150,12 @@ findUci cands uci
   . fromNullable
   $ cands ^.. folded . filtered (\x -> x ^. _1 == uci)
 
-
-filterMoves
-  :: [(Uci, NodeStats)]
-  -> RGM [(Uci, NodeStats)]
-filterMoves mvs = do
-  mpl <- view minPlays
-  pure $ filter (f mpl) mvs
-  where
-    f mpl (_, s) = mpl < s ^. playCount
-
 mergeMoves
   :: Vector Uci
-  -> Double
-  -> Double
   -> [(Uci, NodeStats)]
   -> [(Uci, NodeStats)]
   -> RGM [(Uci, (Fen, PosInfo))]
-mergeMoves ucis pAgg pPrune lichessM mastersM
+mergeMoves ucis lichessM mastersM
   = traverse f lichessM
   where
     f (uci, lcm) = do
@@ -184,14 +172,11 @@ mergeMoves ucis pAgg pPrune lichessM mastersM
           )
         )
 
-
 wrapLCStats
   :: Vector Uci
-  -> Double
-  -> Double
   -> (Uci, NodeStats)
   -> RGM (Uci, (Fen, PosInfo))
-wrapLCStats ucis pAgg pPrune (uci, lcm)
+wrapLCStats ucis (uci, lcm)
   = do
     pModule <- use chessHelpers
     fen <- liftIO . PyC.ucisToFen pModule $ snoc ucis uci

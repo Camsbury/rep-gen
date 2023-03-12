@@ -4,11 +4,13 @@ module RepGen.MoveTree
   ( module RepGen.MoveTree
   ) where
 --------------------------------------------------------------------------------
-import RepGen.Type
+import RepGen.Engine.Type
 import RepGen.Monad
 import RepGen.MoveTree.Type
+import RepGen.Score.Type
 import RepGen.State.Type
 import RepGen.Stats.Type
+import RepGen.Type
 --------------------------------------------------------------------------------
 
 -- | Provide a traversal into the move tree for a given list of ucis
@@ -50,3 +52,31 @@ collectFilteredChildren f node
   ^.. nodeResponses
   . folded
   . filtered f
+
+-- | Convenience function to update all the extra data needed on tree nodes
+insertNodeInfo
+  :: Bool
+  -> Maybe Double
+  -> [EngineCandidate]
+  -> Double
+  -> Double
+  -> Vector Uci
+  -> (Uci, (Fen, PosInfo))
+  -> RGM ()
+insertNodeInfo isResps bestScore nCands pAgg pPrune ucis (uci, (_, pInfo)) = do
+  moveProb
+    <- throwMaybe ("lichess stats missing for ucis: " <> tshow (snoc ucis uci))
+    $ pInfo ^? posStats . lichessStats . _Just . prob
+  moveTree . traverseUcis (snoc ucis uci) . bestScoreL .= (bestScore <|> findBy uci nCands)
+  if isResps
+    then do
+      moveTree . traverseUcis (snoc ucis uci) . probAgg .= pAgg * moveProb
+      moveTree . traverseUcis (snoc ucis uci) . probPrune .= pPrune * moveProb
+    else do
+      moveTree . traverseUcis (snoc ucis uci) . probAgg .= pAgg
+      moveTree . traverseUcis (snoc ucis uci) . probPrune .= pPrune
+  where
+    findBy _ [] = Nothing
+    findBy u (ngn:rest)
+      | u == ngn ^. ngnUci = Just $ ngn ^. ngnScore . scoreL
+      | otherwise = findBy u rest

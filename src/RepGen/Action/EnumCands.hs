@@ -115,6 +115,7 @@ doFetchCandidates action = do
     then firstEngine pPrune ucis engineMoves
     else pure candNodes
   traverse_ State.insertChildPosInfo cands'
+  traverse_ (MT.insertNodeInfo False bestMay engineMoves pAgg pPrune ucis) cands'
   pure $ cands' ^.. folded . to (\(u, (f, _)) -> (u, f))
 
 fetchFen :: Vector Uci -> (Uci, NodeStats) -> RGM (Uci, (Fen, NodeStats))
@@ -128,7 +129,6 @@ fromProcessed ucis (uci, fen)
   = ( uci
     , def & uciPath .~ snoc ucis uci
           & nodeFen .~ fen
-    -- FIXME: add bestScoreL, probPrune and probAgg
     )
 
 toAction :: EnumData -> Vector Uci -> [RGAction]

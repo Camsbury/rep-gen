@@ -166,14 +166,9 @@ injectEngine
   -> (Uci, (Fen, PosInfo))
   -> (Uci, (Fen, PosInfo))
 injectEngine nCands info@(uci, _)
-  = info & _2 . _2 . posStats . rgScore    .~ (mkRGStat <$> findBy uci nCands)
+  = info & _2 . _2 . posStats . rgScore .~ (mkRGStat <$> findBy uci nCands)
   where
     findBy _ [] = Nothing
     findBy u (ngn:rest)
       | u == ngn ^. ngnUci = Just $ ngn ^. ngnScore . scoreL
       | otherwise = findBy u rest
-
-
--- FIXME: update the bestScore on the TreeNode
---       bestScoreL .~ bestMay
---       bestScoreL .~ findBy uci nCands
