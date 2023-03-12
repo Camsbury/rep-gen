@@ -30,7 +30,7 @@ runAction ucis = do
   case maybeChosenUci of
     -- Transposes to another chosen child, no need to repeat work.
     Just choiceUci -> do
-      -- remove others
+      -- remove all options not chosen for the transposition
       moveTree
         . traverseUcis ucis
         . nodeResponses
@@ -48,7 +48,8 @@ runAction ucis = do
         . _2
         . transposes
         .= True
-      -- remove transposition children
+      -- remove transposition children from MoveTree
+      -- since they are covered in the other branch
       moveTree
         . traverseUcis (snoc ucis choiceUci)
         . nodeResponses

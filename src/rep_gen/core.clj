@@ -71,26 +71,60 @@
   (run-in-project
    (str "time cabal run rep-gen -- -c '" (to-config-json config) "'")))
 
+(defn hfen
+  "Homogenize fen for use in posinfo"
+  [fen]
+  (str/replace fen #" \d+ \d+$" ""))
+
 (comment
 
-  (let [move-tree (fetch-tree "white-tree.json")
-        pos-info (fetch-info "white-info.json")
-        fens
-        (->> ["g1f3" "d7d5"]
-             (get-in-tree move-tree)
+  (def black-tree (fetch-tree "black-tree.json"))
+  (def black-info (fetch-info "black-info.json"))
+  (def white-tree (fetch-tree "white-tree.json"))
+  (def white-info (fetch-info "white-info.json"))
+
+  ;;   (def black-tree
+  ;;     (->> "/tmp/black-tree.json"
+  ;;          slurp
+  ;;          from-json))
+
+  ;; (def black-info
+  ;;   (->> "/tmp/black-info.json"
+  ;;        slurp
+  ;;        json/read-str
+  ;;        (into {} (map (fn [[fen info]] [fen (clojurize-map info)])))))
+
+  (->> ["g1f3" "d7d5"]
+       (get-in-tree white-tree)
+       ;; :node-fen
+       :removed
+       #_#_
+       :node-responses
+       (map first)
+       #_
+       (map #(dissoc % :node-responses)))
+
+
+  (let [fens
+        (->> ["e2e4" "g7g6" "d2d4"]
+             (get-in-tree black-tree)
              ;; :node-fen
              :node-responses
-             (map (fn [[a b]] [a (:node-fen b)]))
+             (map (fn [[a b]] [a (hfen (:node-fen b))]))
              #_#_
              :node-responses
              (map second)
              #_
              (map #(dissoc % :node-responses)))]
-    (map (fn [[a b]] [a
-                      #_
-                      (get-in pos-info [b "posStats" "rgScore"])
-                      (/ (get-in pos-info [b "posStats" "lichessStats" "whiteWins" "agg"])
-                       (get-in pos-info [b "posStats" "lichessStats" "blackWins" "agg"]))]) fens)
+    (->> fens
+         (remove (fn [[a b]] (= 0 (get-in black-info [b :pos-stats :lichess-stats :white-wins :agg]))))
+         (map (fn [[a b]] [a
+                           #_
+                           (get-in black-info [b "posStats" "rgScore"])
+                           (/ (get-in black-info [b :pos-stats :lichess-stats :black-wins :agg])
+                              (get-in black-info [b :pos-stats :lichess-stats :white-wins :agg]))]))
+         #_
+         (sort-by second >))
     )
 
   (def p
@@ -112,7 +146,6 @@
       :export-pgn-path  "./resources/white.pgn"}))
 
   (destroy-tree p)
-
   )
 
 
