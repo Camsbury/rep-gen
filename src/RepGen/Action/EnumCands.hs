@@ -231,10 +231,14 @@ maxCandBreadth :: Bool -> Double -> RGM Int
 maxCandBreadth _isPruned pAgg = do
   initBreadth <- view initCandBreadth
   asymBreadth <- view asymCandBreadth
+  -- pure
+  --   . round
+  --   $ fromIntegral (initBreadth - asymBreadth) * pAgg
+  --   + fromIntegral asymBreadth
   pure
     . round
-    $ fromIntegral (initBreadth - asymBreadth) * pAgg
-    + fromIntegral asymBreadth
+    $ exp (log (initBreadth /. asymBreadth) * pAgg)
+    * fromIntegral asymBreadth
   -- only go wider for candidates to be pruned
   -- if isPruned
   --   then
