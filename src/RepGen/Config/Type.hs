@@ -74,10 +74,10 @@ instance Default RGConfig where
       , _exportPgnPath   = "./resources/move-tree.pgn"
       , _historyConfig   = def
       , _httpCachePath   = "./resources/http-cache.db"
-      , _initCandBreadth = 10
+      , _initCandBreadth = 13
       , _asymCandBreadth = 5 -- need to enforce this is less
-      , _initRespProb    = 0.001 -- want to capture all the main first moves
-      , _asymRespProb    = 0.3 -- want to provide enough breadth for decision making later on
+      , _initRespProb    = 0.025 -- want to capture all the main first moves
+      , _asymRespProb    = 0.1 -- want to provide enough breadth for decision making later on
       , _mOverrides      = mempty
       , _mastersP        = True
       , _minLogLevel     = LevelInfo
