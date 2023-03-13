@@ -63,9 +63,21 @@ fetchCandidates action = do
        logDebugN $ "Candidates already exist for ucis: " <> tshow ucis
        pure $ children ^.. folded . to (\(u, n) -> (u, n ^. nodeFen))
      Nothing -> do
-       candidates <- doFetchCandidates action
-       let nodes = fromProcessed ucis <$> candidates
+       let isPruned = action ^. edIsPruned
+       let pFen     = parent ^. nodeFen
+       pAgg         <- MT.fetchPAgg ucis
+       breadth      <- maxCandBreadth isPruned pAgg
+       engineMoves  <- Ngn.fenToEngineCandidates (Just $ breadth + ngnBuffer) pFen
+       candidates   <- doFetchCandidates action engineMoves
+       let nodes    = fromProcessed ucis <$> candidates
+       let pPrune   = action ^. edProbP
+       let bestMay  = parent ^? bestScoreL . _Just
+
+       -- create nodes
        moveTree . MT.traverseUcis ucis . nodeResponses .= fromList nodes
+
+       -- add stats nodes
+       traverse_ (MT.insertNodeInfo False bestMay engineMoves pAgg pPrune ucis) candidates
        pure candidates
 
 -- | Added to the candidate breadth to ensure enough data exists for our choices
@@ -73,8 +85,8 @@ fetchCandidates action = do
 ngnBuffer :: Int
 ngnBuffer = 5
 
-doFetchCandidates :: EnumData -> RGM [(Uci, Fen)]
-doFetchCandidates action = do
+doFetchCandidates :: EnumData -> [EngineCandidate] -> RGM [(Uci, Fen)]
+doFetchCandidates action engineMoves = do
   let ucis     = action ^. edUcis
   let pPrune   = action ^. edProbP
   let isPruned = action ^. edIsPruned
@@ -90,8 +102,6 @@ doFetchCandidates action = do
   stratSats          <- view $ strategy . satisficers
   stratOpt           <- view $ strategy . optimizer
   breadth            <- maxCandBreadth isPruned pAgg
-  engineMoves
-    <- Ngn.fenToEngineCandidates (Just $ breadth + ngnBuffer) pFen
   let candidates     = fromMaybe lcM maybeMM
   let isMasters      = isJust maybeMM
   let bestMay        = parent ^? bestScoreL . _Just
@@ -116,7 +126,6 @@ doFetchCandidates action = do
     then firstEngine pPrune ucis engineMoves
     else pure candNodes
   traverse_ State.insertChildPosInfo cands'
-  traverse_ (MT.insertNodeInfo False bestMay engineMoves pAgg pPrune ucis) cands'
   pure $ cands' ^.. folded . to (\(u, (f, _)) -> (u, f))
 
 fetchFen :: Vector Uci -> (Uci, NodeStats) -> RGM (Uci, (Fen, NodeStats))

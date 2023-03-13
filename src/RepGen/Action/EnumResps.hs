@@ -56,41 +56,36 @@ processMoves action = do
     $ moveTree . MT.traverseUcis ucis
   let children = parent ^.. nodeResponses . folded
   when (null children) $ do
-    processed <- doProcessMoves action pAgg
+    processed <- doProcessMoves action
     let nodes = fromProcessed ucis <$> processed
     moveTree . MT.traverseUcis ucis . nodeResponses .= fromList nodes
+    let bestMay = parent ^? bestScoreL . _Just
+    let pPrune = action ^. edProbP
+    traverse_ (MT.insertNodeInfo True bestMay [] pAgg pPrune ucis) processed
 
-doProcessMoves :: EnumData -> Double -> RGM [(Uci, Fen)]
-doProcessMoves action pAgg = do
+doProcessMoves :: EnumData -> RGM [(Uci, Fen)]
+doProcessMoves action = do
   let ucis = action ^. edUcis
   parent
     <- throwMaybe ("Parent doesn't exist at ucis: " <> tshow ucis)
     <=< preuse
     $ moveTree . MT.traverseUcis ucis
   let pFen    = parent ^. nodeFen
-  let bestMay = parent ^? bestScoreL . _Just
 
   (rMStats, maybeMastersM) <- maybeMastersMoves pFen
   Stats.updateParentNominal pFen mastersStats rMStats
   (rStats, lichessM) <- lichessMoves pFen
   Stats.updateParentNominal pFen lichessStats rStats
 
-  -- removed filter on move count
-  -- lichessM <- bool filterMoves pure (action ^. edIsPruned) lichessM'
-  -- NOTE: expensive and unnecessary
-  -- engineMoves <- Ngn.fenToEngineCandidates (Just $ length lichessM) pFen
-  let engineMoves = []
   mOverride <- preview $ overridesL . ix pFen
-  let pPrune = action ^. edProbP
   processed
-    <-   fmap (Ngn.injectEngine engineMoves)
+    <-   fmap (Ngn.injectEngine [])
     <$> maybe
           (traverse (wrapLCStats ucis) lichessM)
           (mergeMoves ucis lichessM)
           maybeMastersM
   processed' <- pure . fromMaybe processed $ findUci processed =<< mOverride
   traverse_ State.insertChildPosInfo processed'
-  traverse_ (MT.insertNodeInfo True bestMay engineMoves pAgg pPrune ucis) processed'
 
   pure $ processed' ^.. folded . to (\(u, (f, _)) -> (u, f))
 
@@ -107,19 +102,20 @@ initProcessMoves ucis = do
      Just _ ->
        pure ()
      Nothing -> do
-       processed <- doInitProcessMoves ucis pAgg
+       processed <- doInitProcessMoves ucis
        let nodes = fromProcessed ucis <$> processed
        moveTree . MT.traverseUcis ucis . nodeResponses .= fromList nodes
+       let bestMay = parent ^? bestScoreL . _Just
+       traverse_ (MT.insertNodeInfo True bestMay [] pAgg 1 ucis) processed
 
 -- TODO: DRY up these two functions
-doInitProcessMoves :: Vector Uci -> Double -> RGM [(Uci, Fen)]
-doInitProcessMoves ucis pAgg = do
+doInitProcessMoves :: Vector Uci -> RGM [(Uci, Fen)]
+doInitProcessMoves ucis = do
   parent
     <- throwMaybe ("Parent doesn't exist at ucis: " <> tshow ucis)
     <=< preuse
     $ moveTree . MT.traverseUcis ucis
   let pFen    = parent ^. nodeFen
-  let bestMay = parent ^? bestScoreL . _Just
 
   (rMStats, maybeMastersM) <- maybeMastersMoves pFen
   Stats.updateParentNominal pFen mastersStats rMStats
@@ -136,7 +132,6 @@ doInitProcessMoves ucis pAgg = do
   processed' <- pure . fromMaybe processed $ findUci processed =<< mOverride
   traverse_ State.insertChildPosInfo processed'
 
-  traverse_ (MT.insertNodeInfo True bestMay engineMoves pAgg 1 ucis) processed'
   pure $ processed' ^.. folded . to (\(u, (f, _)) -> (u, f))
 
 fromProcessed :: Vector Uci -> (Uci, Fen) -> (Uci, TreeNode)
@@ -233,6 +228,9 @@ filterMinRespProb isPruned pPrune pAgg ucis = do
   mpa <- view minProbAgg
   pTI <- use posToInfo
   let minProb = exp (log (irp / arp) * pAgg) * arp
+  logDebugN $ "filtering for ucis: " <> tshow ucis
+  logDebugN $ "pAgg: " <> tshow pAgg
+  logDebugN $ "minProb: " <> tshow minProb
   let isValid rNode =
         maybe
           False

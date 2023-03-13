@@ -61,9 +61,12 @@ insertNodeInfo
   -> Double
   -> Double
   -> Vector Uci
-  -> (Uci, (Fen, PosInfo))
+  -> (Uci, Fen)
   -> RGM ()
-insertNodeInfo isResps mBestScore nCands pAgg pPrune ucis (uci, (_, pInfo)) = do
+insertNodeInfo isResps mBestScore nCands pAgg pPrune ucis (uci, fen) = do
+  pInfo
+    <- throwMaybe ("lichess stats missing for ucis: " <> tshow (snoc ucis uci))
+    =<< preuse (posToInfo . ixPTI fen)
   moveProb
     <- throwMaybe ("lichess stats missing for ucis: " <> tshow (snoc ucis uci))
     $ pInfo ^? posStats . lichessStats . _Just . prob
