@@ -227,7 +227,8 @@ filterMinRespProb isPruned pPrune pAgg ucis = do
   arp <- view asymRespProb
   mpa <- view minProbAgg
   pTI <- use posToInfo
-  let minProb = exp (log (irp / arp) * pAgg) * arp
+  let minProb = arp + (irp - arp) * pAgg
+  -- let minProb = exp (log (irp / arp) * pAgg) * arp
   logDebugN $ "filtering for ucis: " <> tshow ucis
   logDebugN $ "pAgg: " <> tshow pAgg
   logDebugN $ "minProb: " <> tshow minProb
