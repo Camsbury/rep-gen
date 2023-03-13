@@ -51,7 +51,7 @@ data RGConfig
   , _httpCachePath   :: Text
   , _initCandBreadth :: Int
   , _initRespProb    :: Double
-  , _mOverrides      :: Map [San] San
+  , _mOverrides      :: [([San], San)]
   , _mastersP        :: Bool
   , _minLogLevel     :: LogLevel
   , _minPlays        :: Int

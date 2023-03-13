@@ -34,8 +34,6 @@ compileConfig config chessHelpers = do
     toFenORs
       = fmap mapFromList
       . traverse toFenOR
-      . mapToList
     toSanORs moves
-      = mapFromList
-      $ L.inits moves ^.. folded . to unsnoc . _Just
+      = L.inits moves ^.. folded . to unsnoc . _Just
 
