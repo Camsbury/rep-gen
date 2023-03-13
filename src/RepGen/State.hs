@@ -87,18 +87,20 @@ initState pModule = do
 
       logInfoN "Parsed resumable data"
 
-      actions <- resumeActions tree info =<< view colorL
-
-      logInfoN "Built actions for resuming"
-
-      pure
-        $ RGState
+      (`execStateT`
+       (RGState
         { _cloudLimitReached = False
         , _posToInfo         = info
         , _chessHelpers      = pModule
         , _moveTree          = tree
-        , _actionStack       = actions
-        }
+        , _actionStack       = []
+        })) $ do
+        actions <- resumeActions tree info =<< view colorL
+
+        actionStack .= actions
+
+        logInfoN "Built actions for resuming"
+
 
 initActions :: Color -> [RGAction]
 initActions White
@@ -149,6 +151,7 @@ resumeActions
     , MonadError  RGError  m
     , MonadLogger m
     , MonadIO m
+    , MonadState RGState m
     )
   => TreeNode
   -> PosToInfo
@@ -164,6 +167,7 @@ doResumeActions
     , MonadError  RGError  m
     , MonadLogger m
     , MonadIO m
+    , MonadState RGState m
     )
   => TreeNode
   -> PosToInfo
@@ -185,6 +189,7 @@ doResumeActions node pTI False
         , MonadError  RGError  m
         , MonadLogger m
         , MonadIO m
+        , MonadState RGState m
         )
       => TreeNode
       -> m [RGAction]
@@ -195,7 +200,8 @@ doResumeActions node pTI False
       if child ^. removed
         then
           if pAgg > mpa
-            then
+            then do
+              moveTree . MT.traverseUcis ucis . removed .= False
               pure
                 [ RGAEnumCands
                   $ EnumData

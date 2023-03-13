@@ -14,6 +14,7 @@ module Prelude
   , command
   , command_
   , evalStateT
+  , execStateT
   , filterLogger
   , logDebugN
   , logErrorN
