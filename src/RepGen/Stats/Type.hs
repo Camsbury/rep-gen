@@ -11,6 +11,7 @@ import Data.Aeson
   , object
   , withObject
   , (.:)
+  , (.:?)
   )
 --------------------------------------------------------------------------------
 import qualified Data.Aeson as J
@@ -86,9 +87,9 @@ instance FromJSON RGStats where
   parseJSON
     = withObject "RGStats"
     $ \o -> RGStats
-      <$> (o .: "lichessStats")
-      <*> (o .: "mastersStats")
-      <*> (o .: "rgScore")
+      <$> (o .:? "lichessStats")
+      <*> (o .:? "mastersStats")
+      <*> (o .:? "rgScore")
 
 instance FromJSON NodeStats where
   parseJSON

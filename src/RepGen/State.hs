@@ -19,7 +19,9 @@ import RepGen.Stats.Type
 import qualified Data.Aeson             as J
 import qualified RepGen.Lichess.History as H
 import qualified RepGen.Engine          as Ngn
+import qualified RepGen.MoveTree        as MT
 import qualified System.IO              as Sys
+
 --------------------------------------------------------------------------------
 
 -- | Initialize the state of the repertoire generator
@@ -85,7 +87,7 @@ initState pModule = do
 
       logInfoN "Parsed resumable data"
 
-      actions <- resumeActions tree =<< view colorL
+      actions <- resumeActions tree info =<< view colorL
 
       logInfoN "Built actions for resuming"
 
@@ -142,7 +144,6 @@ insertChildPosInfo :: (Uci, (Fen, PosInfo)) -> RGM ()
 insertChildPosInfo (_, (fen, pInfo))
   = posToInfo . getPosToInfo . at (homogenizeFen fen) ?= pInfo
 
-
 resumeActions
   :: ( MonadReader RGConfig m
     , MonadError  RGError  m
@@ -150,6 +151,66 @@ resumeActions
     , MonadIO m
     )
   => TreeNode
+  -> PosToInfo
   -> Color
   -> m [RGAction]
-resumeActions root color = undefined
+resumeActions root pTI White
+  = doResumeActions root pTI True
+resumeActions root pTI Black
+  = doResumeActions root pTI False
+
+doResumeActions
+  :: ( MonadReader RGConfig m
+    , MonadError  RGError  m
+    , MonadLogger m
+    , MonadIO m
+    )
+  => TreeNode
+  -> PosToInfo
+  -> Bool
+  -> m [RGAction]
+doResumeActions node pTI True = do
+  let ucis = node ^. uciPath
+  child
+   <- throwMaybe ("Valid child doesn't exist for ucis: " <> tshow ucis)
+   $ node ^? MT.validChildrenT . _2
+
+  -- apply next step to the responses of the child
+  (++ [RGATransStats ucis]) <$> doResumeActions child pTI False
+doResumeActions node pTI False
+  = fmap fold . traverse toActions $ node ^.. nodeResponses . folded . _2
+  where
+    toActions
+      :: ( MonadReader RGConfig m
+        , MonadError  RGError  m
+        , MonadLogger m
+        , MonadIO m
+        )
+      => TreeNode
+      -> m [RGAction]
+    toActions child = do
+      mpa <- view minProbAgg
+      let ucis = child ^. uciPath
+      let pAgg = child ^. probAgg
+      if child ^. removed
+        then
+          if pAgg > mpa
+            then
+              pure
+                [ RGAEnumCands
+                  $ EnumData
+                  { _edUcis     = ucis
+                  , _edProbP    = 1
+                  , _edProbA    = pAgg
+                  , _edDepth    = 1
+                  , _edIsPruned = True
+                  }
+                , RGAPruneCands ucis
+                , RGATransStats ucis
+                ]
+            else
+              pure []
+        else
+          doResumeActions child pTI True
+
+

@@ -10,6 +10,7 @@ import Data.Aeson
   , object
   , withObject
   , (.:)
+  , (.:?)
   )
 --------------------------------------------------------------------------------
 import qualified Data.Aeson as J
@@ -26,9 +27,9 @@ data TreeNode
   , _nodeResponses :: Vector (Uci, TreeNode)
   , _removed       :: Bool
   , _transposes    :: Bool
-  , _bestScoreL   :: Maybe Double
-  , _probPrune    :: ProbPrune
-  , _probAgg      :: ProbAgg
+  , _bestScoreL    :: Maybe Double
+  , _probPrune     :: ProbPrune
+  , _probAgg       :: ProbAgg
   } deriving (Show, Eq)
 makeLenses ''TreeNode
 
@@ -52,11 +53,11 @@ instance FromJSON TreeNode where
   parseJSON
     = withObject "TreeNode"
     $ \o -> TreeNode
-      <$> (o .: "uciPath")
-      <*> (o .: "nodeFen")
-      <*> (o .: "nodeResponses")
-      <*> (o .: "removed")
-      <*> (o .: "transposes")
-      <*> (o .: "bestScoreL")
-      <*> (o .: "probPrune")
-      <*> (o .: "probAgg")
+      <$> (o .:  "uciPath")
+      <*> (o .:  "nodeFen")
+      <*> (o .:  "nodeResponses")
+      <*> (o .:  "removed")
+      <*> (o .:  "transposes")
+      <*> (o .:? "bestScoreL")
+      <*> (o .:  "probPrune")
+      <*> (o .:  "probAgg")
