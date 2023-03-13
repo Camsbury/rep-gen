@@ -11,8 +11,11 @@ import RepGen.MoveTree.Type
 import RepGen.Stats.Type
 --------------------------------------------------------------------------------
 import Data.Aeson
-  ( ToJSON(..)
+  ( FromJSON(..)
+  , ToJSON(..)
   , object
+  , withObject
+  , (.:)
   )
 --------------------------------------------------------------------------------
 import qualified Data.Aeson as J
@@ -28,6 +31,13 @@ makeLenses ''PosInfo
 
 instance Default PosInfo where
   def = PosInfo def Nothing
+
+instance FromJSON PosInfo where
+  parseJSON
+    = withObject "PosInfo"
+    $ \o -> PosInfo
+       <$> (o .: "posStats")
+       <*> (o .: "chosenUci")
 
 instance ToJSON PosInfo where
   toJSON posInfo =
@@ -47,6 +57,9 @@ makeLenses ''PosToInfo
 
 instance ToJSON PosToInfo where
   toJSON = toJSON . view getPosToInfo
+
+instance FromJSON PosToInfo where
+  parseJSON = fmap PosToInfo . parseJSON
 
 -- | Remove portions of fen that have nothing to do with what is actually
 -- playable from a position

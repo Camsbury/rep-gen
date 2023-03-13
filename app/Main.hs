@@ -18,20 +18,6 @@ main
   . J.eitherDecode
   . fromStrict
   =<< O.customExecParser (O.prefs O.showHelpOnEmpty) opts
-  -- buildRepertoire $
-  --   def & colorL   .~ Black
-  --       & mastersP .~ False
-  --       -- & minProbAgg .~ 0.01
-  --       -- & initRespProb .~ 0.5
-  --       -- & asymRespProb .~ 0.9
-
-  --       -- & startingMoves .~ ["Nf3"]
-  --       -- & minLogLevel .~ LevelDebug
-
-
-  --       -- & minLogLevel .~ LevelDebug
-  --       & mOverrides .~ mapFromList ([(["e4"], "c5")] :: [([San], San)])
-  --       -- & startingMoves .~ ["f4"]
   where
     opts = O.info (parseRepGenConfig <**> O.helper) desc
     desc = O.fullDesc

@@ -16,8 +16,10 @@ import RepGen.Score.Type
 import RepGen.State.Type
 import RepGen.Stats.Type
 --------------------------------------------------------------------------------
+import qualified Data.Aeson             as J
 import qualified RepGen.Lichess.History as H
-import qualified RepGen.Engine as Ngn
+import qualified RepGen.Engine          as Ngn
+import qualified System.IO              as Sys
 --------------------------------------------------------------------------------
 
 -- | Initialize the state of the repertoire generator
@@ -31,33 +33,70 @@ initState
   -> m RGState
 initState pModule = do
   logInfoN "Initializing state"
-  actions <- initActions <$> view colorL
-  iPTI <- initPosToInfo pModule
-  logDebugN $ "Actions: " <> tshow actions
-  logInfoN "Finished initializing state"
-  iPA
-    <- throwMaybe "No initial lichess stats"
-    $ iPTI ^? ixPTI def . posStats . lichessStats . _Just . prob
-  pure $ RGState
-       { _cloudLimitReached = False
-       , _posToInfo         = iPTI
-       , _chessHelpers      = pModule
-       , _moveTree
-         = TreeNode
-         { _uciPath       = empty
-         , _nodeFen       = def
-         , _nodeResponses = empty
-         , _removed       = False
-         , _transposes    = False
-         , _bestScoreL    = iPTI ^? ixPTI def . posStats . rgScore . _Just . nom
-         , _probPrune     = 1
-         , _probAgg       = iPA
-         }
-       , _actionStack       = actions
-       }
+  rFrom <- view resumeFrom
+  case rFrom of
+    Nothing -> do
+      actions <- initActions <$> view colorL
+      iPTI <- initPosToInfo pModule
+      logDebugN $ "Actions: " <> tshow actions
+      logInfoN "Finished initializing state"
+      iPA
+        <- throwMaybe "No initial lichess stats"
+        $ iPTI ^? ixPTI def . posStats . lichessStats . _Just . prob
+      pure $ RGState
+           { _cloudLimitReached = False
+           , _posToInfo         = iPTI
+           , _chessHelpers      = pModule
+           , _moveTree
+             = TreeNode
+             { _uciPath       = empty
+             , _nodeFen       = def
+             , _nodeResponses = empty
+             , _removed       = False
+             , _transposes    = False
+             , _bestScoreL    = iPTI ^? ixPTI def . posStats . rgScore . _Just . nom
+             , _probPrune     = 1
+             , _probAgg       = iPA
+             }
+           , _actionStack       = actions
+           }
+    Just (treePath, infoPath) -> do
+      tree
+        <- throwEither
+        . first pack
+        . J.eitherDecode
+        . fromStrict
+        . encodeUtf8
+        . pack
+        <=< liftIO
+        . Sys.readFile
+        $ unpack treePath
 
+      info
+        <- throwEither
+        . first pack
+        . J.eitherDecode
+        . fromStrict
+        . encodeUtf8
+        . pack
+        <=< liftIO
+        . Sys.readFile
+        $ unpack infoPath
 
-                     -- & bestScoreL .~ score ^? _Just . scoreL
+      logInfoN "Parsed resumable data"
+
+      actions <- resumeActions tree =<< view colorL
+
+      logInfoN "Built actions for resuming"
+
+      pure
+        $ RGState
+        { _cloudLimitReached = False
+        , _posToInfo         = info
+        , _chessHelpers      = pModule
+        , _moveTree          = tree
+        , _actionStack       = actions
+        }
 
 initActions :: Color -> [RGAction]
 initActions White
@@ -102,3 +141,15 @@ collectInfo (uci, node) = do
 insertChildPosInfo :: (Uci, (Fen, PosInfo)) -> RGM ()
 insertChildPosInfo (_, (fen, pInfo))
   = posToInfo . getPosToInfo . at (homogenizeFen fen) ?= pInfo
+
+
+resumeActions
+  :: ( MonadReader RGConfig m
+    , MonadError  RGError  m
+    , MonadLogger m
+    , MonadIO m
+    )
+  => TreeNode
+  -> Color
+  -> m [RGAction]
+resumeActions root color = undefined

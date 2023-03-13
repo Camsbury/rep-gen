@@ -37,14 +37,17 @@ instance FromJSON HistoryConfig where
         >>= updateIfPresent "historySpeeds" historySpeeds
         >>= updateIfPresent "historyMoveCount"  historyMoveCount
 
+type TreePath = Text
+type InfoPath = Text
+
 data RGConfig
   = RGConfig
   { _asymCandBreadth :: Int
   , _asymRespProb    :: Double
   , _colorL          :: Color
   , _engineCachePath :: Text
-  , _exportTreePath  :: Text
-  , _exportInfoPath  :: Text
+  , _exportTreePath  :: TreePath
+  , _exportInfoPath  :: InfoPath
   , _exportP         :: Bool
   , _exportPgnPath   :: Text
   , _historyConfig   :: HistoryConfig
@@ -58,6 +61,7 @@ data RGConfig
   , _minProbAgg      :: Double
   , _minTotalMasters :: Int
   , _overridesL      :: Map Fen Uci
+  , _resumeFrom      :: Maybe (TreePath, InfoPath)
   , _searchDepth     :: Int
   , _startingMoves   :: [San]
   , _strategy        :: RGStrategy
@@ -85,6 +89,7 @@ instance Default RGConfig where
       , _minProbAgg      = 0.0003
       , _minTotalMasters = 500
       , _overridesL      = mempty
+      , _resumeFrom      = Nothing
       -- this seems useless in the grand scheme, but useful in shorter analysis
       , _searchDepth     = 15
       , _startingMoves   = []
@@ -114,6 +119,7 @@ instance FromJSON RGConfig where
         >>= updateIfPresent "minProbAgg"      minProbAgg
         >>= updateIfPresent "minTotalMasters" minTotalMasters
         >>= updateIfPresent "overridesL"      overridesL
+        >>= updateIfPresent "resumeFrom"      resumeFrom
         >>= updateIfPresent "searchDepth"     searchDepth
         >>= updateIfPresent "startingMoves"   startingMoves
         >>= updateIfPresent "strategy"        strategy
