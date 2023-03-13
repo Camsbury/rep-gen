@@ -27,11 +27,10 @@ runAction :: EnumData -> RGM ()
 runAction action = do
   let ucis = action ^. edUcis
   logDebugN $ "Enumerating Responses for: " <> tshow ucis
-  pAgg <- MT.fetchPAgg ucis
 
   processMoves action
   toActOn <- filterMinRespProb
-    (action ^. edIsPruned) (action ^. edProbP) pAgg ucis
+    (action ^. edIsPruned) (action ^. edProbP) (action ^. edProbA) ucis
   let actions = toAction action =<< toActOn
   actionStack %= (actions ++)
 
@@ -189,25 +188,27 @@ wrapLCStats ucis (uci, lcm)
       )
 
 -- | Turn viable responses into actions
-toAction :: EnumData -> (Double, TreeNode) -> [RGAction]
-toAction action (pPrune, node)
+toAction :: EnumData -> (Double, Double, TreeNode) -> [RGAction]
+toAction action (pPrune, _, node)
   = [ RGAEnumCands
       $ EnumData
-      { _edUcis = node ^. uciPath
-      , _edProbP = pPrune
-      , _edDepth = action ^. edDepth
+      { _edUcis     = node ^. uciPath
+      , _edProbP    = pPrune
+      , _edProbA    = action ^. edProbA
+      , _edDepth    = action ^. edDepth
       , _edIsPruned = action ^. edIsPruned
       }
     , RGATransStats $ node ^. uciPath
     ]
 
 -- | Turn viable responses into actions
-initToAction ::  (Double, TreeNode) -> [RGAction]
-initToAction (pPrune, node)
+initToAction ::  (Double, Double, TreeNode) -> [RGAction]
+initToAction (pPrune, pAgg, node)
   = [ RGAEnumCands
       $ EnumData
       { _edUcis = node ^. uciPath
       , _edProbP = pPrune
+      , _edProbA = pAgg
       , _edDepth = 1
       , _edIsPruned = False
       }
@@ -221,17 +222,26 @@ filterMinRespProb
   -> Double
   -> Double
   -> Vector Uci
-  -> RGM [(Double, TreeNode)]
-filterMinRespProb isPruned pPrune pAgg ucis = do
+  -> RGM [(Double, Double, TreeNode)]
+filterMinRespProb isPruned pPrune pAggPrune ucis = do
   irp <- view initRespProb
   arp <- view asymRespProb
   mpa <- view minProbAgg
   pTI <- use posToInfo
-  let minProb = arp + (irp - arp) * pAgg
+  pAgg <- MT.fetchPAgg ucis
+  let minProb = arp + (irp - arp) * pAggPrune
   -- let minProb = exp (log (irp / arp) * pAgg) * arp
   logDebugN $ "filtering for ucis: " <> tshow ucis
   logDebugN $ "pAgg: " <> tshow pAgg
+  logDebugN $ "pAggPrune: " <> tshow pAggPrune
   logDebugN $ "minProb: " <> tshow minProb
+  -- traverse_
+  --   (\rNode ->
+  --     logInfoN $ "nodeProbPrune: " <> tshow
+  --       ((pPrune *) <$>
+  --       (pTI ^? ixPTI (rNode ^. _2 . nodeFen) . posStats . lichessStats . _Just . prob))
+  --   )
+  --   =<< use (moveTree . traverseUcis ucis . nodeResponses)
   let isValid rNode =
         maybe
           False
@@ -251,17 +261,16 @@ filterMinRespProb isPruned pPrune pAgg ucis = do
     $ moveTree
     . traverseUcis ucis
     . to (collectFilteredChildren (\x -> x ^. _2 . to isValid))
-  traverse addPPrune $ children ^.. folded . _2
+  traverse addProbs $ children ^.. folded . _2
   where
-    addPPrune :: TreeNode -> RGM (Double, TreeNode)
-    addPPrune child = do
+    addProbs :: TreeNode -> RGM (Double, Double, TreeNode)
+    addProbs child = do
       let fen = child ^. nodeFen
-      cPPrune
+      cProb
         <- throwMaybe ("No pos info exists for ucis: " <> tshow (child ^. uciPath))
         <=< preuse
         $ posToInfo . ixPTI fen . posStats . lichessStats . _Just . prob
-        . to (* pPrune)
-      pure (cPPrune, child)
+      pure (pPrune * cProb, pAggPrune * cProb, child)
 
 
 

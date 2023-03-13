@@ -100,7 +100,8 @@ runAction ucis = do
 
               let newUcis = snoc ucis choiceUci
 
-              let actions = toActions newUcis
+              pAgg <- fetchPAgg newUcis
+              let actions = toActions pAgg newUcis
               -- logDebugN $ "Actions: " <> tshow actions
 
               actionStack %= (actions ++)
@@ -115,9 +116,9 @@ runAction ucis = do
               $ "No sound candidates when pruning at: "
               <> tshow ucis
 
-toActions :: Vector Uci -> [RGAction]
-toActions ucis
-  = [ RGAEnumResps $ EnumData ucis 1 1 True
+toActions :: Double -> Vector Uci -> [RGAction]
+toActions pAgg ucis
+  = [ RGAEnumResps $ EnumData ucis 1 pAgg 1 True
     , RGAPruneHooks ucis
     , RGACalcStats ucis
     ]

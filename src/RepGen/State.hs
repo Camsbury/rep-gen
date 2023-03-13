@@ -65,6 +65,7 @@ initActions White
       $ EnumData
       { _edUcis     = []
       , _edProbP    = 1
+      , _edProbA    = 1
       , _edDepth    = 1
       , _edIsPruned = True
       }

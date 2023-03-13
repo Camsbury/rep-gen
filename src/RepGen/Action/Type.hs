@@ -9,6 +9,7 @@ data EnumData
   = EnumData
   { _edUcis     :: Vector Uci
   , _edProbP    :: Double
+  , _edProbA    :: Double
   , _edDepth    :: Int
   , _edIsPruned :: Bool
   } deriving (Show, Eq)

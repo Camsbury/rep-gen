@@ -26,9 +26,9 @@ import qualified RepGen.State           as State
 runAction :: EnumData -> RGM ()
 runAction action = do
   let ucis = action ^. edUcis
-  logInfoN $ "Cands for: " <> tshow ucis
+  logInfoN $ "Candidates for: " <> tshow ucis
   candidates <- fetchCandidates action
-  logInfoN $ "Candidates are: " <> tshow (candidates ^.. folded . _1)
+  traverse_ (logInfoN . ("  - " <>) . tshow) $ candidates ^.. folded . _1
   sDepth <- view searchDepth
   pTI <- use posToInfo
   -- used to stop eval if scores are super high
@@ -142,8 +142,8 @@ fromProcessed ucis (uci, fen)
     )
 
 toAction :: EnumData -> Vector Uci -> [RGAction]
-toAction (EnumData _ probP depth _) ucis
-  = [ RGAEnumResps $ EnumData ucis probP (succ depth) False
+toAction (EnumData _ probP probA depth _) ucis
+  = [ RGAEnumResps $ EnumData ucis probP probA (succ depth) False
     , RGACalcStats ucis
     ]
 
@@ -228,23 +228,23 @@ filterCandidates mvs = do
     f mpl (_, s) = mpl < s ^. playCount
 
 maxCandBreadth :: Bool -> Double -> RGM Int
-maxCandBreadth isPruned pAgg = do
+maxCandBreadth _isPruned pAgg = do
   initBreadth <- view initCandBreadth
   asymBreadth <- view asymCandBreadth
+  pure
+    . round
+    $ fromIntegral (initBreadth - asymBreadth) * pAgg
+    + fromIntegral asymBreadth
   -- only go wider for candidates to be pruned
-  -- pure
-  --   . round
-  --   $ exp (log (initBreadth /. asymBreadth) * pAgg)
-  --   * fromIntegral asymBreadth
-  if isPruned
-    then
-      pure
-        . round
-        $ fromIntegral (initBreadth - asymBreadth) * pAgg
-        + fromIntegral asymBreadth
-      -- pure
-      --   . round
-      --   $ exp (log (initBreadth /. asymBreadth) * pAgg)
-      --   * fromIntegral asymBreadth
-    else
-      pure asymBreadth
+  -- if isPruned
+  --   then
+  --     pure
+  --       . round
+  --       $ fromIntegral (initBreadth - asymBreadth) * pAgg
+  --       + fromIntegral asymBreadth
+  --     -- pure
+  --     --   . round
+  --     --   $ exp (log (initBreadth /. asymBreadth) * pAgg)
+  --     --   * fromIntegral asymBreadth
+  --   else
+  --     pure asymBreadth
