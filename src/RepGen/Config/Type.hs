@@ -46,6 +46,7 @@ data RGConfig
   , _asymRespProb    :: Double
   , _colorL          :: Color
   , _engineCachePath :: Text
+  , _exclusionsL     :: Map Fen (Set Uci)
   , _exportTreePath  :: TreePath
   , _exportInfoPath  :: InfoPath
   , _exportP         :: Bool
@@ -54,6 +55,7 @@ data RGConfig
   , _httpCachePath   :: Text
   , _initCandBreadth :: Int
   , _initRespProb    :: Double
+  , _mExclusions     :: [([San], [San])]
   , _mOverrides      :: [([San], San)]
   , _mastersP        :: Bool
   , _minLogLevel     :: LogLevel
@@ -72,6 +74,7 @@ instance Default RGConfig where
   def = RGConfig
       { _colorL          = White
       , _engineCachePath = "./resources/engine-cache.db"
+      , _exclusionsL     = mempty
       , _exportTreePath  = "./resources/move-tree.json"
       , _exportInfoPath  = "./resources/pos-info.json"
       , _exportP         = True
@@ -82,6 +85,7 @@ instance Default RGConfig where
       , _asymCandBreadth = 5 -- need to enforce this is less
       , _initRespProb    = 0.025 -- want to capture all the main first moves
       , _asymRespProb    = 0.1 -- want to provide enough breadth for decision making later on
+      , _mExclusions     = mempty
       , _mOverrides      = mempty
       , _mastersP        = True
       , _minLogLevel     = LevelInfo
@@ -102,6 +106,7 @@ instance FromJSON RGConfig where
       let updateIfPresent fName f c = maybe c (\a -> c & f .~ a) <$> o .:? fName
       updateIfPresent "colorL" colorL def
         >>= updateIfPresent "engineCachePath" engineCachePath
+        >>= updateIfPresent "exclusionsL"     exclusionsL
         >>= updateIfPresent "exportTreePath"  exportTreePath
         >>= updateIfPresent "exportInfoPath"  exportInfoPath
         >>= updateIfPresent "exportP"         exportP
@@ -112,6 +117,7 @@ instance FromJSON RGConfig where
         >>= updateIfPresent "asymCandBreadth" asymCandBreadth
         >>= updateIfPresent "initRespProb"    initRespProb
         >>= updateIfPresent "asymRespProb"    asymRespProb
+        >>= updateIfPresent "mExclusions"     mExclusions
         >>= updateIfPresent "mOverrides"      mOverrides
         >>= updateIfPresent "mastersP"        mastersP
         >>= updateIfPresent "minLogLevel"     minLogLevel

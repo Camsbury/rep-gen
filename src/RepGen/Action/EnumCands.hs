@@ -111,7 +111,7 @@ doFetchCandidates action engineMoves = do
 
   initCands
     <- traverse (fetchFen ucis)
-    <=< maybe (filterCandidates candidates) pure
+    <=< maybe (filterCandidates pFen candidates) pure
     <=< findUci candidates pFen <=< preview $ overridesL . ix pFen
 
   let candNodes
@@ -122,6 +122,7 @@ doFetchCandidates action engineMoves = do
         .   applyWhen isMasters (injectLichess lcM)
         .   initPosInfo isMasters
         <$> initCands
+
   cands' <- if null candNodes
     then firstEngine pPrune ucis engineMoves
     else pure candNodes
@@ -215,17 +216,21 @@ findUci cands fen (Just u)
 
 -- | Filter available candidates for selection
 filterCandidates
-  :: [(Uci, NodeStats)]
+  :: Fen
+  -> [(Uci, NodeStats)]
   -> RGM [(Uci, NodeStats)]
-filterCandidates mvs = do
+filterCandidates pFen mvs = do
   -- TODO: make this much smarter about what to filter
   -- don't want to be too restrictive, but also don't want to cut out all useful data
   -- there should be some notion of confidence ranges by sample size, and working with the lower end of that range
   -- can trim here based on how destructive to data a candidate is
   mpl <- view minPlays
-  pure $ filter (f mpl) mvs
+  exMay <- preview $ exclusionsL . ix pFen
+  pure . filter (g exMay) $ filter (f mpl) mvs
   where
     f mpl (_, s) = mpl < s ^. playCount
+    g (Just exs) (u, _) = u `notElem` exs
+    g Nothing _ = True
 
 maxCandBreadth :: Bool -> Double -> RGM Int
 maxCandBreadth _isPruned pAgg = do
