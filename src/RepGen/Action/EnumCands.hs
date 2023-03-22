@@ -111,7 +111,7 @@ doFetchCandidates action engineMoves = do
 
   initCands
     <- traverse (fetchFen ucis)
-    <=< maybe (filterCandidates pFen candidates) pure
+    <=< maybe (filterCandidates pFen pAgg candidates) pure
     <=< findUci candidates pFen <=< preview $ overridesL . ix pFen
 
   let candNodes
@@ -217,14 +217,17 @@ findUci cands fen (Just u)
 -- | Filter available candidates for selection
 filterCandidates
   :: Fen
+  -> Double
   -> [(Uci, NodeStats)]
   -> RGM [(Uci, NodeStats)]
-filterCandidates pFen mvs = do
+filterCandidates pFen pAgg mvs = do
   -- TODO: make this much smarter about what to filter
   -- don't want to be too restrictive, but also don't want to cut out all useful data
   -- there should be some notion of confidence ranges by sample size, and working with the lower end of that range
   -- can trim here based on how destructive to data a candidate is
-  mpl <- view minPlays
+  iMPl <- fromIntegral <$> view initMinPlays
+  aMPl <- fromIntegral <$> view asymMinPlays
+  let mpl = round $ aMPl + (iMPl - aMPl) * sqrt pAgg
   exMay <- preview $ exclusionsL . ix pFen
   pure . filter (g exMay) $ filter (f mpl) mvs
   where

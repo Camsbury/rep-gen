@@ -43,6 +43,7 @@ type InfoPath = Text
 data RGConfig
   = RGConfig
   { _asymCandBreadth :: Int
+  , _asymMinPlays    :: Int
   , _asymRespProb    :: Double
   , _colorL          :: Color
   , _engineCachePath :: Text
@@ -54,12 +55,12 @@ data RGConfig
   , _historyConfig   :: HistoryConfig
   , _httpCachePath   :: Text
   , _initCandBreadth :: Int
+  , _initMinPlays    :: Int
   , _initRespProb    :: Double
   , _mExclusions     :: [([San], [San])]
   , _mOverrides      :: [([San], San)]
   , _mastersP        :: Bool
   , _minLogLevel     :: LogLevel
-  , _minPlays        :: Int
   , _minProbAgg      :: Double
   , _minTotalMasters :: Int
   , _overridesL      :: Map Fen Uci
@@ -73,23 +74,24 @@ makeLenses ''RGConfig
 instance Default RGConfig where
   def = RGConfig
       { _colorL          = White
+      , _asymCandBreadth = 5 -- need to enforce this is less
+      , _asymMinPlays    = 100 -- minimum needed for statistical significance
+      , _asymRespProb    = 0.1 -- want to provide enough breadth for decision making later on
       , _engineCachePath = "./resources/engine-cache.db"
       , _exclusionsL     = mempty
-      , _exportTreePath  = "./resources/move-tree.json"
       , _exportInfoPath  = "./resources/pos-info.json"
       , _exportP         = True
       , _exportPgnPath   = "./resources/move-tree.pgn"
+      , _exportTreePath  = "./resources/move-tree.json"
       , _historyConfig   = def
       , _httpCachePath   = "./resources/http-cache.db"
       , _initCandBreadth = 13
-      , _asymCandBreadth = 5 -- need to enforce this is less
+      , _initMinPlays    = 12000 -- found empirically
       , _initRespProb    = 0.025 -- want to capture all the main first moves
-      , _asymRespProb    = 0.1 -- want to provide enough breadth for decision making later on
       , _mExclusions     = mempty
       , _mOverrides      = mempty
       , _mastersP        = True
       , _minLogLevel     = LevelInfo
-      , _minPlays        = 50
       , _minProbAgg      = 0.0003
       , _minTotalMasters = 500
       , _overridesL      = mempty
@@ -105,23 +107,24 @@ instance FromJSON RGConfig where
     = J.withObject "RGConfig" $ \o -> do
       let updateIfPresent fName f c = maybe c (\a -> c & f .~ a) <$> o .:? fName
       updateIfPresent "colorL" colorL def
+        >>= updateIfPresent "asymCandBreadth" asymCandBreadth
+        >>= updateIfPresent "asymMinPlays"    asymMinPlays
+        >>= updateIfPresent "asymRespProb"    asymRespProb
         >>= updateIfPresent "engineCachePath" engineCachePath
         >>= updateIfPresent "exclusionsL"     exclusionsL
-        >>= updateIfPresent "exportTreePath"  exportTreePath
         >>= updateIfPresent "exportInfoPath"  exportInfoPath
         >>= updateIfPresent "exportP"         exportP
         >>= updateIfPresent "exportPgnPath"   exportPgnPath
+        >>= updateIfPresent "exportTreePath"  exportTreePath
         >>= updateIfPresent "historyConfig"   historyConfig
         >>= updateIfPresent "httpCachePath"   httpCachePath
         >>= updateIfPresent "initCandBreadth" initCandBreadth
-        >>= updateIfPresent "asymCandBreadth" asymCandBreadth
+        >>= updateIfPresent "initMinPlays"    initMinPlays
         >>= updateIfPresent "initRespProb"    initRespProb
-        >>= updateIfPresent "asymRespProb"    asymRespProb
         >>= updateIfPresent "mExclusions"     mExclusions
         >>= updateIfPresent "mOverrides"      mOverrides
         >>= updateIfPresent "mastersP"        mastersP
         >>= updateIfPresent "minLogLevel"     minLogLevel
-        >>= updateIfPresent "minPlays"        minPlays
         >>= updateIfPresent "minProbAgg"      minProbAgg
         >>= updateIfPresent "minTotalMasters" minTotalMasters
         >>= updateIfPresent "overridesL"      overridesL
