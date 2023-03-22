@@ -214,6 +214,9 @@ findUci cands fen (Just u)
       >> pure Nothing
     matchesUci u' (x, _) = x == u'
 
+minFallbackWindow :: Double
+minFallbackWindow = 0.9
+
 -- | Filter available candidates for selection
 filterCandidates
   :: Fen
@@ -221,16 +224,17 @@ filterCandidates
   -> [(Uci, NodeStats)]
   -> RGM [(Uci, NodeStats)]
 filterCandidates pFen pAgg mvs = do
-  -- TODO: make this much smarter about what to filter
-  -- don't want to be too restrictive, but also don't want to cut out all useful data
-  -- there should be some notion of confidence ranges by sample size, and working with the lower end of that range
-  -- can trim here based on how destructive to data a candidate is
   iMPl <- fromIntegral <$> view initMinPlays
   aMPl <- fromIntegral <$> view asymMinPlays
-  let mpl = round $ aMPl + (iMPl - aMPl) * sqrt pAgg
+  -- Variable minPlays, but if too large, then the most played move used as ref
+  let mpl
+        = min (round (minFallbackWindow * fromIntegral maxPlays))
+        . round
+        $ aMPl + (iMPl - aMPl) * sqrt pAgg
   exMay <- preview $ exclusionsL . ix pFen
   pure . filter (g exMay) $ filter (f mpl) mvs
   where
+    maxPlays = fromMaybe 0 . maximumMay $ mvs ^.. folded . _2 . playCount
     f mpl (_, s) = mpl < s ^. playCount
     g (Just exs) (u, _) = u `notElem` exs
     g Nothing _ = True
