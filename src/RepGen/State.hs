@@ -143,8 +143,10 @@ collectInfo (uci, node) = do
   pure (uci, (fen, info))
 
 insertChildPosInfo :: (Uci, (Fen, PosInfo)) -> RGM ()
-insertChildPosInfo (_, (fen, pInfo))
-  = posToInfo . getPosToInfo . at (homogenizeFen fen) ?= pInfo
+insertChildPosInfo (_, (fen, pInfo)) = do
+  mPInfo <- preuse $ posToInfo . ixPTI fen
+  when (isNothing mPInfo) $
+    posToInfo . getPosToInfo . at (homogenizeFen fen) ?= pInfo
 
 resumeActions
   :: ( MonadReader RGConfig m

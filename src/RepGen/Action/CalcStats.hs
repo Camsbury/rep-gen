@@ -47,7 +47,8 @@ calcNodeStats parent statsLens = do
     <- throwMaybe ("No info exists for fen: " <> tshow parentFen)
     <=< preuse
     $ posToInfo . ixPTI parentFen . posStats
-  let children = fromList $ parent ^.. validChildrenT
+  -- let children = fromList $ parent ^.. validChildrenT
+  let children = fromList $ parent ^.. nodeResponses . folded
   cWhite     <- childrenStat children statsLens $ whiteWins . nom
   cWhiteAgg  <- childrenStat children statsLens $ whiteWins . agg
   cBlack     <- childrenStat children statsLens $ blackWins . nom

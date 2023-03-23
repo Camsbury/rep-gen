@@ -118,7 +118,7 @@ maxWinOverLoss c (_, (_, a)) (_, (_, b)) = fromMaybe EQ $ compM <|> comp
     compM = compare <$> lossWinMA <*> lossWinMB
     comp = compare <$> lossWinA <*> lossWinB
 
--- | Calculate the upper end of the confidence interval using the method from:
+-- | Calculate the lower end of the confidence interval using the method from:
 -- https://www.statology.org/standard-error-of-proportion/
 lowerConf
   :: RGStats
