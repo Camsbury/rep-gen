@@ -19,7 +19,7 @@ import qualified RepGen.MoveTree as MT
 --------------------------------------------------------------------------------
 
 -- | Apply a strategy to select the best move option
-applyStrategy :: Vector Uci -> [(Uci, (Fen, PosInfo))] -> RGM (Maybe (Uci, (Fen, PosInfo)))
+applyStrategy :: Vector Uci -> [(Uci, (Fen, Double, PosInfo))] -> RGM (Maybe (Uci, (Fen, Double, PosInfo)))
 applyStrategy ucis options = do
   sats <- view $ strategy . satisficers
   sComp <- strategicCompare <$> view (strategy . optimizer) <*> view colorL
@@ -32,8 +32,8 @@ applyStrategy ucis options = do
 strategicFilter
   :: RGSatisficers
   -> Maybe Double
-  -> [(Uci, (Fen, PosInfo))]
-  -> [(Uci, (Fen, PosInfo))]
+  -> [(Uci, (Fen, Double, PosInfo))]
+  -> [(Uci, (Fen, Double, PosInfo))]
 strategicFilter sats mBestScore opts
   = if sats ^. engineFilter . engineP
     then
@@ -43,27 +43,27 @@ strategicFilter sats mBestScore opts
   where
     mBestCandScore
       = maximumMay
-      $ opts ^.. folded . _2 . _2 . posStats . rgScore . _Just . nom
+      $ opts ^.. folded . _2 . _3 . posStats . rgScore . _Just . nom
     toFiltered bestScore = filter (allowable bestScore) opts
     aLoss = sats ^. engineFilter . engineAllowableLoss
     allowable bestScore opt
       = maybe False (\x -> x >= (bestScore * aLoss))
-      $ opt ^? _2 . _2 . posStats . rgScore . _Just . nom
+      $ opt ^? _2 . _3 . posStats . rgScore . _Just . nom
 
 -- | Get the 'Ordering' needed to fulfill the chosen 'RGOptimizer'
 strategicCompare
   :: RGOptimizer
   -> Color
-  -> (Uci, (Fen, PosInfo))
-  -> (Uci, (Fen, PosInfo))
+  -> (Uci, (Fen, Double, PosInfo))
+  -> (Uci, (Fen, Double, PosInfo))
   -> Ordering
 strategicCompare MaxWinOverLoss = maxWinOverLoss
 strategicCompare MinLoss        = minLoss
 
 
 -- | Comparison for MinLoss
-minLoss :: Color -> (Uci, (Fen, PosInfo)) -> (Uci, (Fen, PosInfo)) -> Ordering
-minLoss c (_, (_, a)) (_, (_, b)) = fromMaybe EQ $ compM <|> comp
+minLoss :: Color -> (Uci, (Fen, Double, PosInfo)) -> (Uci, (Fen, Double, PosInfo)) -> Ordering
+minLoss c (_, (_, _, a)) (_, (_, _, b)) = fromMaybe EQ $ compM <|> comp
   where
     stat
       :: RGStats
@@ -81,8 +81,8 @@ minLoss c (_, (_, a)) (_, (_, b)) = fromMaybe EQ $ compM <|> comp
       <*> stat (b ^. posStats) oppWins lichessStats
 
 -- | Comparison for MaxWinOverLoss
-maxWinOverLoss :: Color -> (Uci, (Fen, PosInfo)) -> (Uci, (Fen, PosInfo)) -> Ordering
-maxWinOverLoss c (_, (_, a)) (_, (_, b)) = fromMaybe EQ $ compM <|> comp
+maxWinOverLoss :: Color -> (Uci, (Fen, Double, PosInfo)) -> (Uci, (Fen, Double, PosInfo)) -> Ordering
+maxWinOverLoss c (_, (_, _, a)) (_, (_, _, b)) = fromMaybe EQ $ compM <|> comp
   where
     stat
       :: RGStats

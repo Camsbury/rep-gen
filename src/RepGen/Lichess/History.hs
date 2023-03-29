@@ -33,7 +33,7 @@ lichessMoves
     , MonadIO m
     )
   => Fen
-  -> m (RawStats, [(Uci, NodeStats)])
+  -> m (RawStats, [(Uci, (Double, NodeStats))])
 lichessMoves fen = do
   rawStats <- historicMoves =<< getLichessParams fen
   pure (rawStats, parseStats rawStats)
@@ -56,7 +56,9 @@ maybeMastersMoves fen = do
         = if useM
           then parseStats <$> mHistMoves
           else Nothing
-  pure (rawStats, mMoves)
+  pure (rawStats, fmap removeProb <$> mMoves)
+  where
+    removeProb (u, (_, ns)) = (u, ns)
 
 initialStats
   :: ( MonadReader RGConfig m
@@ -188,7 +190,7 @@ getMastersParams fen = do
   pure $ UniversalParams hmc fen
 
 rawToNode :: RawStats -> NodeStats
-rawToNode rs = NodeStats whiteS blackS 1 total
+rawToNode rs = NodeStats whiteS blackS total
   where
     white = rs ^. whiteTotal
     black = rs ^. blackTotal

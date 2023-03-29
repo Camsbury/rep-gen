@@ -163,10 +163,10 @@ applyScoreColor Black = ngnScore . scoreL %~ (1 -)
 
 injectEngine
   :: [EngineCandidate]
-  -> (Uci, (Fen, PosInfo))
-  -> (Uci, (Fen, PosInfo))
+  -> (Uci, (Fen, Double, PosInfo))
+  -> (Uci, (Fen, Double, PosInfo))
 injectEngine nCands info@(uci, _)
-  = info & _2 . _2 . posStats . rgScore .~ (mkRGStat <$> findBy uci nCands)
+  = info & _2 . _3 . posStats . rgScore .~ (mkRGStat <$> findBy uci nCands)
   where
     findBy _ [] = Nothing
     findBy u (ngn:rest)

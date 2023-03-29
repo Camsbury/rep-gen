@@ -33,7 +33,7 @@ runAction ucis = do
 
   appliedStrat <- Strat.applyStrategy ucis childrenInfo
   case appliedStrat of
-    Just (_, (_, child)) -> do
+    Just (_, (_, _, child)) -> do
       logDebugN "Children exist for transfer!"
 
       setScore (child ^. posStats . rgScore) pFen

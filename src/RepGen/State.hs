@@ -42,9 +42,6 @@ initState pModule = do
       iPTI <- initPosToInfo pModule
       logDebugN $ "Actions: " <> tshow actions
       logInfoN "Finished initializing state"
-      iPA
-        <- throwMaybe "No initial lichess stats"
-        $ iPTI ^? ixPTI def . posStats . lichessStats . _Just . prob
       pure $ RGState
            { _cloudLimitReached = False
            , _posToInfo         = iPTI
@@ -57,8 +54,9 @@ initState pModule = do
              , _removed       = False
              , _transposes    = False
              , _bestScoreL    = iPTI ^? ixPTI def . posStats . rgScore . _Just . nom
+             , _probLocal     = 1
              , _probPrune     = 1
-             , _probAgg       = iPA
+             , _probAgg       = 1
              }
            , _actionStack       = actions
            }
@@ -135,15 +133,16 @@ initPosToInfo pModule = do
       stats' = stats & rgScore    .~ scoreStat
   pure . PosToInfo $ mapFromList [(homogenizeFen def, def & posStats .~ stats')]
 
-collectInfo :: (Uci, TreeNode) -> RGM (Uci, (Fen, PosInfo))
+collectInfo :: (Uci, TreeNode) -> RGM (Uci, (Fen, Double, PosInfo))
 collectInfo (uci, node) = do
-  let fen = node ^. nodeFen
+  let fen  = node ^. nodeFen
+  let prob = node ^. probLocal
   mInfo <- preuse $ posToInfo . ixPTI fen
   info <- throwMaybe ("No position info for fen: " <> tshow fen) mInfo
-  pure (uci, (fen, info))
+  pure (uci, (fen, prob, info))
 
-insertChildPosInfo :: (Uci, (Fen, PosInfo)) -> RGM ()
-insertChildPosInfo (_, (fen, pInfo)) = do
+insertChildPosInfo :: (Uci, (Fen, Double, PosInfo)) -> RGM ()
+insertChildPosInfo (_, (fen, _, pInfo)) = do
   mPInfo <- preuse $ posToInfo . ixPTI fen
   when (isNothing mPInfo) $
     posToInfo . getPosToInfo . at (homogenizeFen fen) ?= pInfo

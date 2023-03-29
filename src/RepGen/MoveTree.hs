@@ -61,20 +61,14 @@ insertNodeInfo
   -> Double
   -> Double
   -> Vector Uci
-  -> (Uci, Fen)
+  -> (Uci, (Double, Fen))
   -> RGM ()
-insertNodeInfo isResps mBestScore nCands pAgg pPrune ucis (uci, fen) = do
-  pInfo
-    <- throwMaybe ("lichess stats missing for ucis: " <> tshow (snoc ucis uci))
-    =<< preuse (posToInfo . ixPTI fen)
-  moveProb
-    <- throwMaybe ("lichess stats missing for ucis: " <> tshow (snoc ucis uci))
-    $ pInfo ^? posStats . lichessStats . _Just . prob
+insertNodeInfo isResps mBestScore nCands pAgg pPrune ucis (uci, (pMove, _)) = do
   if isResps
     then do
       moveTree . traverseUcis (snoc ucis uci) . bestScoreL .= (mBestScore <|> findBy uci nCands)
-      moveTree . traverseUcis (snoc ucis uci) . probAgg .= pAgg * moveProb
-      moveTree . traverseUcis (snoc ucis uci) . probPrune .= pPrune * moveProb
+      moveTree . traverseUcis (snoc ucis uci) . probAgg .= pAgg * pMove
+      moveTree . traverseUcis (snoc ucis uci) . probPrune .= pPrune * pMove
     else do
       moveTree . traverseUcis (snoc ucis uci) . bestScoreL .= (max <$> mBestScore <*> maxCandScore)
       moveTree . traverseUcis (snoc ucis uci) . probAgg .= pAgg

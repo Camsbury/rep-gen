@@ -34,7 +34,6 @@ data NodeStats
   = NodeStats
   { _whiteWins :: RGStat
   , _blackWins :: RGStat
-  , _prob      :: Double
   , _playCount :: Int
   } deriving (Show, Eq)
 makeLenses ''NodeStats
@@ -72,7 +71,6 @@ instance ToJSON NodeStats where
     object
       [ "whiteWins" J..= view whiteWins ns
       , "blackWins" J..= view blackWins ns
-      , "prob"      J..= view prob      ns
       , "playCount" J..= view playCount ns
       ]
 
@@ -97,7 +95,6 @@ instance FromJSON NodeStats where
     $ \o -> NodeStats
       <$> (o .: "whiteWins")
       <*> (o .: "blackWins")
-      <*> (o .: "prob")
       <*> (o .: "playCount")
 
 instance FromJSON RGStat where

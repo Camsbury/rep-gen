@@ -34,7 +34,7 @@ runAction action = do
   -- used to stop eval if scores are super high
   let maybeBestScore
         = maximumMay
-        $ candidates ^.. folded . _2 . to (\f -> pTI ^? ixPTI f . posStats . rgScore . _Just . nom) . _Just
+        $ candidates ^.. folded . _2 . _2 . to (\f -> pTI ^? ixPTI f . posStats . rgScore . _Just . nom) . _Just
   -- if this is the final enumeration and there is nothing, remove the parent
   when (action ^. edIsPruned && null candidates)
     $ moveTree . MT.traverseUcis ucis . removed .= True
@@ -50,7 +50,7 @@ runAction action = do
 scoreCap :: Double
 scoreCap = 0.9
 
-fetchCandidates :: EnumData -> RGM [(Uci, Fen)]
+fetchCandidates :: EnumData -> RGM [(Uci, (Double, Fen))]
 fetchCandidates action = do
   let ucis = action ^. edUcis
   parent
@@ -61,7 +61,7 @@ fetchCandidates action = do
   case fromNullable children of
      Just _ -> do
        logDebugN $ "Candidates already exist for ucis: " <> tshow ucis
-       pure $ children ^.. folded . to (\(u, n) -> (u, n ^. nodeFen))
+       pure $ children ^.. folded . to (\(u, n) -> (u, (n ^. probLocal, n ^. nodeFen)))
      Nothing -> do
        let isPruned = action ^. edIsPruned
        let pFen     = parent ^. nodeFen
@@ -85,7 +85,7 @@ fetchCandidates action = do
 ngnBuffer :: Int
 ngnBuffer = 5
 
-doFetchCandidates :: EnumData -> [EngineCandidate] -> RGM [(Uci, Fen)]
+doFetchCandidates :: EnumData -> [EngineCandidate] -> RGM [(Uci, (Double, Fen))]
 doFetchCandidates action engineMoves = do
   let ucis     = action ^. edUcis
   let pPrune   = action ^. edProbP
@@ -102,7 +102,7 @@ doFetchCandidates action engineMoves = do
   stratSats          <- view $ strategy . satisficers
   stratOpt           <- view $ strategy . optimizer
   breadth            <- maxCandBreadth isPruned pAgg
-  let candidates     = fromMaybe lcM maybeMM
+  let candidates     = maybe lcM (adornProb lcM <$>) maybeMM
   let isMasters      = isJust maybeMM
   let bestMay        = parent ^? bestScoreL . _Just
 
@@ -127,19 +127,23 @@ doFetchCandidates action engineMoves = do
     then firstEngine pPrune ucis engineMoves
     else pure candNodes
   traverse_ State.insertChildPosInfo cands'
-  pure $ cands' ^.. folded . to (\(u, (f, _)) -> (u, f))
+  pure $ cands' ^.. folded . to (\(u, (f, p, _)) -> (u, (p, f)))
 
-fetchFen :: Vector Uci -> (Uci, NodeStats) -> RGM (Uci, (Fen, NodeStats))
-fetchFen ucis (uci, ns) = do
+adornProb :: [(Uci, (Double, NodeStats))] -> (Uci, NodeStats) -> (Uci, (Double, NodeStats))
+adornProb lcm (uci, ns) = (uci, (maybe 0 (view _1) (lookup uci lcm), ns))
+
+fetchFen :: Vector Uci -> (Uci, (Double, NodeStats)) -> RGM (Uci, (Fen, Double, NodeStats))
+fetchFen ucis (uci, (prob, ns)) = do
   pModule <- use chessHelpers
   fen <- liftIO . PyC.ucisToFen pModule $ snoc ucis uci
-  pure (uci, (fen, ns))
+  pure (uci, (fen, prob, ns))
 
-fromProcessed :: Vector Uci -> (Uci, Fen) -> (Uci, TreeNode)
-fromProcessed ucis (uci, fen)
+fromProcessed :: Vector Uci -> (Uci, (Double, Fen)) -> (Uci, TreeNode)
+fromProcessed ucis (uci, (prob, fen))
   = ( uci
-    , def & uciPath .~ snoc ucis uci
-          & nodeFen .~ fen
+    , def & uciPath   .~ snoc ucis uci
+          & nodeFen   .~ fen
+          & probLocal .~ prob
     )
 
 toAction :: EnumData -> Vector Uci -> [RGAction]
@@ -153,7 +157,7 @@ firstEngine
   :: Double
   -> Vector Uci
   -> [EngineCandidate]
-  -> RGM [(Uci, (Fen, PosInfo))]
+  -> RGM [(Uci, (Fen, Double, PosInfo))]
 firstEngine _ ucis (_:_) = do
 -- firstEngine pPrune ucis (ngn:_) = do
   -- pAgg <- MT.fetchPAgg ucis
@@ -174,22 +178,23 @@ firstEngine _ ucis [] = do
   -- logWarnN "Nor are there any engine moves."
   pure []
 
-injectLichess :: [(Uci, NodeStats)] -> (Uci, (Fen, PosInfo)) -> (Uci, (Fen, PosInfo))
+injectLichess :: [(Uci, (Double, NodeStats))] -> (Uci, (Fen, Double, PosInfo)) -> (Uci, (Fen, Double, PosInfo))
 injectLichess lcM stats@(uci, _)
   = stats
   & _2
-  . _2
+  . _3
   . posStats
   . lichessStats
-  .~ lookup uci lcM
+  .~ (view _2 <$> lookup uci lcM)
 
 initPosInfo
   :: Bool
-  -> (Uci, (Fen, NodeStats))
-  -> (Uci, (Fen, PosInfo))
-initPosInfo isMasters (uci, (fen, ns))
+  -> (Uci, (Fen, Double, NodeStats))
+  -> (Uci, (Fen, Double, PosInfo))
+initPosInfo isMasters (uci, (fen, prob, ns))
   = ( uci
     , ( fen
+      , prob
       , def & posStats .~ stats
       )
     )
@@ -198,10 +203,10 @@ initPosInfo isMasters (uci, (fen, ns))
     stats = def & nsL ?~ ns
 
 findUci
-  :: [(Uci, NodeStats)]
+  :: [(Uci, (Double, NodeStats))]
   -> Fen
   -> Maybe Uci
-  -> RGM (Maybe [(Uci, NodeStats)])
+  -> RGM (Maybe [(Uci, (Double, NodeStats))])
 findUci _ _ Nothing = pure Nothing
 findUci cands fen (Just u)
   = maybe logMiss (pure . Just . (:[]))
@@ -221,8 +226,8 @@ minFallbackWindow = 0.9
 filterCandidates
   :: Fen
   -> Double
-  -> [(Uci, NodeStats)]
-  -> RGM [(Uci, NodeStats)]
+  -> [(Uci, (Double, NodeStats))]
+  -> RGM [(Uci, (Double, NodeStats))]
 filterCandidates pFen pAgg mvs = do
   iMPl <- fromIntegral <$> view initMinPlays
   aMPl <- fromIntegral <$> view asymMinPlays
@@ -234,8 +239,8 @@ filterCandidates pFen pAgg mvs = do
   exMay <- preview $ exclusionsL . ix pFen
   pure . filter (g exMay) $ filter (f mpl) mvs
   where
-    maxPlays = fromMaybe 0 . maximumMay $ mvs ^.. folded . _2 . playCount
-    f mpl (_, s) = mpl < s ^. playCount
+    maxPlays = fromMaybe 0 . maximumMay $ mvs ^.. folded . _2 . _2 . playCount
+    f mpl (_, (_, s)) = mpl < s ^. playCount
     g (Just exs) (u, _) = u `notElem` exs
     g Nothing _ = True
 

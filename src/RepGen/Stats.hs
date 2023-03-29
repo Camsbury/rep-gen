@@ -10,19 +10,20 @@ import RepGen.Stats.Type
 --------------------------------------------------------------------------------
 
 -- | Parse stats for algorithm use
-parseStats :: RawStats -> [(Uci, NodeStats)]
+parseStats :: RawStats -> [(Uci, (Double, NodeStats))]
 parseStats rs =
   parseStatsMove (rs ^. rawTotal) <$> rs ^. rawStatsMoves
 
-parseStatsMove :: Int -> RawStatsMove -> (Uci, NodeStats)
+parseStatsMove :: Int -> RawStatsMove -> (Uci, (Double, NodeStats))
 parseStatsMove totalCount rs =
   ( rs ^. rawUci
-  , NodeStats
-      { _whiteWins = mkRGStat whiteP
-      , _blackWins = mkRGStat blackP
-      , _prob      = total /. totalCount
-      , _playCount = total
-      }
+  , ( total /. totalCount
+    , NodeStats
+        { _whiteWins = mkRGStat whiteP
+        , _blackWins = mkRGStat blackP
+        , _playCount = total
+        }
+    )
   )
   where
     white = rs ^. rawWhite

@@ -62,7 +62,7 @@ processMoves action = do
     let pPrune = action ^. edProbP
     traverse_ (MT.insertNodeInfo True bestMay [] pAgg pPrune ucis) processed
 
-doProcessMoves :: EnumData -> RGM [(Uci, Fen)]
+doProcessMoves :: EnumData -> RGM [(Uci, (Double, Fen))]
 doProcessMoves action = do
   let ucis = action ^. edUcis
   parent
@@ -86,7 +86,7 @@ doProcessMoves action = do
   processed' <- pure . fromMaybe processed $ findUci processed =<< mOverride
   traverse_ State.insertChildPosInfo processed'
 
-  pure $ processed' ^.. folded . to (\(u, (f, _)) -> (u, f))
+  pure $ processed' ^.. folded . to (\(u, (f, p, _)) -> (u, (p, f)))
 
 
 initProcessMoves :: Vector Uci -> RGM ()
@@ -108,7 +108,7 @@ initProcessMoves ucis = do
        traverse_ (MT.insertNodeInfo True bestMay [] pAgg 1 ucis) processed
 
 -- TODO: DRY up these two functions
-doInitProcessMoves :: Vector Uci -> RGM [(Uci, Fen)]
+doInitProcessMoves :: Vector Uci -> RGM [(Uci, (Double, Fen))]
 doInitProcessMoves ucis = do
   parent
     <- throwMaybe ("Parent doesn't exist at ucis: " <> tshow ucis)
@@ -131,16 +131,17 @@ doInitProcessMoves ucis = do
   processed' <- pure . fromMaybe processed $ findUci processed =<< mOverride
   traverse_ State.insertChildPosInfo processed'
 
-  pure $ processed' ^.. folded . to (\(u, (f, _)) -> (u, f))
+  pure $ processed' ^.. folded . to (\(u, (f, p, _)) -> (u, (p, f)))
 
-fromProcessed :: Vector Uci -> (Uci, Fen) -> (Uci, TreeNode)
-fromProcessed ucis (uci, fen)
+fromProcessed :: Vector Uci -> (Uci, (Double, Fen)) -> (Uci, TreeNode)
+fromProcessed ucis (uci, (prob, fen))
   = ( uci
-    , def & uciPath .~ snoc ucis uci
-          & nodeFen .~ fen
+    , def & uciPath   .~ snoc ucis uci
+          & nodeFen   .~ fen
+          & probLocal .~ prob
     )
 
-findUci :: [(Uci, (Fen, PosInfo))] -> Uci -> Maybe [(Uci, (Fen, PosInfo))]
+findUci :: [(Uci, (Fen, Double, PosInfo))] -> Uci -> Maybe [(Uci, (Fen, Double, PosInfo))]
 findUci cands uci
   = fmap toList
   . fromNullable
@@ -148,18 +149,19 @@ findUci cands uci
 
 mergeMoves
   :: Vector Uci
+  -> [(Uci, (Double, NodeStats))]
   -> [(Uci, NodeStats)]
-  -> [(Uci, NodeStats)]
-  -> RGM [(Uci, (Fen, PosInfo))]
+  -> RGM [(Uci, (Fen, Double, PosInfo))]
 mergeMoves ucis lichessM mastersM
   = traverse f lichessM
   where
-    f (uci, lcm) = do
+    f (uci, (prob, lcm)) = do
       pModule <- use chessHelpers
       fen <- liftIO . PyC.ucisToFen pModule $ snoc ucis uci
       pure
         ( uci
         , ( fen
+          , prob
           , def & posStats .~ RGStats
             { _lichessStats = Just lcm
             , _mastersStats = lookup uci mastersM
@@ -170,15 +172,16 @@ mergeMoves ucis lichessM mastersM
 
 wrapLCStats
   :: Vector Uci
-  -> (Uci, NodeStats)
-  -> RGM (Uci, (Fen, PosInfo))
-wrapLCStats ucis (uci, lcm)
+  -> (Uci, (Double, NodeStats))
+  -> RGM (Uci, (Fen, Double, PosInfo))
+wrapLCStats ucis (uci, (prob, lcm))
   = do
     pModule <- use chessHelpers
     fen <- liftIO . PyC.ucisToFen pModule $ snoc ucis uci
     pure
       ( uci
       , ( fen
+        , prob
         , def & posStats .~ RGStats
           { _lichessStats = Just lcm
           , _mastersStats = Nothing
@@ -227,7 +230,6 @@ filterMinRespProb isPruned pPrune pAggPrune ucis = do
   irp <- view initRespProb
   arp <- view asymRespProb
   mpa <- view minProbAgg
-  pTI <- use posToInfo
   pAgg <- MT.fetchPAgg ucis
   -- let minProb = arp + (irp - arp) * pAggPrune
   let minProb = exp (log (irp / arp) * pAggPrune) * arp
@@ -243,10 +245,9 @@ filterMinRespProb isPruned pPrune pAggPrune ucis = do
   --   )
   --   =<< use (moveTree . traverseUcis ucis . nodeResponses)
   let isValid rNode =
-        maybe
-          False
           (\x -> (isPruned && mpa < (pAgg * x)) || pPrune * x > minProb)
-          (pTI ^? ixPTI (rNode ^. nodeFen) . posStats . lichessStats . _Just . prob)
+          (rNode ^. probLocal)
+
   when isPruned $
     moveTree
       . traverseUcis ucis
@@ -265,11 +266,7 @@ filterMinRespProb isPruned pPrune pAggPrune ucis = do
   where
     addProbs :: TreeNode -> RGM (Double, Double, TreeNode)
     addProbs child = do
-      let fen = child ^. nodeFen
-      cProb
-        <- throwMaybe ("No pos info exists for ucis: " <> tshow (child ^. uciPath))
-        <=< preuse
-        $ posToInfo . ixPTI fen . posStats . lichessStats . _Just . prob
+      let cProb = child ^. probLocal
       pure (pPrune * cProb, pAggPrune * cProb, child)
 
 

@@ -67,10 +67,11 @@ calcNodeStats parent statsLens = do
 
 -- | Calculate a stat weighting
 weightedStat
-  :: Lens' NodeStats Double
+  :: Double
+  -> Lens' NodeStats Double
   -> NodeStats
   -> Double
-weightedStat winsL ns = view winsL ns * view prob ns
+weightedStat prob winsL ns = view winsL ns * prob
 
 setAggStat
   :: Maybe Double
@@ -89,20 +90,20 @@ childrenStat
   -> Lens' NodeStats Double
   -> RGM Double
 childrenStat children parentL statL
-  = fmap sum . traverse getStat $ children ^.. folded . _2 . nodeFen
+  = fmap sum . traverse getStat $ children ^.. folded . _2
   where
-    getStat :: Fen -> RGM Double
-    getStat fen
-      = throwMaybe ("Info doesn't exist for fen: " <> tshow fen)
+    getStat :: TreeNode -> RGM Double
+    getStat node
+      = throwMaybe ("Info doesn't exist for fen: " <> tshow (node ^. nodeFen))
       <=< preuse
-      $ posToInfo . ixPTI fen . posStats . parentL . _Just
-      . to (weightedStat statL)
+      $ posToInfo . ixPTI (node ^. nodeFen) . posStats . parentL . _Just
+      . to (weightedStat (node ^. probLocal) statL)
 
 -- | Decrement the sum of the child probabilities
 -- empty probabilities mean we don't want to take the child into account
 -- so we use 0
 probNonChild
-  :: [(Uci, (Fen, PosInfo))]
+  :: [(Uci, (Fen, Double, PosInfo))]
   -> Double
 probNonChild children
   = (1 -)
@@ -111,9 +112,6 @@ probNonChild children
   ^.. folded
   . _2
   . _2
-  . posStats
-  . lichessStats
-  . to (maybe 0 $ view prob)
 
 setScore :: Maybe Double -> Fen -> RGM ()
 setScore Nothing _ = pure ()
@@ -157,6 +155,6 @@ calcScore parent = do
         ^.. folded
         . _2
         . to (\n -> fromMaybe 0 (pTI ^? ixPTI (n ^. nodeFen) . posStats . rgScore . _Just . agg)
-                 * fromMaybe 0 (pTI ^? ixPTI (n ^. nodeFen) . posStats . lichessStats . _Just . prob))
+                 * view probLocal n)
   let pScore = pTI ^? ixPTI (parent ^. nodeFen) . posStats . rgScore . _Just . nom
   setScore ((\pS -> cScoreAgg + probNonChild childrenInfo * pS) <$> pScore) $ parent ^. nodeFen
